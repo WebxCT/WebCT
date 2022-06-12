@@ -13,6 +13,7 @@ WebCT is a feature-rich environment for previewing and simulating X-ray scans on
 ![Image of UI](./doc/preview.png)
 
 > **Note**
+> 
 > WebCT is still in development, and while most features are implemented, some are still a work-in-progress. [Feel free to request features, and report bugs.](https://github.com/WebxCT/WebCT/issues) WebCT aims to be a useful tool for everyone, if there is something you'll like to see, please request it!
 
 
