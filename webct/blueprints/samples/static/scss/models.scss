@@ -1,0 +1,171 @@
+div.model {
+	display: grid;
+	width: 100%;
+	border-width: 1px;
+	border-color: var(--sl-panel-border-color);
+	padding: 0;
+	background-color: var(--sl-panel-background-color);
+	grid-template-columns: 2rem auto;
+	margin: 1rem;
+	margin-left: 0rem;
+	border-radius: var(--sl-border-radius-large);
+}
+
+div.model > div:not(.remove) {
+	padding: 0.5rem;
+}
+
+div.model > div:not(.remove) > * {
+	margin: 0.1rem;
+}
+
+div.model div.remove button {
+	height: 100%;
+	display: block;
+	width: 100%;
+	background-color: var(--sl-color-danger-400);
+	border-right: 2px;
+	border-style: solid;
+	border-color: var(--sl-color-danger-400);
+	box-sizing: border-box;
+	transition: all 0.2s;
+	border-top-left-radius: var(--sl-border-radius-large);
+	border-bottom-left-radius: var(--sl-border-radius-large);
+}
+
+div.model div.remove button:hover {
+	background-color: var(--sl-color-danger-300);
+	transition: all 0.2s;
+}
+
+div.model div.remove button:active {
+	background-color: var(--sl-color-danger-700);
+	border-color: var(--sl-color-danger-700);
+	transition: all 0s;
+}
+
+div.model > div:not(.remove) {
+	padding-left: 1rem;
+}
+
+sl-dialog > div.buttons {
+	display: inline-grid;
+	grid-template-columns: 7rem auto 7rem 1rem 7rem;
+	width: 100%;
+	margin-top: 1rem;
+}
+
+sl-dialog > div.buttons > sl-button#buttonMaterialSave {
+	grid-column-start: 3;
+}
+
+sl-dialog > div.buttons > sl-button.close {
+	grid-column-start: 1;
+}
+
+sl-dialog > div.buttons > sl-button#buttonMaterialSubmit {
+	grid-column-start: 5;
+}
+
+sl-dialog > div:first-child > * {
+	margin-top: 0;
+}
+
+div#divSamples > div {
+	opacity: 1;
+	transition: all 1s;
+	height: auto;
+}
+
+div#divSamples > div.model.removed {
+	transition: all 1s;
+	opacity: 0;
+	margin: 0;
+	overflow: hidden;
+	height: 0;
+	transform: translateY(-2rem);
+}
+
+#buttonSampleSubmit {
+	grid-column-start: 5;
+}
+
+sl-dialog#dialogueMaterial {
+	--width: 70%;
+	--height: 70%;
+}
+
+div.materialform {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 1rem;
+	padding: 1rem;
+}
+
+sl-dialog sl-tab-group > sl-button[slot=nav] {
+	width: fit-content;
+	align-self: center;
+}
+
+sl-dialog > div.buttons > sl-button {
+	box-sizing: border-box;
+}
+
+sl-tab {
+	text-transform: capitalize;
+}
+
+div.materialform > * {
+	margin: 0.25rem;
+}
+
+div.materialform > sl-button {
+	margin-top: 1.5rem;
+	width: 2.5rem;
+}
+
+div.materialform > sl-divider {
+	grid-column-start: 1;
+	grid-column-end: 3;
+}
+
+.hidden {
+	display: none;
+}
+
+div.materialform > .wide {
+	grid-column-start: 1;
+	grid-column-end: 3;
+}
+
+sl-dialog > sl-radio-group > div {
+	border-style: solid;
+	box-sizing: border-box;
+	border-width: 2px;
+	border-radius: var(--sl-border-radius-medium);
+	border-color: var(--sl-panel-border-color);
+	box-sizing: border-box;
+	padding: 1rem;
+	padding-top: 0;
+	transition: all 0.25s ease-out;
+}
+
+sl-dialog input {
+	display: block;
+	margin-top: 0.25rem;
+	margin-bottom: 0.5rem;
+}
+
+sl-dialog > sl-radio-group > div.radioselect {
+	border-color: var(--sl-color-primary-500);
+	border-style: solid;
+	transition: all 0.25s ease-in;
+}
+
+sl-progress-bar.success {
+	--indicator-color: var(--sl-color-success-500)
+}
+
+sl-progress-bar.fail {
+	--indicator-color: var(--sl-color-danger-500)
+}

@@ -1,0 +1,6 @@
+{
+	"label": "Rod-Particles",
+	"description": "Ceramic particles in fuel mixture",
+	"density": 6.085,
+	"material": ["compound", "ZrB2"]
+}

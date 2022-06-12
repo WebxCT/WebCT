@@ -1,0 +1,108 @@
+{% extends "base.html.j2" %}
+
+{% block title %}
+WebCT
+{% endblock title %}
+
+{% block scripts %}
+{{ super() }}
+<!-- shoelace -->
+<script src="{{ url_for('app.js_app')}}"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.0.0-beta.72/dist/themes/light.css">
+
+<link rel="stylesheet" href="{{url_for('app.css_app')}}">
+<script type="module" src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.0.0-beta.72/dist/shoelace.js"></script>
+
+<!-- Highlight.js -->
+<link rel="stylesheet" href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.5.1/build/styles/default.min.css">
+<script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.5.1/build/highlight.min.js"></script>
+
+{% include "favicons.html.j2" %}
+
+{% endblock scripts %}
+
+{% block content %}
+	<main>
+		<aside id="imagebar">
+			<sl-tooltip content="X-Ray Beam" placement="right" hoist>
+				<sl-button size="large" type="primary" target="beam">
+					<sl-icon name="sunrise" slot="prefix">
+				</sl-button>
+			</sl-tooltip>
+			<sl-tooltip content="Detector Plane" placement="right" hoist>
+				<sl-button size="large" target="detector">
+					<sl-icon name="border-outer" slot="prefix"></sl-icon>
+				</sl-button>
+			</sl-tooltip>
+			<sl-tooltip content="Materials & Samples" placement="right" hoist>
+				<sl-button size="large" target="samples">
+					<sl-icon name="server" slot="prefix"></sl-icon>
+				</sl-button>
+			</sl-tooltip>
+			<sl-tooltip content="Capture Plan" placement="right" hoist>
+				<sl-button size="large" target="capture">
+					<sl-icon name="camera-reels" slot="prefix"></sl-icon>
+				</sl-button>
+			</sl-tooltip>
+			<sl-tooltip content="Reconstruction" placement="right" hoist>
+				<sl-button size="large" target="reconstruction">
+					<sl-icon name="box" slot="prefix"></sl-icon>
+				</sl-button>
+			</sl-tooltip>
+		</aside>
+		<aside id="sidebar">
+			<section class="tab" type="beam" active>
+				{% include "tab.beam.html.j2" %}
+			</section>
+			<section class="tab" type="detector">
+				{% include "tab.detector.html.j2" %}
+			</section>
+			<section class="tab" type="samples">
+				{% include "tab.samples.html.j2" %}
+			</section>
+			<section class="tab" type="capture">
+				{% include "tab.capture.html.j2" %}
+			</section>
+			<section class="tab" type="reconstruction">
+				{% include "tab.reconstruction.html.j2" %}
+			</section>
+		</aside>
+		<section class="content">
+			<sl-progress-bar indeterminate id="barLoading"></sl-progress-bar>
+			<sl-split-panel vertical snap="20% 50% 80%">
+				<sl-icon slot="handle" name="grip-horizontal"></sl-icon>
+			<section class="half-pane" slot="start">
+				<section class="pane" type="beam" active>
+					{% include "pane.beam.html.j2" %}
+				</section>
+				<section class="pane" type="detector">
+					{% include "pane.detector.html.j2" %}
+				</section>
+				<section class="pane" type="samples">
+					{% include "pane.samples.html.j2" %}
+				</section>
+				<section class="pane" type="capture">
+					{% include "pane.capture.html.j2" %}
+				</section>
+				<section class="pane" type="reconstruction">
+					{% include "pane.reconstruction.html.j2" %}
+				</section>
+			</section>
+			<section class="half-pane" id="webgl" slot="end">
+				{# <img src="img/test.svg" alt=""> #}
+				{% include "preview.pane.html.j2" %}
+			</section>
+		</sl-split-panel>
+		</section>
+
+		<div id="appIcons">
+			<sl-tooltip content="Configuration">
+				<sl-icon-button name="gear" label="Configuration" id="buttonConfig"></sl-icon>
+			</sl-tooltip>
+			<sl-tooltip content="Help">
+				<sl-icon-button name="question-circle" label="Help"></sl-icon>
+			</sl-tooltip>
+		</div>
+		{% include "config.html.j2" %}
+	</main>
+{% endblock content %}

@@ -1,0 +1,21 @@
+<svg width="1800" height="600" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+    xml:space="preserve" overflow="hidden">
+    <g>
+        <rect x="0" y="0" width="100%" height="100%" fill="#0EA5E9" />
+        <rect x="4%" y="10%" width="92%" height="80%" stroke="#FFFFFF" stroke-width="4.5" stroke-miterlimit="8"
+            fill="#0EA5E9" />
+    </g>
+    <g>
+        <rect x="4%" y="10%" width="27%" height="80%" stroke="#FFFFFF" stroke-width="4.5" stroke-miterlimit="8"
+            fill="#0EA5E9" />
+        <text x="14%" y="55%" fill="#FFFFFF" font-family="Segoe UI,Segoe UI_MSFontService,sans-serif" font-weight="700"
+            font-size="275" text-anchor="middle" dominant-baseline="middle">W<tspan font-size="147" x="25%" y="66.5%" dominant-baseline="alphabetic">CT</tspan>
+        </text>
+    </g>
+    <g>
+        <text x="63%" y="38%" fill="#FFFFFF" font-family="Segoe UI,Segoe UI_MSFontService,sans-serif" font-weight="600"
+            font-size="70" text-anchor="middle" dominant-baseline="middle">WebCT
+            <tspan dy="15%" x="63%" font-weight="400">Interactive Web UI for X-ray CT</tspan>
+            <tspan dy="12%" x="63%" font-weight="400">with Real-time Results</tspan> </text>
+    </g>
+</svg>

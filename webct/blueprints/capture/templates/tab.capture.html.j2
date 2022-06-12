@@ -1,0 +1,46 @@
+<h1> Capture </h1>
+<sl-input label="Capture Preset Name" help-text="A user-friendly name of the preset." placeholder="360 Capture"
+	value="360 deg Capture"></sl-input>
+
+{% include "update-button.html.j2" %}
+
+<sl-button variant="primary" class="button-capture">Simulate Capture
+	<sl-icon slot="prefix" name="camera-reels"></sl-icon>
+</sl-button>
+
+<div class="group">
+	<div>
+		<sl-select label="Total Rotation" value="360" id="selectCaptureRotation">
+			<sl-menu-item value="180">180 Degrees</sl-menu-item>
+			<sl-menu-item value="360">360 Degrees</sl-menu-item>
+		</sl-select>
+
+		<sl-input label="Total projections" type="number" id="inputCaptureProjections" min="2" max="2000" step="1"
+			value="360"></sl-input>
+		<!-- <sl-button type="primary">Calculate Optimal Projections</sl-button> -->
+	</div>
+	<!-- <button></button> -->
+</div>
+
+<div class="group">
+	<div>
+		<p>Sample Rotation</p>
+		<div style="grid-template-columns: repeat(3, minmax(0, 1fr)); display: grid;">
+			<sl-input label="Pitch" type="number" min="0" max="360" step="0.1" id="inputSampleRotateX"></sl-input>
+			<sl-input label="Yaw" type="number" min="0" max="360" step="0.1"   id="inputSampleRotateY"></sl-input>
+			<sl-input label="Roll" type="number" min="0" max="360" step="0.1"  id="inputSampleRotateZ"></sl-input>
+		</div>
+	</div>
+</div>
+
+<div class="group">
+	<div>
+		<sl-input type="number" max="1000" step="0.1" min="-1000" id="inputBeamPosX" label="Position of beam source to sample"><span slot="prefix">X</span>0<span slot="suffix">mm</span></sl-input>
+		<sl-input type="number" max="1000" step="0.1" min="-1000" id="inputBeamPosY"><span slot="prefix">Y</span>0<span slot="suffix">mm</span></sl-input>
+		<sl-input type="number" max="1000" step="0.1" min="-1000" id="inputBeamPosZ"><span slot="prefix">Z</span>100<span slot="suffix">mm</span></sl-input>
+
+		<sl-input type="number" max="1000" step="0.1" min="-1000" id="inputDetectorPosX" label="Position of detector to sample"><span slot="prefix">X</span>0<span slot="suffix">mm</span></sl-input>
+		<sl-input type="number" max="1000" step="0.1" min="-1000" id="inputDetectorPosY"><span slot="prefix">Y</span>0<span slot="suffix">mm</span></sl-input>
+		<sl-input type="number" max="1000" step="0.1" min="-1000" id="inputDetectorPosZ"><span slot="prefix">Z</span>-144.92<span slot="suffix">mm</span></sl-input>
+	</div>
+</div>

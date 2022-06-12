@@ -1,0 +1,31 @@
+name: webct
+channels:
+  - defaults
+  - conda-forge
+  - ccpi
+  - intel
+  - astra-toolbox
+dependencies:
+  - cmake # Needed only for docker
+
+  # Runtime
+  - python>=3.9
+  - flask
+  # - gvirtualxray # Installed by docker container
+  - scipy
+  - matplotlib
+  - opencv
+  - cil
+  - tigre
+  - astra-toolbox
+  - cil-astra
+  - ccpi-regulariser
+
+  # Pip packages
+  # (environment.yml does not support multiple pip: keys.)
+  - pip
+  - pip:
+    # Runtime
+    - imageio[ffmpeg]
+    - git+https://bitbucket.org/spekpy/spekpy_release.git
+    - xpecgen

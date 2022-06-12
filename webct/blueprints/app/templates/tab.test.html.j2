@@ -1,0 +1,19 @@
+<h1>Detector</h1>
+<input label="Detector Name" help-text="A user-friendly name of the preset."
+	placeholder="Example detector pane"
+	value="Swansea Pane"></input>
+
+<div class="group">
+	<div>
+		<input type="number" label="Pane Width" value="500"></input>
+			{# {% include "./units/size.html.j2" %} #}
+		<input type="number" label="Pane Height" value="200"></input>
+			{# {% include "./units/size.html.j2" %} #}
+		<input type="number" label="Pixel Size" value="1.0" step="0.1">
+			{# {% include "./units/size.html.j2" %} #}
+		</input>
+		<input label="PSF" type="file" advanced></input>
+		<input label="Energy Response" type="file" disabled advanced></input>
+	</div>
+	<button></button>
+</div>

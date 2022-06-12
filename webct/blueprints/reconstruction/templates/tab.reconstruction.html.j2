@@ -1,0 +1,70 @@
+<h1>Reconstruction</h1>
+
+<sl-input label="Reconstruction Preset Name" help-text="A user-friendly name of the preset." placeholder="Simple FDK"
+	value="Simple FDK"></sl-input>
+
+{% include "update-button.html.j2" %}
+
+<sl-button variant="primary" class="button-recon">Reconstruct
+	<sl-icon slot="prefix" name="box"></sl-icon>
+</sl-button>
+
+<div class="group" type="FDK" id="groupAlg">
+	<div>
+		<sl-select label="Reconstruction Algorithm" value="FDK" id="selectReconstruction">
+			<sl-menu-label>Non-Iterative</sl-menu-label>
+			{# Span elements do not show up when selected.#}
+			<sl-menu-item value="FDK">FDK<span> Feldkamp, David & Kress</span></sl-menu-item>
+			<sl-menu-item value="FBP">FBP<span> Filtered Back Projection</span></sl-menu-item>
+			<sl-divider></sl-divider>
+			<sl-menu-label>Iterative Methods</sl-menu-label>
+			<sl-menu-item value="MLEM" disabled>MLEM<span> Maximum Likelihood Estimation Method</span></sl-menu-item>
+			<sl-menu-item value="SIRT" disabled>SIRT<span> Simultaneous Iterative Reconstructive Technique</span></sl-menu-item>
+			<sl-menu-item value="CGLS" disabled>CGLS<span> Conjugate Gradient Least Squares</span></sl-menu-item>
+		</sl-select>
+		<sl-select label="Reconstruction Quality" value="medium" id="selectReconQuality" advanced>
+			<sl-menu-item value="0">High
+				<sl-tag slot="suffix" variant="danger" pill size="small">GPU Intensive</sl-pill>
+			</sl-menu-item>
+			<sl-menu-item value="1">Medium</sl-menu-item>
+			<sl-menu-item value="2">Low</sl-menu-item>
+			<sl-divider></sl-divider>
+			<sl-menu-item value="3">Preview</sl-menu-item>
+		</sl-select>
+		<p id="descriptionQuality" advanced>
+			Medium quality uses a full detector size for projections, but a reduced size for the reconstruction space.
+		</p>
+	</div>
+	<button></button>
+</div>
+
+<div class="group" id="settingsFDK">
+	<div>
+		<h2>FDK Settings</h2>
+		<sl-select label="Sinogram Filtering" value="ram-lak" id="selectFDKFilter">
+			<sl-menu-item value="ram-lak">Ram-Lak (Ramp)</sl-menu-item>
+		</sl-select>
+	</div>
+</div>
+
+<div class="group hidden" id="settingsFBP">
+	<div>
+		<h2>FBP Settings</h2>
+		<sl-select label="Sinogram Filtering" value="ram-lak" id="selectFBPFilter">
+			<sl-menu-item value="ram-lak">Ram-Lak (Ramp)</sl-menu-item>
+		</sl-select>
+	</div>
+</div>
+
+<div class="group hidden" id="settingsCGLS">
+	<div>
+		<h2>CGLS Settings</h2>
+		<sl-select label="CGLS Variant" id="selectVariantCGLS" class="hidden" value="">
+			<sl-menu-item value="">No Varient</sl-menu-item>
+			<sl-menu-item value="Conv">Convolution</sl-menu-item>
+			<sl-menu-item value="Tik"> Tikhonov Regularization</sl-menu-item>
+			<sl-menu-item value="TV">TV Regularisation<span> Total Variation</span></sl-menu-item>
+		</sl-select>
+	</div>
+	<!-- <button></button> -->
+</div>

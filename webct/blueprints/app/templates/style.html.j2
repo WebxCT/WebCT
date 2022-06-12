@@ -1,0 +1,36 @@
+{% extends "base.html.j2" %}
+
+{% block title %}
+WebCT
+{% endblock title %}
+
+{% block scripts %}
+{{ super() }}
+{# <script src="{{ url_for('app.js_app')}}"></script> #}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.0.0-beta.62/dist/themes/light.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.0.0-beta.62/dist/themes/dark.css" />
+<link rel="stylesheet" href="{{url_for('app.css_test')}}">
+<script type="module"
+	src="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.0.0-beta.62/dist/shoelace.js"></script>
+{% endblock scripts %}
+
+{% block content %}
+	<main>
+		<aside id="imagebar">
+		</aside>
+		<aside id="sidebar">
+			<section class="tab" type="beam" active>
+				{% include "tab.test.html.j2" %}
+			</section>
+		</aside>
+		<section class="content">
+			<section class="half-pane">
+				<section class="pane" type="beam" active>
+					{% include "pane.test.html.j2" %}
+				</section>
+			</section>
+			<section class="half-pane" id="webgl">
+			</section>
+		</section>
+	</main>
+{% endblock content %}

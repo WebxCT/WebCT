@@ -1,0 +1,70 @@
+<h1> Beam </h1>
+<sl-input label="Beam Preset Name" help-text="A user-friendly name of the preset."
+	placeholder="Example Beam 1"
+	value="Swansea 80KeV"></sl-input>
+
+{% include "update-button.html.j2" %}
+
+<div class="group">
+	<div>
+		<sl-input type="number" label="Tube Voltage" step="0.01" value="80.0" id="inputTubeVoltage">
+			{% include "./units/energy.html.j2" %}
+		</sl-input>
+		<sl-input label="Anode Angle" type="number" step="0.1" value="12" id="inputTubeAngle" advanced >
+			{% include "./units/degree.html.j2" %}
+		</sl-input>
+		{# <sl-input label="Photon Count" type="number" value="1000" advanced ></sl-input>
+		<sl-select label="Noise Type" clearable placeholder="No Noise">
+			<sl-menu-item value="poission">Poission</sl-menu-item>
+		</sl-select>
+		<sl-input label="Noise Amount" type="number" value="1.0" step="0.1" advanced></sl-input> #}
+	</div>
+	<button></button>
+</div>
+
+<div class="group">
+	<div>
+		<sl-select label="Anode Material" value="74" id="selectTubeMaterial">
+			{# <sl-menu-item value="29">Cu (Copper)</sl-menu-item> #}
+			<sl-menu-item value="74">W (Tungsten)</sl-menu-item>
+			<sl-menu-item value="42">Mo (Molydbenum)</sl-menu-item>
+			<sl-menu-item value="45">Rh (Rhodium)</sl-menu-item>
+		</sl-select>
+		{# <sl-input type="number" label="Source Size" value="2.0" id="inputTubeSize" advanced>
+			{% include "./units/size.html.j2" %}
+		</sl-input> #}
+	</div>
+	{# <button></button> #}
+</div>
+
+<div class="group">
+	<div>
+		<sl-select label="Filter Material" value="13" id="selectFilterMaterial">
+			<sl-menu-item value="13">Al (Aluminium)</sl-menu-item>
+			<sl-menu-item value="29">Cu (Copper)</sl-menu-item>
+			<sl-divider></sl-divider>
+			<sl-menu-item value="47">Ag (Silver)</sl-menu-item>
+			<sl-menu-item value="45">Rh (Rhodium)</sl-menu-item>
+			<sl-menu-item value="73">Ta (Tantalum)</sl-menu-item>
+			<sl-menu-item value="42">Mo (Molydbenum)</sl-menu-item>
+		</sl-select>
+		<sl-input type="number" label="Filter Thickness" step="0.1" value="10" id="inputFilterSize">
+			{% include "./units/size.html.j2" %}
+		</sl-input>
+	</div>
+	{# <button></button> #}
+</div>
+
+<div class="group">
+	<div>
+		<sl-select label="Source Type" value="point" id="selectBeamType">
+			<sl-menu-item value="point">Point</sl-menu-item>
+			<sl-menu-item value="parallel">Parallel</sl-menu-item>
+		</sl-select>
+		<sl-select label="Beam Generator" value="spekpy" id="selectBeamGen" advanced>
+			<sl-menu-item value="spekpy">SpekPy</sl-menu-item>
+			<sl-menu-item value="xpecgen">xpecgen</sl-menu-item>
+		</sl-select>
+	</div>
+	<button></button>
+</div>

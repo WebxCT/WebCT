@@ -1,0 +1,6 @@
+{
+	"label": "Air",
+	"description": "Standard earth atmosphere",
+	"density": 0.0,
+	"material": ["special", "air"]
+}

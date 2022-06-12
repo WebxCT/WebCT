@@ -1,0 +1,27 @@
+<h1>Detector</h1>
+<sl-input label="Detector Preset Name" help-text="A user-friendly name of the preset."
+	placeholder="Example detector pane"
+	value="Swansea Pane"></sl-input>
+{% include "update-button.html.j2" %}
+
+<div class="group">
+	<div>
+		<sl-input type="number" label="Pane Width" value="640" id="inputPaneWidth">
+			{% include "./units/size.html.j2" %}
+		</sl-input>
+		<sl-input type="number" label="Pane Height" value="320" id="inputPaneHeight">
+			{% include "./units/size.html.j2" %}
+		</sl-input>
+		<sl-input type="number" label="Pixel Size" value="0.5" step="0.01" id="inputPanePixelSize">
+			{% include "./units/size.html.j2" %}
+		</sl-input>
+
+		<sl-button style="width:95%" advanced outline disabled>Upload PSF
+			<sl-icon slot="suffix" name="file-earmark-arrow-up"></sl-icon>
+		</sl-button>
+		<sl-button style="width:95%" advanced outline disabled>Upload Energy Response
+			<sl-icon slot="suffix" name="file-earmark-arrow-up"></sl-icon>
+		</sl-button>
+	</div>
+	<button></button>
+</div>

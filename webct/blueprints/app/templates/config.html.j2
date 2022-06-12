@@ -1,0 +1,38 @@
+<sl-dialog label="Configuration" id="dialogueConfig">
+	<div class="dialogpanel">
+		<div>
+			<ul>
+				<li><sl-checkbox><span><sl-icon name="sunrise"></sl-icon></span> X-Ray Beam </sl-checkbox></li>
+				<li><sl-checkbox><sl-icon name="border-outer"></sl-icon> Detector Pane</sl-checkbox></li>
+				<li><sl-checkbox><sl-icon name="server"></sl-icon> Materials & Samples</sl-checkbox></li>
+				<li><sl-checkbox><sl-icon name="camera-reels"></sl-icon> Capture Plan</sl-checkbox></li>
+				<li><sl-checkbox><sl-icon name="box"></sl-icon> Reconstruction</sl-checkbox></li>
+			</ul>
+		</div>
+		<div class="downloadPanel">
+			<sl-button-group>
+				<sl-dropdown>
+				<sl-button slot="trigger" caret>Format: JSON</sl-button>
+					<sl-menu>
+					<sl-menu-item>JSON</sl-menu-item>
+					<sl-menu-item disabled>XTEK</sl-menu-item>
+				</sl-menu>
+				</sl-dropdown>
+				<sl-button>
+					<sl-icon slot="prefix" name="cloud-download"></sl-icon>
+					Download
+				</sl-button>
+			</sl-button-group>
+			<sl-divider></sl-divider>
+			<div class="downloadPreview">
+			<pre id="codePreview"></pre>
+		</div>
+		</div>
+	</div>
+<div slot="footer">
+	<sl-divider></sl-divider>
+	<div class="buttons">
+		<sl-button variant="" class="close" type="button" id="buttonConfigClose">Close</sl-button>
+	</div>
+</div>
+</sl-dialog>

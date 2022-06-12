@@ -1,0 +1,168 @@
+img.image-projection {
+	border-width: 0.25rem;
+	border-color: #7ECEFD;
+	border-style: solid;
+	transition: all 0.5s ease-out;
+	background-position: center center;
+	background-repeat: no-repeat;
+	background-size: cover;
+}
+
+video.updating,
+img.updating {
+	border-color: var(--sl-color-yellow-300);
+}
+
+video.error,
+img.error {
+	border-color: #FF7F66;
+}
+
+.half-pane img {
+	// width: 80%;
+	// height: 80%;
+	max-height: 100%;
+	max-width: 100%;
+	margin: auto;
+}
+
+#webgl {
+	display: block;
+	// border-top-width: 0.25rem;
+	// border-color: var(--sl-color-primary-500);
+	// border-top-style: outset;
+}
+#previewPane {
+	height: 100%;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.previewContainer {
+	width: 100%;
+	height: 100%;
+}
+
+.previewContainer > div {
+	flex-direction: column;
+	justify-content: center;
+	box-sizing: border-box;
+	padding: 0.25rem;
+	align-items: center;
+	display: flex;
+	height: 100%;
+}
+
+img.image-layout {
+	border-width: 0.25rem;
+	border-color: #7ECEFD;
+	border-style: solid;
+	transition: all 0.5s ease-out;
+	background-position: center center;
+	background-repeat: no-repeat;
+	background-size: contain;
+	background-color: white;
+}
+
+#previewLayout {
+	height: 100%;
+	width: 100%;
+}
+
+#previewPane:not([selected=projection]) #previewImage {
+	display: none;
+}
+
+#previewPane:not([selected=layout]) #previewLayout {
+	display: none;
+}
+
+#previewPane:not([selected=recon]) #previewRecon {
+	display: none;
+}
+
+#webgl > #previewSettings {
+	height: 0;
+}
+
+#settingsPane:not([selected=projection]) {
+	display: none;
+}
+
+#previewSettings > sl-button-group {
+	display: block;
+	position: fixed;
+	// margin-top: -1.5rem;
+	z-index: 1;
+}
+
+#settingsPane > div > * {
+	display: block;
+	margin-top: 0.2rem;
+}
+
+#settingsPane > div {
+	padding: 1.5rem;
+	display: block;
+}
+
+#settingsPane:not([active]) sl-radio-group {
+	display: none;
+}
+
+#settingsPane:not([active]) sl-range {
+	display: none;
+}
+
+#settingsPane:not([active]) * {
+	height: 0;
+	opacity: 0;
+	padding: 0;
+	margin: 0;
+}
+
+#settingsPane:not([active]) {
+	height: 3rem;
+	transition: all 0.5s;
+	overflow: hidden;
+	padding: 0;
+}
+
+#settingsPane {
+	opacity: 100;
+	transition: all 0.25s;
+	height: auto;
+	padding-top: 1rem;
+	width: 15.5rem;
+	position: fixed;
+	border-radius: 0.9rem;
+	background-color: var(--sl-color-primary-50);
+	border-color: var(--sl-color-primary-500);
+	border-style: groove;
+	border-width: 1px;
+	box-sizing: border-box;
+}
+
+#settingsPane > button {
+	margin-top: 0;
+	padding: 0;
+	height: 1rem;
+	width: 100%;
+	background-color: var(--sl-color-primary-500);
+	border: 0;
+	border-bottom-left-radius: 0.9rem;
+	display: block;
+	border-bottom-right-radius: 0.9rem;
+	z-index: 100;
+}
+
+#settingsPane:not([active]) > button {
+	height: 3rem;
+	opacity: 100;
+}
+
+#settingsPane > button:hover {
+	background-color: var(--sl-color-primary-600);
+	box-shadow: inset;
+	transition: background-color 0.5s ease-in-out;
+}

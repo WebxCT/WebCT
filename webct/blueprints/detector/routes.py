@@ -1,0 +1,32 @@
+from dataclasses import dataclass
+from flask import jsonify, session, request
+from flask.wrappers import Response
+from webct.blueprints.detector import bp
+from webct.components.Detector import DetectorParameters
+from webct.components.sim.SimSession import Sim
+
+from webct import logger
+
+
+@bp.route("/detector/set", methods=["PUT"])
+def setDetector() -> Response:
+	data = request.get_json()
+	if data is None:
+		return Response(None, 400)
+
+	simdata = Sim(session)
+	simdata.detector = DetectorParameters.from_json(data)
+	return Response(None, 200)
+
+
+@dataclass(frozen=True)
+class DetectorResponse:
+	params: DetectorParameters
+
+
+@bp.route("/detector/get")
+def getBeam() -> Response:
+
+	simdata = Sim(session)
+	response = DetectorResponse(simdata.detector)
+	return jsonify(response)

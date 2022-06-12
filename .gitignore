@@ -1,0 +1,29 @@
+# Python compiled objects
+*.pyc
+__pycache__/
+
+# Ignore build files and folders
+.mypy_cache/
+.pytest_cache/
+*.egg-info
+build/
+dist/
+*.js
+node_modules/
+package-lock.json
+yarn.lock
+yarn-error.log
+tsconfig.tsbuildinfo
+*.d.ts
+
+# IDE configuration
+.vscode/
+
+# Rollup configuration
+!rollup.config.js
+
+# Data files
+*.stl
+
+# Notebook checkpoints
+.ipynb_checkpoints/

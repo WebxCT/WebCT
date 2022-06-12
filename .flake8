@@ -1,0 +1,38 @@
+[flake8]
+max-line-length = 120
+
+ignore =
+	; W191 - Indentation contains tabs
+	; pep8 is logically unsound. Why would you use a continuous character for
+	; discrete indentation blocks?
+	W191,
+	; N806 - Variables in function should be lowercase
+	N806,
+	; N802 - Function name should be lowercase
+	N802,
+	; N803 - argument name should be lowercase
+	N803,
+	; E128 - Continuation line under-indented for visual indent
+	; This rule does not work when using the standard one-indent approach.
+	E128,
+	; N813 - camelcase imported as lowercase
+	; camelcase 'gvxrPython3.gvxrPython3' imported as lowercase 'gvxr'
+	N813,
+	; W503 - Line break occurred before a binary operator
+	; The opposite is true: linebreaks should happen at the start of the line.
+	W503
+
+include =
+	; E121 - Continuation line under-indented for hanging indent
+	E121,
+	; E123 - Closing bracket does not match indentation of opening bracket's line
+	E123,
+	; E126 - Continuation line over-indented for hanging indent
+	E126,
+	; E226 - Missing whitespace around arithmetic operator
+	E226,
+	; Multiple spaces after ','
+	; Tab after ','
+	E24,
+	; E704 - Multiple statements on one line (def)
+	E704

@@ -1,0 +1,66 @@
+#previewCapture {
+	display: grid;
+	grid-auto-rows: auto;
+	grid-auto-columns: auto auto;
+	grid-template-columns: auto auto;
+	column-gap: 2rem;
+	grid-template-areas: "image-capture image-layout";
+}
+
+#previewCapture > .image-capture {
+	grid-area: image-capture-start;
+}
+
+.image-capture {
+	border-width: 0.25rem;
+	border-color: #7ECEFD;
+	border-style: solid;
+	transition: all 0.5s ease-out;
+	background-position: center center;
+	background-repeat: no-repeat;
+	background-size: contain;
+	background-color: white;
+}
+
+video[src=""] {
+	border-style: none;
+}
+
+.overlay-capture {
+	grid-area: image-capture-start;
+}
+
+.overlay > div {
+	display: block;
+	text-align: center;
+	background-color: white;
+	border-radius: var(--sl-border-radius-medium);
+	padding: 1rem;
+}
+
+.overlay span {
+	background-color: var(--sl-color-primary-700);
+	border-radius: var(--sl-border-radius-small);
+	border: solid var(--sl-color-primary-700);
+	margin: 0.2rem;
+	color: white;
+	padding-left: .2rem;
+	padding-right: .2rem;
+}
+
+.overlay.update {
+	display: flex;
+	opacity: 1;
+}
+
+.overlay.update.updating > div > div {
+	display: none;
+}
+
+.overlay.update.updating > div > div.generating {
+	display: inline-block;
+}
+
+.overlay .generating {
+	display: none;
+}

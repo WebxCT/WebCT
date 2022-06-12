@@ -1,0 +1,51 @@
+<div id="previewSettings">
+	<sl-button-group>
+		<sl-button pill size="small" id="buttonPreviewLayout">Layout</sl-button>
+		<sl-button pill size="small" id="buttonPreviewProjection" variant="primary">Projection</sl-button>
+		<sl-button pill size="small" id="buttonPreviewReconstruction">Reconstruction</sl-button>
+	</sl-button-group>
+</div>
+
+<div id="settingsPane">
+	<div>
+		<sl-radio-group>
+			<sl-radio value="1" checked id="radioRawProjectionSetting">Raw Projection</sl-radio>
+			<sl-radio value="2" id="radioLogProjectionSetting">Log Projection</sl-radio>
+			<sl-radio value="3" disabled>Gamma Projection</sl-radio>
+			<sl-range disabled min="0" max="1" step="0.1" label="Gamma Value"></sl-range>
+		</sl-radio-group>
+		<sl-checkbox id="checkboxInvertSetting">Invert Colours</sl-checkbox>
+	</div>
+	<button></button>
+</div>
+
+<div id="previewPane" class="previewContainer" selected="projection">
+
+	<div id="previewImage">
+		<img src="" class="image-projection" alt="">
+	</div>
+
+	<div id="previewLayout" name="layout">
+		<img src="" class="image-layout" alt="">
+	</div>
+
+	<div id="previewRecon">
+		<video src="" class="image-recon" alt="" muted autoplay loop></video>
+		<div class="overlay overlay-recon update">
+			<div>
+				<div>
+					Use<br />
+					<span>
+						<sl-icon name="box"></sl-icon> Reconstruct
+					</span><br />
+					To perform a tomographic reconstruction on simulated projections.<br>
+				</div>
+				<div class="generating">
+					Reconstructing Volume...<br>
+					<sl-spinner></sl-spinner>
+				</div>
+			</div>
+		</div>
+	</div>
+
+</div>

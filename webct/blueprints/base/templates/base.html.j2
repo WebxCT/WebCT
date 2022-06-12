@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	{# Sometimes typescript will just stop producing working code, unsure why...#}
+	<script>var exports = {};</script>
+
+	<title>{% block title %}Web-CT{% endblock title %}</title>
+	{% block scripts %}
+	<script src="{{ url_for('base.js_base') }}"></script>
+	{% endblock scripts %}
+
+</head>
+<body>
+	{% block content %}
+	{% endblock content %}
+</body>
+</html>

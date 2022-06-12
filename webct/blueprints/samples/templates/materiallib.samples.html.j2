@@ -1,0 +1,83 @@
+
+<sl-dialog label="Material Library" id="dialogueMaterial">
+	<sl-tab-group placement="start" id="tabMaterial">
+		<sl-tab slot="nav" panel="Elements">Elements</sl-tab>
+		<sl-tab slot="nav" panel="Rods">Rods</sl-tab>
+		<sl-tab slot="nav" panel="Medical">Medical</sl-tab>
+		<sl-tab slot="nav" panel="EP-20412">EP-20412</sl-tab>
+		<sl-button type="button" slot="nav" size="small" outline circle style="font-size: 32px;"><sl-icon name="plus"></sl-icon></sl-button>
+
+		<sl-tab-panel name="Elements">
+		<sl-tab-group placement="start">
+			<sl-tab slot="nav" panel="copper">Copper</sl-tab>
+			<sl-tab slot="nav" panel="aluminium">Aluminium</sl-tab>
+			<sl-tab slot="nav" panel="lithium">Lithium</sl-tab>
+
+			<sl-tab-panel name="copper">
+				<div class="materialform">
+					<sl-input label="Name" help-text="A short alphanumeric material name. of the material. Alphanumeric only." value="Copper"></sl-input>
+					<sl-button type="button" outline variant="danger"><sl-icon name="trash-fill"></sl-icon></sl-button>
+
+					<sl-input label="Description" help-text="A brief description of the material." class="wide" value="Pure Copper Metal"></sl-input>
+					<sl-select label="Material Type" value="element" hoist>
+						<sl-menu-item value="element">Element</sl-menu-item>
+						<sl-menu-item value="compound">Compound</sl-menu-item>
+						<sl-menu-item value="mixture" disabled>Mixture</sl-menu-item>
+					</sl-select>
+
+					<sl-input label="Density" type="number" help-text="Material density in g/cm^2.">8.96</sl-input>
+
+					<sl-divider></sl-divider>
+
+					<div class="element">
+						{# element #}
+						<sl-input label="Element" help-text="Elemental Symbol.">Cu</sl-input>
+					</div>
+
+					<div class="compound">
+						{# compound #}
+						<sl-input label="Compound" help-text="A material compound (H2O)." disabled>Cu</sl-input>
+					</div>
+
+					<div class="mixture">
+						{# mixture #}
+						<div style="height: 5vh; border: dashed 2px var(--sl-color-neutral-200); padding: 0 1rem; margin-top: 0.5rem;"></div>
+					</div>
+				</div>
+			</sl-tab-panel>
+
+			<sl-tab-panel name="aluminium"></sl-tab-panel>
+			<sl-tab-panel name="lithium"></sl-tab-panel>
+			<sl-button slot="nav" size="small" outline circle><sl-icon name="plus"></sl-icon></sl-button>
+
+		</sl-tab-group>
+
+		<sl-tab-panel name="Elements">
+
+
+		</sl-tab-panel>
+		<sl-tab-panel name="Rods">
+
+
+		</sl-tab-panel>
+		<sl-tab-panel name="Medical">
+
+
+
+
+		</sl-tab-panel>
+		<sl-tab-panel name="EP-20412">
+
+		</sl-tab-panel>
+	</sl-tab-group>
+
+
+	<sl-divider></sl-divider>
+	<small>Empty categories will be automatically deleted.</small>
+
+	<div class="buttons">
+		<sl-button variant="" class="close" id="buttonMaterialClose" type="button">Close</sl-button>
+		<sl-button outline variant="warning" id="buttonMaterialSave" type="button"><sl-icon slot="prefix" name="journal-check"></sl-icon>Save</sl-button>
+		<sl-button variant="success" id="buttonMaterialSubmit" outline disabled="" type="button">Select Material</sl-button>
+	</div>
+</sl-dialog>

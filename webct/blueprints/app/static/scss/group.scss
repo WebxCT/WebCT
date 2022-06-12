@@ -1,0 +1,88 @@
+
+div.group {
+	padding: 0;
+	border-width: 1px;
+	border-style: groove;
+	border-color: var(--sl-color-primary-500);
+}
+
+div.group[active] {
+	border-color: var(--sl-color-info-500);
+}
+
+/* // :has() is not implemented: <https://developer.mozilla.org/en-US/docs/Web/CSS/:has>
+div.group:has( .invalid ) {
+	border-color: var(--sl-color-warning-500);
+} */
+
+div.group > div {
+	background-color: var(--sl-color-primary-50);
+	padding: 1rem;
+	margin-bottom: 0;
+}
+
+div.group[active] > div {
+	background-color: var(--sl-color-neutral-100);
+}
+
+div.group > button {
+	margin-top: 0;
+	padding: 0;
+	height: 1.25rem;
+	width: 100%;
+	background-color: var(--sl-color-primary-500);
+	border: 0;
+	border-radius: 0;
+	display: block;
+	transition: all 0.25s ease-in;
+}
+
+div.group > button:hover {
+	background-color: var(--sl-color-primary-600);
+	box-shadow: inset;
+	transition: all 0.5s ease-in-out;
+}
+
+div.group > div > sl-button {
+	margin-top: 0.25rem;
+}
+
+div.group > div > * {
+	display: block;
+	margin-top: 0.2rem;
+}
+
+div.group[active] > button {
+	background-color: var(--sl-color-neutral-500);
+	transition: all 0.25s ease-in;
+}
+
+div.group[active] > button:hover {
+	background-color: var(--sl-color-neutral-400);
+	box-shadow: inset;
+	transition: all 0.5s ease-in-out;
+}
+
+div.group:not([active]) > div > *[advanced] {
+	/* 'fake hide' so we have something to transition from */
+	opacity: 0;
+	height: 0;
+	margin: 0;
+	transform: translateY(-1rem);
+	transition: all 0.5s;
+	overflow: hidden;
+}
+
+div.group:not([active]) > div > *[advanced]  * {
+	opacity: 0;
+	height: 0;
+	margin: 0;
+	width: 0;
+	display: none;
+}
+
+div.group[active] > div > [advanced] {
+	opacity: 100;
+	transition: all 0.25s;
+	height: auto;
+}

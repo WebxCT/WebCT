@@ -1,0 +1,17 @@
+{% extends "base.html.j2" %}
+
+{% block title %}
+Error 404
+{% endblock title %}
+
+{% block scripts %}
+{{ super() }}
+<script src="{{url_for('errors.js_errors')}}"></script>
+{% endblock scripts %}
+
+{% block content %}
+<h1>Error {{error.code}}: {{error.name}}</h1>
+<hr>
+<p>Unfortunately, something has gone wrong with your request to the website.</p>
+<strong>{{error.description}}</strong>
+{% endblock content %}

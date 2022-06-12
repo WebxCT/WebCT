@@ -1,0 +1,11 @@
+
+#divDetectorPreview {
+	background-color: var(--sl-color-primary-50);
+	transition-duration: 150ms;
+	transition-timing-function: linear;
+	border-style: double;
+}
+
+#divDetectorPreview > line {
+	stroke: var(--sl-color-neutral-200)
+}

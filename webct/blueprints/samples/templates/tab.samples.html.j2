@@ -1,0 +1,38 @@
+<h1>Samples</h1>
+<sl-input label="Sample Collection Name" help-text="A user-friendly name of the preset."
+	placeholder="Dragon Example"
+	value="Dragon Example"></sl-input>
+
+{% include "update-button.html.j2" %}
+
+<div id="divSamples">
+<div class="model">
+	<div class="remove">
+		<button>X</button>
+	</div>
+	<div>
+		<p>Dragon.stl</p>
+		<p>The dragon model</p>
+		<p> 1000 vertexes, 12.43MiB</p>
+		<sl-select placeholder="Air">
+				<sl-menu-label>Recent Materials</sl-menu-label>
+				<sl-menu-item value="option-1">Air</sl-menu-item>
+				<sl-menu-item value="option-2">Copper</sl-menu-item>
+				<sl-menu-item value="option-3">Tungsten</sl-menu-item>
+			<sl-divider></sl-divider>
+				<sl-menu-label>Custom Materials</sl-menu-label>
+				<sl-menu-item value="option-4">Rat Brain</sl-menu-item>
+				<sl-menu-item value="option-5">Al Matrix</sl-menu-item>
+				<sl-menu-item value="option-6">Rod Cladding</sl-menu-item>
+			<sl-divider></sl-divider>
+				<sl-menu-item value="None">
+					Custom Material
+					<sl-icon slot="prefix" name="gear"></sl-icon>
+				</sl-menu-item>
+		</sl-select>
+	</div>
+</div>
+</div>
+
+<sl-button id="buttonSampleAdd" variant="success">Add Sample</sl-button>
+<sl-button id="buttonViewMaterials">Open Material Library</sl-button>

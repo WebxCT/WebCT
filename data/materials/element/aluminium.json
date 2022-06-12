@@ -1,0 +1,9 @@
+{
+	"label": "Aluminium",
+	"description": "Aluminium Metal",
+	"density": 2.7,
+	"material": [
+		"element",
+		"Al"
+	]
+}
