@@ -13,9 +13,9 @@ import { validateHeight, validatePixel, validateWidth } from "./validation";
 // ====================================================== //
 // ================== Document Elements ================= //
 // ====================================================== //
-let PaneWidthElement: SlInput;
+export let PaneWidthElement: SlInput;
 let PaneHeightElement: SlInput;
-let PanePixelSizeElement: SlInput;
+export let PanePixelSizeElement: SlInput;
 let DetectorPreviewElement: HTMLDivElement;
 let DetectorHorizontalText: SVGTextElement;
 let DetectorVerticalText: SVGTextElement;

@@ -64,3 +64,21 @@ video[src=""] {
 .overlay .generating {
 	display: none;
 }
+
+div.group > sl-dropdown > sl-menu {
+	width: 100%;
+}
+
+sl-menu > sl-range {
+	padding: 0.5rem;
+	overflow-x: hidden;
+
+}
+
+sl-range.linked {
+	--track-color-active: var(--sl-color-primary-500);
+}
+
+sl-range::part(tooltip) {
+	z-index: var(--sl-z-index-tooltip);
+}

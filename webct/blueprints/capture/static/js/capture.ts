@@ -3,8 +3,9 @@
  * @author Iwan Mitchell
  */
 
-import { SlInput, SlSelect } from "@shoelace-style/shoelace";
+import { SlDropdown, SlInput, SlRange, SlSelect } from "@shoelace-style/shoelace";
 import { AlertType, showAlert } from "../../../base/static/js/base";
+import { PaneWidthElement } from "../../../detector/static/js/detector";
 import { CaptureResponseRegistry, processResponse, requestCaptureData, sendCaptureData, prepareRequest, requestCapturePreview } from "./api";
 import { CaptureConfigError, CaptureRequestError, showError } from "./errors";
 import { CapturePreview, CaptureProperties } from "./types";
@@ -28,6 +29,8 @@ let SampleRotateZElement: SlInput;
 
 let PreviewImages: NodeListOf<HTMLImageElement>;
 let PreviewOverlays: NodeListOf<HTMLDivElement>;
+
+let NyquistRange: SlRange;
 
 // ====================================================== //
 // ======================= Globals ====================== //
@@ -62,6 +65,7 @@ export function setupCapture(): boolean {
 	const sample_rotatey_element = document.getElementById("inputSampleRotateY");
 	const sample_rotatez_element = document.getElementById("inputSampleRotateZ");
 
+	const range_nyquist = document.getElementById("rangeNyquist");
 
 	if (total_rotation_element == null ||
 		total_projections_element == null ||
@@ -73,7 +77,8 @@ export function setupCapture(): boolean {
 		sample_rotatez_element == null ||
 		detector_posx_element == null ||
 		detector_posy_element == null ||
-		detector_posz_element == null) {
+		detector_posz_element == null ||
+		range_nyquist == null) {
 
 		console.log(total_rotation_element);
 		console.log(total_projections_element);
@@ -89,6 +94,7 @@ export function setupCapture(): boolean {
 		console.log(sample_rotatex_element);
 		console.log(sample_rotatey_element);
 		console.log(sample_rotatez_element);
+		console.log(range_nyquist);
 
 		showAlert("Capture setup failure", AlertType.ERROR);
 		return false;
@@ -110,6 +116,31 @@ export function setupCapture(): boolean {
 	SampleRotateXElement = sample_rotatex_element as SlInput;
 	SampleRotateYElement = sample_rotatey_element as SlInput;
 	SampleRotateZElement = sample_rotatez_element as SlInput;
+
+	// Workaround hack to deal with styling annoying shadowroot classes
+	Array.prototype.slice.call(document.getElementsByTagName("sl-dropdown")).forEach((dropdown: SlDropdown) => {
+		Array.prototype.slice.call(dropdown.shadowRoot?.children).forEach((child: HTMLElement) => {
+			if (child.tagName == "DIV") {
+				Array.prototype.slice.call(child.children).forEach((child2: HTMLElement) => {
+					if (child2.classList.contains("dropdown__positioner")) {
+						child2.style.width = "100%";
+					}
+				});
+			}
+		});
+	});
+
+	NyquistRange = range_nyquist as SlRange;
+	NyquistRange.addEventListener("sl-change", () => {
+		TotalProjectionsElement.value = Math.floor((Math.PI / 2.0 * parseInt(PaneWidthElement.value)) * (NyquistRange.value as number / 100)) + ""
+		NyquistRange.classList.add("linked")
+	});
+	NyquistRange.tooltipFormatter = (value: number) => {
+		return value.toFixed(0) + "%"
+	};
+	TotalProjectionsElement.addEventListener("sl-change", () => {
+		NyquistRange.classList.remove("linked");
+	});
 
 	for (let index = 0; index < PreviewImages.length; index++) {
 		const image = PreviewImages[index];
