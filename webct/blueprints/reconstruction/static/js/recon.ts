@@ -65,8 +65,8 @@ export function setupRecon(): boolean {
 	SliceOverlays = Array.prototype.slice.call(document.querySelectorAll(".overlay-slice") as NodeListOf<HTMLDivElement>);
 
 	Overlays = SinogramOverlays
-	.concat(ReconOverlays)
-	.concat(SliceOverlays);
+		.concat(ReconOverlays)
+		.concat(SliceOverlays);
 
 	const select_alg = document.getElementById("selectReconstruction");
 	const group_alg = document.getElementById("groupAlg")
@@ -172,7 +172,6 @@ export function setupRecon(): boolean {
 	})
 
 	validateRecon();
-	SetOverlaySize(300, 300)
 	return true;
 }
 
@@ -183,29 +182,6 @@ export function validateRecon(): boolean {
 // ====================================================== //
 // =================== Display and UI =================== //
 // ====================================================== //
-
-type OverlayType = "all" | "slice" | "sinogram" | "recon"
-
-function SetOverlaySize(width: number, height: number, type:OverlayType="all"): void {
-	let overlays = Overlays
-	switch (type) {
-		case "recon":
-			overlays = ReconOverlays;
-			break;
-		case "sinogram":
-			overlays = SinogramOverlays;
-		case "slice":
-			overlays = SliceOverlays;
-		default:
-			break;
-	}
-
-	for (let index = 0; index < overlays.length; index++) {
-		const overlay = overlays[index];
-		overlay.style.height = height + "px"
-		overlay.style.width = width + "px"
-	}
-}
 
 function MarkLoading(): void {
 	console.log("markloading");
@@ -319,23 +295,17 @@ function MarkError(): void {
 	}
 }
 
-function SetPreviewImages(preview:ReconstructionPreview): void {
+function SetPreviewImages(preview: ReconstructionPreview): void {
 	for (let index = 0; index < SliceImages.length; index++) {
 		const image = SliceImages[index];
-		image.width = preview.slice.width;
-		image.height = preview.slice.height;
 		image.src = "data:video/mpeg;base64," + preview.slice.video;
 	}
 	for (let index = 0; index < SinogramImages.length; index++) {
 		const image = SinogramImages[index];
-		image.width = preview.sino.width;
-		image.height = preview.sino.height;
 		image.src = "data:video/mpeg;base64," + preview.sino.video;
 	}
 	for (let index = 0; index < ReconImages.length; index++) {
 		const image = ReconImages[index];
-		image.width = preview.recon.width;
-		image.height = preview.recon.height;
 		image.src = "data:video/mpeg;base64," + preview.recon.video;
 	}
 }
@@ -470,10 +440,6 @@ export function UpdateReconPreview(): Promise<void> {
 					cancelable: false,
 					composed: false,
 				}));
-
-				SetOverlaySize(preview.slice.width, preview.slice.height, "slice")
-				SetOverlaySize(preview.sino.width, preview.sino.height, "sinogram")
-				SetOverlaySize(preview.recon.width, preview.recon.height, "recon")
 
 				SetPreviewImages(preview)
 				MarkDone();

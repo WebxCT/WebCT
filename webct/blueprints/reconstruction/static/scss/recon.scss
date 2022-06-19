@@ -3,22 +3,34 @@
 	grid-auto-rows: auto;
 	grid-template-columns: repeat(3, minmax(0, 1fr));
 	column-gap: 2rem;
-	grid-template-areas: "image-slice image-sinogram	 image-recon";
+	grid-template-areas: "recon-slice recon-sinogram recon-recon";
 }
 
-#previewRecon > .image-slice {
-	grid-area: image-slice-start;
-	width: 100%;
-
-}
-
-#previewRecon > .image-sinogram {
-	grid-area: image-sinogram-start;
+#previewRecon .recon-slice {
+	grid-area: recon-slice-start;
 	width: 100%;
 }
 
-#previewRecon > .image-recon {
-	grid-area: image-recon-start;
+#previewRecon > .recon-sinogram {
+	grid-area: recon-sinogram-start;
+	width: 100%;
+}
+
+#previewRecon > .recon-recon {
+	grid-area: recon-recon-start;
+	width: 100%;
+}
+
+div.stacker {
+	// 1x1 grid with a named area
+	grid-template-areas: "t1";
+	grid-template-rows: auto;
+	display: grid;
+}
+
+div.stacker > * {
+	// Stack all children onto the same area
+	grid-area: t1-start;
 	width: 100%;
 }
 
