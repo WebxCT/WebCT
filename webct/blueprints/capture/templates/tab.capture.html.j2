@@ -17,7 +17,13 @@
 
 		<sl-input label="Total projections" type="number" id="inputCaptureProjections" min="2" max="2000" step="1"
 			value="360"></sl-input>
-		<!-- <sl-button type="primary">Calculate Optimal Projections</sl-button> -->
+		<sl-dropdown>
+			<sl-button slot="trigger" caret>Optimal Projections</sl-button>
+			<sl-menu>
+				<sl-range id="rangeNyquist" label="Nyquist" max="100" min="1" step="1"
+					help-text="π/2 * Horizontal Detector Pixels"></sl-range>
+			</sl-menu>
+		</sl-dropdown>
 	</div>
 	<!-- <button></button> -->
 </div>
