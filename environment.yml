@@ -13,7 +13,7 @@ dependencies:
   - flask
   # - gvirtualxray # Installed by docker container
   - scipy
-  - matplotlib
+  - matplotlib<3.5
   - opencv
   - cil
   - tigre
