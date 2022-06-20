@@ -21,10 +21,10 @@ const WidthValidator: Validator = {
 };
 
 const PixelValidator: Validator = {
-	min: 0.0001,
-	max: 100,
+	min: 0.01,
+	max: 100000,
 	type: "number",
-	message: "Pixel size must be larger than 0.001mm and less than 100mm"
+	message: "Pixel size must be larger than 0.01μm and less than 10cm (100000μm)"
 };
 
 export function validateWidth(WidthElement: SlInput): boolean {
