@@ -9,12 +9,14 @@ __pycache__/
 build/
 dist/
 *.js
+*.css
 node_modules/
 package-lock.json
 yarn.lock
 yarn-error.log
 tsconfig.tsbuildinfo
 *.d.ts
+
 
 # IDE configuration
 .vscode/
