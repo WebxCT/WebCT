@@ -1,10 +1,7 @@
 from dataclasses import dataclass
-import sys
-import traceback
 
 from flask import jsonify, request, session
 from flask.wrappers import Response
-from webct import logger
 from webct.blueprints.beam import bp
 from webct.components.Beam import BeamParameters, Spectra
 from webct.components.sim.SimSession import Sim

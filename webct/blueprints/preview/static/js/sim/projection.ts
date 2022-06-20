@@ -81,9 +81,9 @@ function updateImageDisplay(): void {
 		image.style.backgroundImage = "url('" + "data:image/png;base64," + PreviewData.projection.image + "')";
 
 		if (SettingInvertElement.checked) {
-			window.dispatchEvent(new CustomEvent("invertOn",{bubbles:true, cancelable:false}))
+			window.dispatchEvent(new CustomEvent("invertOn",{bubbles:true, cancelable:false}));
 		} else {
-			window.dispatchEvent(new CustomEvent("invertOff",{bubbles:true, cancelable:false}))
+			window.dispatchEvent(new CustomEvent("invertOff",{bubbles:true, cancelable:false}));
 		}
 
 		// if (!SettingInvertElement.checked) {
@@ -107,7 +107,7 @@ function updateImageDisplay(): void {
 }
 
 export function setupPreview(): void {
-	PreviewPane = document.getElementById("previewPane") as HTMLDivElement
+	PreviewPane = document.getElementById("previewPane") as HTMLDivElement;
 	PreviewImages = document.querySelectorAll("img.image-projection") as NodeListOf<HTMLImageElement>;
 	LayoutImages = document.querySelectorAll("img.image-layout") as NodeListOf<HTMLImageElement>;
 
@@ -161,15 +161,15 @@ export function setupPreview(): void {
 	for (let index = 0; index < PreviewImages.length; index++) {
 		const image = PreviewImages[index];
 		window.addEventListener("invertOn", ()=> {
-			image.classList.add("invert")
+			image.classList.add("invert");
 		});
 		window.addEventListener("invertOff", ()=> {
-			image.classList.remove("invert")
+			image.classList.remove("invert");
 		});
 	}
 }
 
-export function SetPreviewSize(height: number, width: number, pixSize: number): void {
+export function SetPreviewSize(height: number, width: number): void {
 	if (PreviewImages === undefined) {
 		// Catch for calling update in the detector setup before previews are ready.
 		return;

@@ -16,6 +16,7 @@ class SaveableParameters:
 
 	def to_json(self) -> dict:
 		return self.__dict__
+
 	@staticmethod
 	def from_json(json: dict):
 		if "label" not in json:
@@ -32,6 +33,7 @@ class SaveableParameters:
 			description = str(json["description"])
 
 		return SaveableParameters(label, description)
+
 
 @dataclass(frozen=True)
 class Material(SaveableParameters):
@@ -59,7 +61,7 @@ class Material(SaveableParameters):
 		return Material(parent.label, parent.description, density)
 
 	@staticmethod
-	def from_id(ID:str):
+	def from_id(ID: str):
 		if "/" not in ID:
 			raise ValueError("Category splitter not found.")
 		if ID == "":
@@ -83,7 +85,7 @@ class Material(SaveableParameters):
 
 # I would like to put this global at the top, but due to python shenanigans, I
 # cannot use type hinting because the type is not yet declared.....
-MATERIALS:Dict[str, Dict[str, Material]] = {}
+MATERIALS: Dict[str, Dict[str, Material]] = {}
 
 
 @dataclass(frozen=True)
@@ -190,7 +192,8 @@ class MixtureMaterial(Material):
 
 		elements = []
 		weights = []
-		iselement=False
+		iselement = False
+
 		for i, item in enumerate(material[1]):
 			iselement = not iselement
 			if iselement:
@@ -250,11 +253,13 @@ class HUMaterial(Material):
 
 		return HUMaterial(parent.label, parent.description, parent.density, HUunit)
 
+
 class SpecialMaterialEnum(Enum):
 	air = "air"
 
 	def to_json(self):
 		return self.value
+
 
 @dataclass(frozen=True)
 class SpecialMaterial(Material):
@@ -294,7 +299,6 @@ def MaterialFromJson(json: dict) -> Material:
 	if len(json["material"]) != 2:
 		raise TypeError("Dict material key does not contain the required amount of elements.")
 
-
 	if "element" in json["material"][0]:
 		return ElementMaterial.from_json(json)
 	if "compound" in json["material"][0]:
@@ -306,10 +310,10 @@ def MaterialFromJson(json: dict) -> Material:
 	if "special" in json["material"][0]:
 		return SpecialMaterial.from_json(json)
 
-
 	raise TypeError(
 		f"Unable to deduce material type. Was given a material key with a value of {json['material']} elements."
 	)
+
 
 class MaterialEncoder(json.JSONEncoder):
 	def default(self, o):

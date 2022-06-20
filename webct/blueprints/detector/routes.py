@@ -5,8 +5,6 @@ from webct.blueprints.detector import bp
 from webct.components.Detector import DetectorParameters
 from webct.components.sim.SimSession import Sim
 
-from webct import logger
-
 
 @bp.route("/detector/set", methods=["PUT"])
 def setDetector() -> Response:

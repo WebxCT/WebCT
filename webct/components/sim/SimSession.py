@@ -23,6 +23,7 @@ from webct.components.sim.clients.SimClient import SimClient
 from webct.components.sim.Quality import Quality
 from webct.components.sim.SimManager import getClient
 
+
 class SimSession:
 	"""
 	A simulator session, storing current simulation parameters and outputs.
@@ -39,7 +40,7 @@ class SimSession:
 	_counter: int = 1
 
 	# Save a flag if paramaters have changed since last projection creation
-	_dirty:List[bool] = [False, False, False]
+	_dirty: List[bool] = [False, False, False]
 	_projections: dict[Quality, np.ndarray]
 	_projection: dict[Quality, np.ndarray]
 	_reconstruction: dict[Quality, np.ndarray]
@@ -167,16 +168,16 @@ class SimSession:
 
 	def _setupFields(self) -> None:
 		print("setupfield")
-		if not hasattr(self,"_detector_param") or not hasattr(self,"_beam_param") or self._detector_param is None or self._beam_param is None:
+		if not hasattr(self, "_detector_param") or not hasattr(self, "_beam_param") or self._detector_param is None or self._beam_param is None:
 			# Missing detector or beam params, do nothing.
 			return
 
 		# construct fields from detector shape
-		self._darkfield:np.ndarray = np.zeros(self._detector_param.shape)
+		self._darkfield: np.ndarray = np.zeros(self._detector_param.shape)
 		flatfield = np.ones(self._detector_param.shape)
 		# count total energy
 		flatfield *= np.sum(np.array(self._beam_spectra.energies) * np.array(self._beam_spectra.photons))
-		self._flatfield:np.ndarray = flatfield
+		self._flatfield: np.ndarray = flatfield
 		print(self.flatfield.mean())
 		print(self.darkfield.mean())
 
@@ -229,7 +230,7 @@ class SimSession:
 			return self._corrected(self._projections[quality]) if corrected else self._projections[quality]
 
 	def layout(self) -> np.ndarray:
-		geo:Optional[AcquisitionGeometry] = None
+		geo: Optional[AcquisitionGeometry] = None
 		if self.beam.projection == PROJECTION.PARALLEL:
 			geo = AcquisitionGeometry.create_Parallel3D(detector_position=self.capture.detector_position)
 		elif self.beam.projection == PROJECTION.POINT:
@@ -240,7 +241,7 @@ class SimSession:
 		geo.set_angles(self.capture.angles)
 
 		# Obtain canvas from figure
-		fig:Figure = show_geometry(geo,figsize=(8, 6)).figure
+		fig: Figure = show_geometry(geo, figsize=(8, 6)).figure
 
 		width, height = fig.get_size_inches() * fig.get_dpi()
 		width = int(width)
@@ -257,7 +258,7 @@ class SimSession:
 		return self._recon_param
 
 	@recon.setter
-	def recon(self, value:ReconParameters) -> None:
+	def recon(self, value: ReconParameters) -> None:
 		with self._lock:
 			if hasattr(self, "_recon_param") and value == self._recon_param:
 				return

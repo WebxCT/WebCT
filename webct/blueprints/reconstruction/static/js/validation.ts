@@ -21,27 +21,27 @@ const ProjectionValidator: Validator = {
 export function validateMethod(MethodElement: SlSelect): boolean {
 
 	// Method validity is based on beam paramaters.
-	let projection = BeamTypeElement.value + ""
+	const projection = BeamTypeElement.value + "";
 
-	let valid = true
-	let message = ""
+	let valid = true;
+	let message = "";
 
 	switch (MethodElement.value as ReconMethod) {
-		case "FBP":
-			// FBP only works with parallel projections
-			valid = projection == "parallel"
-			if (!valid) {
-				message = "FBP Reconstruction only supports parallel beam types."
-			}
-			break;
-		case "FDK":
-			// FDK only works with point projections
-			valid = projection == "point"
-			if (!valid) {
-				message = "FDK Reconstruction only supports cone beam types."
-			}
-			default:
-			break;
+	case "FBP":
+		// FBP only works with parallel projections
+		valid = projection == "parallel";
+		if (!valid) {
+			message = "FBP Reconstruction only supports parallel beam types.";
+		}
+		break;
+	case "FDK":
+		// FDK only works with point projections
+		valid = projection == "point";
+		if (!valid) {
+			message = "FDK Reconstruction only supports cone beam types.";
+		}
+	default:
+		break;
 	}
 
 	markValid(MethodElement, valid);

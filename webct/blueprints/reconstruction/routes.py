@@ -6,6 +6,7 @@ from webct.blueprints.reconstruction import bp
 from webct.components.Reconstruction import ReconstructionFromJson, asSinogram
 from webct.components.sim.SimSession import Sim
 
+
 @bp.route("/recon/set", methods=["PUT"])
 def setReconParams() -> Response:
 	data = request.get_json()
@@ -18,13 +19,15 @@ def setReconParams() -> Response:
 	print(simdata.recon)
 	return Response(None, 200)
 
+
 @bp.route("/recon/get")
 def getReconParams() -> Response:
 	simdata = Sim(session)
 	response = simdata.recon
 	return jsonify(response)
 
-def createSliceVideo(array:np.ndarray) -> str:
+
+def createSliceVideo(array: np.ndarray) -> str:
 	arr = np.zeros((array.shape[0], array.shape[0], array.shape[1]))
 
 	# Broadcast projection into time
@@ -42,6 +45,7 @@ def createSliceVideo(array:np.ndarray) -> str:
 		arr[i, i, :] = np.array((255, 0, 0))
 
 	return asVideo(arr)
+
 
 @bp.route("/recon/preview/get")
 def getReconstruction() -> dict:
@@ -68,10 +72,10 @@ def getReconstruction() -> dict:
 			"video": sliceVideo,
 			"height": proj.shape[0],
 			"width": proj.shape[1],
-			},
+		},
 		"sino": {
 			"video": sinoVideo,
 			"height": sino[0].shape[0],
 			"width": sino[0].shape[1],
-			},
+		},
 	}

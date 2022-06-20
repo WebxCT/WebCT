@@ -20,6 +20,7 @@ from webct.components.sim.simulators.Simulator import Simulator
 
 from webct import model_folder
 
+
 class GVXRSimulator(Simulator):
 	total_rotation: Tuple[float, float, float] = (0, 0, 0)
 	"""
@@ -91,7 +92,7 @@ class GVXRSimulator(Simulator):
 			gvxr.setDetectorNumberOfPixels(value.shape[1], value.shape[0])
 			gvxr.setDetectorPixelSize(value.pixel_size, value.pixel_size, "mm")
 		elif self.quality == Quality.LOW:
-			gvxr.setDetectorNumberOfPixels(value.shape[1]//2, value.shape[0]//2)
+			gvxr.setDetectorNumberOfPixels(value.shape[1] // 2, value.shape[0] // 2)
 			gvxr.setDetectorPixelSize(value.pixel_size * 2, value.pixel_size * 2, "mm")
 		elif self.quality == Quality.PREVIEW:
 			shape = [0, 0]
@@ -132,7 +133,7 @@ class GVXRSimulator(Simulator):
 					# Don't add meshes that are air
 					continue
 				else:
-					raise NotImplementedError(f"Special material {mat.material} not implemented.")
+					raise NotImplementedError(f"Special material {mat.matType} not implemented.")
 
 			gvxr.loadMeshFile(label, f"{model_folder}{sample.modelPath}", sample.sizeUnit)
 

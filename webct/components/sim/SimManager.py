@@ -5,6 +5,8 @@ from webct.components.sim.clients.SimClient import SimClient
 processes: dict[int, SimClient] = {}
 rng = Random()
 lock = Semaphore()
+
+
 def getClient(session) -> SimClient:
 	with lock:
 		if "tid" not in session:

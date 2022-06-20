@@ -1,15 +1,10 @@
-import errno
 import os
-from datetime import datetime
-from pathlib import Path
-import site
-import sys
-from typing import Dict, List
 from flask import Flask
 from enum import IntEnum
 import logging
 
 import matplotlib
+
 
 # todo: move / replace
 class Element(IntEnum):
@@ -132,6 +127,7 @@ class Element(IntEnum):
 	Ts = 117
 	Og = 118
 
+
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
@@ -180,25 +176,25 @@ from webct.blueprints.beam import bp as beam_bp # noqa
 app.register_blueprint(beam_bp)
 
 # Detector API
-from webct.blueprints.detector import bp as detector_bp
+from webct.blueprints.detector import bp as detector_bp # noqa
 app.register_blueprint(detector_bp)
 
 # Samples API
-from webct.blueprints.samples import bp as samples_bp
+from webct.blueprints.samples import bp as samples_bp # noqa
 app.register_blueprint(samples_bp)
 
 # load sample materials
-from webct.blueprints.samples.routes import preloadMaterials
+from webct.blueprints.samples.routes import preloadMaterials # noqa
 preloadMaterials()
 
 # Capture API
-from webct.blueprints.capture import bp as capture_bp
+from webct.blueprints.capture import bp as capture_bp # noqa
 app.register_blueprint(capture_bp)
 
 # Reconstruction API
-from webct.blueprints.reconstruction import bp as reconstruction_bp
+from webct.blueprints.reconstruction import bp as reconstruction_bp # noqa
 app.register_blueprint(reconstruction_bp)
 
 # Preview API
-from webct.blueprints.preview import bp as preview_bp
+from webct.blueprints.preview import bp as preview_bp # noqa
 app.register_blueprint(preview_bp)

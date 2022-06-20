@@ -31,8 +31,8 @@ export class FDKParams implements FilteredReconstructionParams {
 	filter = "ram_lak"
 
 	constructor(quality: ReconQuality, filter: Filter) {
-		this.quality = quality
-		this.filter = filter
+		this.quality = quality;
+		this.filter = filter;
 	}
 }
 
@@ -42,8 +42,8 @@ export class FBPParams implements FilteredReconstructionParams {
 	filter = "ram_lak"
 
 	constructor(quality: ReconQuality, filter: Filter) {
-		this.quality = quality
-		this.filter = filter
+		this.quality = quality;
+		this.filter = filter;
 	}
 }
 
@@ -56,9 +56,9 @@ export class CGLSParams implements IterativeReconstructionParams {
 	variant: CGLSVariant
 
 	constructor(quality: ReconQuality, iterations: number, variant: CGLSVariant) {
-		this.quality = quality
-		this.iterations = iterations
-		this.variant = variant
+		this.quality = quality;
+		this.iterations = iterations;
+		this.variant = variant;
 	}
 }
 

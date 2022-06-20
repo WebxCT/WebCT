@@ -41,6 +41,7 @@ class STM_PROJECTION(STM):
 	result_arr_shape: tuple
 	result_arr_type: type
 
+
 @dataclass(frozen=True)
 class STM_ALL_PROJECTION(STM):
 	quality: Quality
@@ -53,6 +54,7 @@ class STM_ALL_PROJECTION(STM):
 class STM_BEAM(STM):
 	beam: Beam
 
+
 @dataclass(frozen=True)
 class STM_SAMPLES(STM):
 	samples: Tuple[RenderedSample]
@@ -62,9 +64,11 @@ class STM_SAMPLES(STM):
 class STM_DETECTOR(STM):
 	detector: DetectorParameters
 
+
 @dataclass(frozen=True)
 class STM_CAPTURE(STM):
 	capture: CaptureParameters
+
 
 class SimResponse(Enum):
 	DONE = 0
@@ -72,7 +76,8 @@ class SimResponse(Enum):
 	REJECTED = 10
 	ACCEPTED = 20
 
-def shape_from_quality(value:tuple, quality:Quality) -> Tuple[Tuple[int, int], float]:
+
+def shape_from_quality(value: tuple, quality: Quality) -> Tuple[Tuple[int, int], float]:
 	shape = [0, 0]
 	scale = 1.0
 	if quality == Quality.HIGH or quality == Quality.MEDIUM:
@@ -82,21 +87,22 @@ def shape_from_quality(value:tuple, quality:Quality) -> Tuple[Tuple[int, int], f
 		shape = (shape[0] // 2, shape[1] // 2)
 		scale = 2
 	elif quality == Quality.PREVIEW:
-			shape = [0, 0]
-			maxax = np.argmax(value)
-			minax = np.argmin(value)
+		shape = [0, 0]
+		maxax = np.argmax(value)
+		minax = np.argmin(value)
 
-			if maxax == minax:
-				# both axis are the same
-				shape = (100, 100)
-			else:
-				shape[maxax] = 100
-				shape[minax] = int((value[minax] / value[maxax]) * 100)
-				shape = tuple(shape)
+		if maxax == minax:
+			# both axis are the same
+			shape = (100, 100)
+		else:
+			shape[maxax] = 100
+			shape[minax] = int((value[minax] / value[maxax]) * 100)
+			shape = tuple(shape)
 
-			# pixel scale factor
-			scale = value[maxax] / 100
+		# pixel scale factor
+		scale = value[maxax] / 100
 	return shape, scale
+
 
 class SimClient(Process):
 	# we store detector and capture params just to preallocate memory for
@@ -248,7 +254,7 @@ class SimClient(Process):
 			raise SimTimeoutError(msg)
 		return self.conn_parent.recv()
 
-	def setBeam(self, beam_params:BeamParameters, spectra:Spectra):
+	def setBeam(self, beam_params: BeamParameters, spectra: Spectra):
 		request = STM_BEAM(Beam(beam_params, spectra))
 		self.conn_parent.send(request)
 
@@ -268,7 +274,7 @@ class SimClient(Process):
 				f"Unexpected response: {response}, wanted SimResponse.DONE"
 			)
 
-	def setDetector(self, detector:DetectorParameters):
+	def setDetector(self, detector: DetectorParameters):
 		# detector used for preallocation
 		self.detector = detector
 
@@ -291,7 +297,7 @@ class SimClient(Process):
 				f"Unexpected response: {response}, wanted SimResponse.DONE"
 			)
 
-	def setCapture(self, capture:CaptureParameters):
+	def setCapture(self, capture: CaptureParameters):
 		# Capture used for preallocation
 		self.capture = capture
 
@@ -314,7 +320,7 @@ class SimClient(Process):
 				f"Unexpected response: {response}, wanted SimResponse.DONE"
 			)
 
-	def setSamples(self, samples:Tuple[RenderedSample]):
+	def setSamples(self, samples: Tuple[RenderedSample]):
 		request = STM_SAMPLES(samples)
 		self.conn_parent.send(request)
 

@@ -3,6 +3,7 @@ from typing import Tuple
 
 import numpy as np
 
+
 @dataclass(frozen=True)
 class CaptureParameters:
 	projections: int # Number of projections around an object.

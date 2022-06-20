@@ -21,6 +21,7 @@ def error_http(error: HTTPException) -> Tuple[str, int]:
 		error.code if error.code is not None else 500,
 	)
 
+
 @bp.route("/js/errors.js")
 def js_errors() -> Response:
 	"""Javascript for error pages."""

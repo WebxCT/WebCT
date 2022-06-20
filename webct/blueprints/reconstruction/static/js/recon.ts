@@ -69,7 +69,7 @@ export function setupRecon(): boolean {
 		.concat(SliceOverlays);
 
 	const select_alg = document.getElementById("selectReconstruction");
-	const group_alg = document.getElementById("groupAlg")
+	const group_alg = document.getElementById("groupAlg");
 	const quality = document.getElementById("selectReconQuality");
 	const quality_text = document.getElementById("descriptionQuality");
 
@@ -126,19 +126,19 @@ export function setupRecon(): boolean {
 
 	QualityElement.addEventListener("sl-change", () => {
 		switch (parseInt(QualityElement.value as string) as ReconQuality) {
-			case 0:
-				QualityDescription.innerHTML = "High quality is a pixel-perfect simulation, including full detector size, and a reconstruction space matching the projection size.<br/> <sl-tag pill size='small' variant='danger'>Heavily uses GPU memory</sl-tag>"
-				break;
-			default:
-			case 1:
-				QualityDescription.textContent = "Medium quality uses a full detector size for projections, but a reduced size for the reconstruction space."
-				break;
-			case 2:
-				QualityDescription.textContent = "Low quality uses a half detector size for projections, and an even more reduced reconstruction space compared to medium quality."
-				break;
-			case 3:
-				QualityDescription.textContent = "Preview uses a fixed detector size of no more than 100 pixels in all axis, and will keep aspect ratio if one axis exceeds this limit. The reconstruction space is a fixed 100x100x100 cube."
-				break;
+		case 0:
+			QualityDescription.innerHTML = "High quality is a pixel-perfect simulation, including full detector size, and a reconstruction space matching the projection size.<br/> <sl-tag pill size='small' variant='danger'>Heavily uses GPU memory</sl-tag>";
+			break;
+		default:
+		case 1:
+			QualityDescription.textContent = "Medium quality uses a full detector size for projections, but a reduced size for the reconstruction space.";
+			break;
+		case 2:
+			QualityDescription.textContent = "Low quality uses a half detector size for projections, and an even more reduced reconstruction space compared to medium quality.";
+			break;
+		case 3:
+			QualityDescription.textContent = "Preview uses a fixed detector size of no more than 100 pixels in all axis, and will keep aspect ratio if one axis exceeds this limit. The reconstruction space is a fixed 100x100x100 cube.";
+			break;
 		}
 	});
 
@@ -154,22 +154,22 @@ export function setupRecon(): boolean {
 
 		// Unhide specific alg settings
 		switch (AlgElement.value) {
-			case "FDK":
-				FDKSettings.classList.remove("hidden");
-				break;
-			case "FBP":
-				FBPSettings.classList.remove("hidden");
-				break;
-			case "CGLS":
-			default:
-				CGLSSettings.classList.remove("hidden");
-				break;
+		case "FDK":
+			FDKSettings.classList.remove("hidden");
+			break;
+		case "FBP":
+			FBPSettings.classList.remove("hidden");
+			break;
+		case "CGLS":
+		default:
+			CGLSSettings.classList.remove("hidden");
+			break;
 		}
 	});
 
 	BeamTypeElement.addEventListener("sl-change", () => {
 		validateRecon();
-	})
+	});
 
 	validateRecon();
 	return true;
@@ -331,7 +331,7 @@ export function UpdateRecon(): Promise<void> {
 	return requestReconData().then((response: Response) => {
 		console.log("Reconstruction Data Response Status:" + response.status);
 		if (response.status != 200) {
-			return
+			return;
 		}
 
 		// Convert to json
@@ -342,7 +342,7 @@ export function UpdateRecon(): Promise<void> {
 			console.log(result);
 			console.log(properties);
 			if (properties === undefined) {
-				return
+				return;
 			}
 
 			// Update local values
@@ -351,20 +351,20 @@ export function UpdateRecon(): Promise<void> {
 
 			let params;
 			switch (properties.method) {
-				case "FDK":
-					params = properties as unknown as FDKParams;
-					FDKFilter.value = params.filter + ""
-					break;
-				case "FBP":
-					params = properties as unknown as FBPParams;
-					FBPFilter.value = params.filter + ""
+			case "FDK":
+				params = properties as unknown as FDKParams;
+				FDKFilter.value = params.filter + "";
+				break;
+			case "FBP":
+				params = properties as unknown as FBPParams;
+				FBPFilter.value = params.filter + "";
 				// case "CGLS":
 				// params = properties as CGA
-				default:
-					break;
+			default:
+				break;
 			}
 		});
-	})
+	});
 }
 
 /**
@@ -376,39 +376,39 @@ function setRecon(): Promise<void> {
 	}
 
 	// Collate paramaters for all reconstruction types
-	let method = AlgElement.value + "";
-	let quality = parseInt(QualityElement.value as string)
+	const method = AlgElement.value + "";
+	const quality = parseInt(QualityElement.value as string);
 
-	let FDKParams = {
+	const FDKParams = {
 		method: "FDK" as ReconMethod,
 		quality: quality as ReconQuality,
 		filter: FDKFilter.value as string,
-	}
+	};
 
-	let FBPParams = {
+	const FBPParams = {
 		method: "FBP" as ReconMethod,
 		quality: quality as ReconQuality,
 		filter: FBPFilter.value as string,
-	}
+	};
 
-	let CGLSParams = {
+	const CGLSParams = {
 		method: "CGLS" as ReconMethod,
 		quality: quality as ReconQuality,
 		variant: VarCGLSElement.value as string,
-	}
+	};
 
-	let request = undefined
+	let request = undefined;
 	switch (method) {
-		case "FBP":
-		default:
-			request = prepareRequest(FBPParams);
-			break;
-		case "FDK":
-			request = prepareRequest(FDKParams);
-			break;
-		case "CGLS":
-			request = prepareRequest(CGLSParams);
-			break;
+	case "FBP":
+	default:
+		request = prepareRequest(FBPParams);
+		break;
+	case "FDK":
+		request = prepareRequest(FDKParams);
+		break;
+	case "CGLS":
+		request = prepareRequest(CGLSParams);
+		break;
 	}
 
 	return sendReconData(request).then((response: Response) => {
@@ -441,7 +441,7 @@ export function UpdateReconPreview(): Promise<void> {
 					composed: false,
 				}));
 
-				SetPreviewImages(preview)
+				SetPreviewImages(preview);
 				MarkDone();
 			}).catch(() => {
 				MarkError();

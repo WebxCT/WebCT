@@ -2,17 +2,14 @@ from base64 import b64encode
 from pathlib import Path
 import tempfile
 import io
-from typing import List
-from wsgiref.util import FileWrapper
 from flask import jsonify, request, session
 from flask.wrappers import Response
-from PIL import Image
-from loguru import logger
 import numpy as np
 from webct.blueprints.capture import bp
 from webct.components.Capture import CaptureParameters
 from webct.components.sim.SimSession import Sim
 import imageio.v3 as iio
+
 
 @bp.route("/capture/set", methods=["PUT"])
 def setCapture() -> Response:
@@ -33,25 +30,25 @@ def getCapture() -> Response:
 	response = simdata.capture
 	return jsonify(response)
 
-def asVideo(array:np.ndarray) -> str:
+
+def asVideo(array: np.ndarray) -> str:
 	print("Generating files from array")
 	# First, compress capture to be 0-255
 	print("normalising array")
 	array = ((array - array.min()) / (array.max() - array.min()) * 255).astype("uint8")
-	duration=10
-	fps = array.shape[0]/duration
+	duration = 10
+	fps = array.shape[0] / duration
 	byteStream = io.BytesIO()
 	with tempfile.TemporaryDirectory() as d:
 		dir = Path(d)
-		iio.imwrite(dir/"capture.mp4", array, macro_block_size=1,fps=fps)
+		iio.imwrite(dir / "capture.mp4", array, macro_block_size=1, fps=fps)
 		# optimize(dir/"capture.gif")
-		with open(dir/"capture.mp4", "rb") as f:
+		with open(dir / "capture.mp4", "rb") as f:
 			byteStream.write(f.read())
-
-
 
 	byteStream.seek(0)
 	return str(b64encode(byteStream.read()))[2:-1]
+
 
 @bp.route("/capture/preview/get")
 def getPreview() -> dict:

@@ -3,6 +3,7 @@ from typing import Optional
 
 from webct.components.Material import Material
 
+
 @dataclass(frozen=True)
 class RenderedSample:
 	"""Represents an immutable sample with fixed material properties.

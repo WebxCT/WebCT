@@ -44,7 +44,7 @@ class Simulator(metaclass=ABCMeta):
 		return self._beam
 
 	@beam.setter
-	def beam(self, value:Beam) -> None:
+	def beam(self, value: Beam) -> None:
 		self._beam = value
 
 	@property
@@ -52,7 +52,7 @@ class Simulator(metaclass=ABCMeta):
 		return self._samples
 
 	@samples.setter
-	def samples(self, value:List[RenderedSample]) -> None:
+	def samples(self, value: List[RenderedSample]) -> None:
 		self._samples = value
 
 	@property
@@ -60,7 +60,7 @@ class Simulator(metaclass=ABCMeta):
 		return self._detector
 
 	@detector.setter
-	def detector(self, value:DetectorParameters) -> None:
+	def detector(self, value: DetectorParameters) -> None:
 		self._detector = value
 
 	@property
@@ -68,7 +68,7 @@ class Simulator(metaclass=ABCMeta):
 		return self._capture
 
 	@capture.setter
-	def capture(self, value:CaptureParameters) -> None:
+	def capture(self, value: CaptureParameters) -> None:
 		self._capture = value
 
 	@property
@@ -76,5 +76,5 @@ class Simulator(metaclass=ABCMeta):
 		return self._quality
 
 	@quality.setter
-	def quality(self, value:Quality) -> None:
+	def quality(self, value: Quality) -> None:
 		self._quality = value

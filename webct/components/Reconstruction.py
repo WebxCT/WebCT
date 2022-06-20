@@ -1,18 +1,11 @@
 from dataclasses import dataclass
-from typing import Callable, Optional, Tuple, Union, cast
+from typing import Optional, Tuple, Union, cast
 
 import numpy as np
 from cil.framework import AcquisitionData, AcquisitionGeometry, ImageData
-from cil.optimisation.algorithms import PDHG
-from cil.optimisation.functions import (BlockFunction, IndicatorBox,
-                                        L2NormSquared, MixedL21Norm)
-from cil.optimisation.operators import (BlockOperator, GradientOperator,
-                                        Operator)
-from cil.plugins.astra.operators import ProjectionOperator
-from cil.processors import TransmissionAbsorptionConverter
+from cil.optimisation.functions import (BlockFunction, IndicatorBox)
+from cil.optimisation.operators import (Operator)
 from cil.recon import FBP, FDK
-from cil.utilities.display import show2D, show_geometry
-from loguru import logger
 from matplotlib import use
 from webct.components.Beam import PROJECTION, BeamParameters
 from webct.components.Capture import CaptureParameters
@@ -21,47 +14,53 @@ from webct.components.sim.Quality import Quality
 
 use("Agg")
 
+
 @dataclass(frozen=True)
 class ReconParameters:
-	quality:Quality
-	method:str
+	quality: Quality
+	method: str
+
 
 @dataclass(frozen=True)
 class FDKParam(ReconParameters):
-	method:str="FDK"
-	filter:Union[str,np.ndarray]="ram_lak"
+	method: str = "FDK"
+	filter: Union[str, np.ndarray] = "ram_lak"
+
 
 @dataclass(frozen=True)
 class FBPParam(ReconParameters):
-	method:str="FBP"
-	filter:Union[str,np.ndarray]="ram_lak"
+	method: str = "FBP"
+	filter: Union[str, np.ndarray] = "ram_lak"
+
 
 @dataclass(frozen=True)
 class CGLSParam(ReconParameters):
-	method:str="CGLS"
-	variant:str=""
+	method: str = "CGLS"
+	variant: str = ""
+
 
 @dataclass(frozen=True)
 class PDHGParam(ReconParameters):
-	f:BlockFunction
-	g:IndicatorBox
-	operator:Operator
-	sigma:float
-	tau:float
-	max_iterations:int
-	update_objective_interval:int
+	f: BlockFunction
+	g: IndicatorBox
+	operator: Operator
+	sigma: float
+	tau: float
+	max_iterations: int
+	update_objective_interval: int
+
 
 ReconMethods = {
 	"FDK": {
-		"type":FDKParam,
+		"type": FDKParam,
 		"projections": (PROJECTION.POINT)
 	},
 	"FBP": {
-		"type":FBPParam,
+		"type": FBPParam,
 		"projections": (PROJECTION.PARALLEL)
 	},
 	"CGLS": {
-		"type":CGLSParam,
+		"type": CGLSParam,
 		"projections": (PROJECTION.PARALLEL)
 	},
 	# "PDHG": {
@@ -70,8 +69,8 @@ ReconMethods = {
 	# }
 }
 
-@logger.catch
-def reconstruct(projections:np.ndarray, capture:CaptureParameters, beam:BeamParameters, detector:DetectorParameters, params:ReconParameters) -> np.ndarray:
+
+def reconstruct(projections: np.ndarray, capture: CaptureParameters, beam: BeamParameters, detector: DetectorParameters, params: ReconParameters) -> np.ndarray:
 	# Get reconstruction method
 	method_name = params.method.upper()
 
@@ -82,7 +81,7 @@ def reconstruct(projections:np.ndarray, capture:CaptureParameters, beam:BeamPara
 	if beam.projection not in method["projections"]:
 		raise ValueError(f"{method_name} does not support {beam.projection} beam configurations.")
 
-	geo:Optional[AcquisitionGeometry] = None
+	geo: Optional[AcquisitionGeometry] = None
 	if beam.projection == PROJECTION.PARALLEL:
 		geo = AcquisitionGeometry.create_Parallel3D(detector_position=capture.detector_position)
 	elif beam.projection == PROJECTION.POINT:
@@ -98,7 +97,7 @@ def reconstruct(projections:np.ndarray, capture:CaptureParameters, beam:BeamPara
 	# Aquisition data
 	acData = geo.allocate()
 	acData.fill(projections)
-	rec:Optional[ImageData] = None
+	rec: Optional[ImageData] = None
 	ig = geo.get_ImageGeometry()
 
 	# FDK Reconsturction
@@ -138,8 +137,9 @@ def reconstruct(projections:np.ndarray, capture:CaptureParameters, beam:BeamPara
 	assert rec is not None
 	return rec.as_array()
 
-def asSinogram(projections:np.ndarray, capture:CaptureParameters, beam:BeamParameters, detector:DetectorParameters) -> np.ndarray:
-	geo:Optional[AcquisitionGeometry] = None
+
+def asSinogram(projections: np.ndarray, capture: CaptureParameters, beam: BeamParameters, detector: DetectorParameters) -> np.ndarray:
+	geo: Optional[AcquisitionGeometry] = None
 	if beam.projection == PROJECTION.PARALLEL:
 		geo = AcquisitionGeometry.create_Parallel3D(detector_position=capture.detector_position)
 	elif beam.projection == PROJECTION.POINT:
@@ -153,11 +153,12 @@ def asSinogram(projections:np.ndarray, capture:CaptureParameters, beam:BeamParam
 	geo.set_angles(capture.angles)
 	geo.set_labels(["angle", "vertical", "horizontal"])
 
-	acData:AcquisitionData = geo.allocate()
+	acData: AcquisitionData = geo.allocate()
 	acData.fill(projections)
-	acData.reorder(("vertical","angle","horizontal"))
+	acData.reorder(("vertical", "angle", "horizontal"))
 
 	return acData.array
+
 
 def ReconstructionFromJson(json: dict) -> ReconParameters:
 	"""Select and create reconstruction paramaters from a json dict."""

@@ -132,11 +132,11 @@ export function setupCapture(): boolean {
 
 	NyquistRange = range_nyquist as SlRange;
 	NyquistRange.addEventListener("sl-change", () => {
-		TotalProjectionsElement.value = Math.floor((Math.PI / 2.0 * parseInt(PaneWidthElement.value)) * (NyquistRange.value as number / 100)) + ""
-		NyquistRange.classList.add("linked")
+		TotalProjectionsElement.value = Math.floor((Math.PI / 2.0 * parseInt(PaneWidthElement.value)) * (NyquistRange.value as number / 100)) + "";
+		NyquistRange.classList.add("linked");
 	});
 	NyquistRange.tooltipFormatter = (value: number) => {
-		return value.toFixed(0) + "%"
+		return value.toFixed(0) + "%";
 	};
 	TotalProjectionsElement.addEventListener("sl-change", () => {
 		NyquistRange.classList.remove("linked");
@@ -145,15 +145,15 @@ export function setupCapture(): boolean {
 	for (let index = 0; index < PreviewImages.length; index++) {
 		const image = PreviewImages[index];
 		window.addEventListener("invertOn", () => {
-			image.classList.add("invert")
+			image.classList.add("invert");
 		});
 		window.addEventListener("invertOff", () => {
-			image.classList.remove("invert")
+			image.classList.remove("invert");
 		});
 	}
 
 	validateCapture();
-	SetOverlaySize(300, 300)
+	SetOverlaySize(300, 300);
 	return true;
 }
 
@@ -161,7 +161,7 @@ export function setupCapture(): boolean {
  * Validate capture parameters and mark as valid/invalid.
  */
 export function validateCapture(): boolean {
-	return validateProjections(TotalProjectionsElement)
+	return validateProjections(TotalProjectionsElement);
 }
 
 // ====================================================== //
@@ -171,8 +171,8 @@ export function validateCapture(): boolean {
 function SetOverlaySize(width: number, height: number): void {
 	for (let index = 0; index < PreviewOverlays.length; index++) {
 		const overlay = PreviewOverlays[index];
-		overlay.style.height = height + "px"
-		overlay.style.width = width + "px"
+		overlay.style.height = height + "px";
+		overlay.style.width = width + "px";
 	}
 }
 
@@ -361,8 +361,8 @@ export function UpdateCapturePreview(): Promise<void> {
 					composed: false,
 				}));
 
-				SetOverlaySize(preview.width, preview.height)
-				SetPreviewImage(preview.gifString, preview.width, preview.height)
+				SetOverlaySize(preview.width, preview.height);
+				SetPreviewImage(preview.gifString, preview.width, preview.height);
 				MarkDone();
 			}).catch(() => {
 				showError(CaptureRequestError.RESPONSE_DECODE);

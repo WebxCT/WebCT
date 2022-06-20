@@ -39,8 +39,8 @@ export function setupDetector(): boolean {
 	const pane_height_element = document.getElementById("inputPaneHeight");
 	const pane_pixel_size_element = document.getElementById("inputPanePixelSize");
 	const detector_preview_element = document.getElementById("divDetectorPreview");
-	const text_detector_horizontal = document.getElementById("textDetectorHorizontal")
-	const text_detector_vertical = document.getElementById("textDetectorVertical")
+	const text_detector_horizontal = document.getElementById("textDetectorHorizontal");
+	const text_detector_vertical = document.getElementById("textDetectorVertical");
 
 
 	if (pane_width_element == null ||
@@ -81,7 +81,7 @@ export function setupDetector(): boolean {
 	DetectorVerticalText = text_detector_vertical as unknown as SVGTextElement;
 
 
-	previewDetector()
+	previewDetector();
 	return true;
 }
 
@@ -106,14 +106,14 @@ function previewDetector(): void {
 	const pixSize = parseFloat(PanePixelSizeElement.value);
 	const height = Math.round(parseFloat(PaneHeightElement.value) / pixSize);
 	const width = Math.round(parseFloat(PaneWidthElement.value) / pixSize);
-	SetPreviewSize(height, width, pixSize);
+	SetPreviewSize(height, width);
 
 	// Update detector square
 	DetectorPreviewElement.style.width = width + "px";
 	DetectorPreviewElement.style.height = height + "px";
 	// DetectorPreviewElement.textContent = width + "x" + height + " px"
-	DetectorHorizontalText.textContent = PaneWidthElement.value + "mm (" + width + "px)"
-	DetectorVerticalText.textContent = PaneHeightElement.value + "mm (" + height + "px)"
+	DetectorHorizontalText.textContent = PaneWidthElement.value + "mm (" + width + "px)";
+	DetectorVerticalText.textContent = PaneHeightElement.value + "mm (" + height + "px)";
 
 }
 
@@ -158,7 +158,7 @@ export function UpdateDetector(): Promise<void> {
 			PaneWidthElement.value = properties.paneWidth + "";
 			PanePixelSizeElement.value = properties.pixelSize + "";
 
-			previewDetector()
+			previewDetector();
 		}).catch(() => {
 			showError(DetectorRequestError.RESPONSE_DECODE);
 		});

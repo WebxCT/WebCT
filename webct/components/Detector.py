@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from typing import Tuple
 
-import numpy as np
 
 @dataclass(frozen=True)
 class DetectorParameters:

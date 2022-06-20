@@ -1,7 +1,6 @@
 """Beam generator for WebCT"""
 
 from dataclasses import dataclass
-from functools import cache
 from typing import List, Tuple
 from webct import Element
 from enum import Enum
@@ -11,6 +10,7 @@ from enum import unique
 KeV = float
 mm = float
 Degrees = float
+
 
 @unique
 class PROJECTION(str, Enum):
@@ -24,10 +24,12 @@ class PROJECTION(str, Enum):
 	POINT = "point"
 	PARALLEL = "parallel"
 
+
 @unique
 class BEAM_GENERATOR(str, Enum):
 	SPEKPY = "spekpy"
 	XPECGEN = "xpecgen"
+
 
 @dataclass(frozen=True)
 class Filter:
@@ -80,7 +82,7 @@ class BeamParameters:
 		source_material = int(json["source_material"])
 		source_material = Element(source_material)
 
-		if source_material == None:
+		if source_material is None:
 			raise ValueError(f"Unknown material type {source_material}")
 		if source_material != Element.W and source_material != Element.Rh and source_material != Element.Mo:
 			raise ValueError(f"Unsupported Element type {source_material} only W, Rh, and Mo are supported.")
@@ -125,6 +127,7 @@ class BeamParameters:
 			generator=generator
 		)
 
+
 @dataclass(frozen=True)
 class Spectra:
 	energies: tuple  # Array of energies in a spectrum [keV]
@@ -143,7 +146,8 @@ class Spectra:
 	# hc_cu:float			# Homogeneity coefficient of Cu
 	# eeff_cu:float		# Effective energy of Cu [keV]
 
+
 @dataclass(frozen=True)
 class Beam:
-	params:BeamParameters
-	spectra:Spectra
+	params: BeamParameters
+	spectra: Spectra

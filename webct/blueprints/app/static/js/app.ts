@@ -107,7 +107,7 @@ function bindCaptureButtons(): void {
 
 	for (let index = 0; index < CaptureButtons.length; index++) {
 		const button = CaptureButtons[index];
-		button.onclick = updatePreviewCapture
+		button.onclick = updatePreviewCapture;
 	}
 }
 
@@ -117,7 +117,7 @@ function bindReconstructionButtons(): void {
 
 	for (let index = 0; index < ReconButtons.length; index++) {
 		const button = ReconButtons[index];
-		button.onclick = updatePreviewRecon
+		button.onclick = updatePreviewRecon;
 	}
 }
 
@@ -176,9 +176,9 @@ function setPageLoading(loading: boolean, type:LoadingType="default"): void {
 			button.setAttribute("loading", "true");
 		}
 
-		document.getElementsByTagName("body")[0].style.cursor = "wait"
+		document.getElementsByTagName("body")[0].style.cursor = "wait";
 
-		LoadingBar.setAttribute("variant", type)
+		LoadingBar.setAttribute("variant", type);
 		LoadingBar.removeAttribute("hidden");
 	} else {
 		console.log("## Finished Loading");
@@ -197,7 +197,7 @@ function setPageLoading(loading: boolean, type:LoadingType="default"): void {
 			button.removeAttribute("loading");
 		}
 
-		document.getElementsByTagName("body")[0].style.cursor = ""
+		document.getElementsByTagName("body")[0].style.cursor = "";
 		LoadingBar.setAttribute("hidden", "true");
 	}
 }

@@ -93,7 +93,7 @@ export async function requestReconData(): Promise<Response> {
  * Request recon data from the server.
  * @returns Potentially raw data from the recon data endpoint.
  */
- export async function requestReconPreview(): Promise<Response> {
+export async function requestReconPreview(): Promise<Response> {
 	return await fetch(Endpoint.getReconPreview);
 }
 
@@ -125,38 +125,38 @@ export async function sendReconData(data: ReconRequestRegistry["reconRequest"]):
 export function processResponse(data: ReconResponseRegistry[keyof ReconResponseRegistry], type: keyof ReconResponseRegistry): ReconstructionParams | ReconstructionPreview | undefined {
 	// Todo: Convert and check params for each reconstruction method
 	switch (type) {
-		case "reconResponse":
-			data = data as ReconResponseRegistry["reconResponse"]
-			switch (data.method) {
-				case "FBP":
-					return {
-						quality: data.quality,
-						method: data.method,
-						filter: data.filter,
-					} as FBPParams
-				case "FDK":
-					return {
-						quality: data.quality,
-						method: data.method,
-						filter: data.filter,
-					} as FDKParams
-				case "CGLS":
-					return {
-						quality: data.quality,
-						method: data.method,
-						variant: data.variant as CGLSVariant,
-						iterations:100,
-					} as CGLSParams
-				default:
-					break;
-			}
+	case "reconResponse":
+		data = data as ReconResponseRegistry["reconResponse"];
+		switch (data.method) {
+		case "FBP":
+			return {
+				quality: data.quality,
+				method: data.method,
+				filter: data.filter,
+			} as FBPParams;
+		case "FDK":
+			return {
+				quality: data.quality,
+				method: data.method,
+				filter: data.filter,
+			} as FDKParams;
+		case "CGLS":
+			return {
+				quality: data.quality,
+				method: data.method,
+				variant: data.variant as CGLSVariant,
+				iterations:100,
+			} as CGLSParams;
+		default:
 			break;
-		case "reconPreviewResponse":
-			// Todo: convert and check params
-			data = data as ReconResponseRegistry["reconPreviewResponse"]
-			return data as ReconstructionPreview;
+		}
+		break;
+	case "reconPreviewResponse":
+		// Todo: convert and check params
+		data = data as ReconResponseRegistry["reconPreviewResponse"];
+		return data as ReconstructionPreview;
 	}
-	return undefined
+	return undefined;
 }
 
 /**
@@ -165,5 +165,5 @@ export function processResponse(data: ReconResponseRegistry[keyof ReconResponseR
 */
 export function prepareRequest(data: ReconstructionParams): ReconRequestRegistry["reconRequest"] {
 	// Todo: Convert and check params for each reconstruction method
-	return data as unknown as ReconRequestRegistry["reconRequest"]
+	return data as unknown as ReconRequestRegistry["reconRequest"];
 }

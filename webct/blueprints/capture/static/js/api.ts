@@ -87,7 +87,7 @@ export async function requestCaptureData(): Promise<Response> {
  * Request a capture preview from the server.
  * @returns Potentially raw data from the capture preview endpoint.
  */
- export async function requestCapturePreview(): Promise<Response> {
+export async function requestCapturePreview(): Promise<Response> {
 	return await fetch(Endpoint.getCapturePreview);
 }
 
@@ -117,23 +117,23 @@ export async function sendCaptureData(data: CaptureRequestRegistry["captureReque
  */
 export function processResponse(data: CaptureResponseRegistry[keyof CaptureResponseRegistry], type: keyof CaptureResponseRegistry): CaptureProperties | CapturePreview {
 	switch (type) {
-		case "capturePreviewResponse":
-			data = data as CaptureResponseRegistry["capturePreviewResponse"]
-			return {
-				gifString: data.gif_str,
-				width: data.width,
-				height: data.height,
-			}
-		case "captureResponse":
-		default:
-			data = data as CaptureResponseRegistry["captureResponse"]
-			return {
-				numProjections: data.projections,
-				totalAngle: data.capture_angle,
-				beamPosition: data.beam_position,
-				detectorPosition: data.detector_position,
-				sampleRotation: data.sample_rotation,
-			};
+	case "capturePreviewResponse":
+		data = data as CaptureResponseRegistry["capturePreviewResponse"];
+		return {
+			gifString: data.gif_str,
+			width: data.width,
+			height: data.height,
+		};
+	case "captureResponse":
+	default:
+		data = data as CaptureResponseRegistry["captureResponse"];
+		return {
+			numProjections: data.projections,
+			totalAngle: data.capture_angle,
+			beamPosition: data.beam_position,
+			detectorPosition: data.detector_position,
+			sampleRotation: data.sample_rotation,
+		};
 	}
 }
 

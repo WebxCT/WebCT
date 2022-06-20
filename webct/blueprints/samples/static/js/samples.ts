@@ -4,7 +4,7 @@
  */
 
 import { SlButton, SlDialog, SlInput, SlProgressBar, SlRadio, SlSelect, SlTab, SlTabGroup, SlTabPanel } from "@shoelace-style/shoelace";
-import { serialize } from "@shoelace-style/shoelace/dist/utilities/form"
+import { serialize } from "@shoelace-style/shoelace/dist/utilities/form";
 import { AlertType, showAlert } from "../../../base/static/js/base";
 import { prepareSampleRequest, processResponse, requestMaterialList, requestModelList, requestSampleData, SamplesResponseRegistry, sendMaterialData, sendSamplesData, uploadSample, SamplesRequestRegistry } from "./api";
 import { DetectorRequestError, showError } from "./errors";
@@ -50,9 +50,9 @@ let MaterialLib: MaterialLibrary;
 
 let SelectedMaterial: string;
 let SelectedMaterialCategory: string;
-const SelectedSample: number = 0
+const SelectedSample = 0;
 
-let RecentMaterials: Record<string, number> = {}
+let RecentMaterials: Record<string, number> = {};
 
 export const DefaultMaterial = "element/copper";
 
@@ -153,7 +153,7 @@ export function setupSamples(): boolean {
 		return false;
 	}
 
-	RecentMaterials = {}
+	RecentMaterials = {};
 
 	UploadCompleteDialog = dialogue_complete_upload as SlDialog;
 	SampleDialog = dialogue_sample_element as SlDialog;
@@ -176,7 +176,7 @@ export function setupSamples(): boolean {
 	};
 	MaterialSubmitButton = button_material_submit as SlButton;
 	MaterialSubmitButton.onclick = () => {
-		let [catID, matID, panel] = getSelectedMaterial()
+		const [catID, matID, panel] = getSelectedMaterial();
 
 		if (catID == "" || matID == "") {
 			return;
@@ -290,15 +290,15 @@ export function setupSamples(): boolean {
 
 
 function getSelectedMaterial(): [string, string, HTMLFormElement?] {
-	let catID = (document.querySelector("#tabMaterial > sl-tab-panel[active]") as unknown as SlTabPanel).getAttribute("catID")
-	let form = document.querySelector("#tabMaterial > sl-tab-panel[active] > sl-tab-group > sl-tab-panel[active] > form") as HTMLFormElement;
-	let matID = (document.querySelector("#tabMaterial > sl-tab-panel[active] > sl-tab-group > sl-tab-panel[active]") as unknown as SlTabPanel).getAttribute("materialid")
+	const catID = (document.querySelector("#tabMaterial > sl-tab-panel[active]") as unknown as SlTabPanel).getAttribute("catID");
+	const form = document.querySelector("#tabMaterial > sl-tab-panel[active] > sl-tab-group > sl-tab-panel[active] > form") as HTMLFormElement;
+	const matID = (document.querySelector("#tabMaterial > sl-tab-panel[active] > sl-tab-group > sl-tab-panel[active]") as unknown as SlTabPanel).getAttribute("materialid");
 
 	if (catID == null || matID == null) {
 		return ["", "", undefined];
 	}
 
-	return [catID, matID, form]
+	return [catID, matID, form];
 }
 
 // ====================================================== //
@@ -310,16 +310,16 @@ function setSampleElement(): void {
 		return;
 	}
 
-	const matID = SelectedMaterialCategory + "/" + SelectedMaterial
+	const matID = SelectedMaterialCategory + "/" + SelectedMaterial;
 
 	if (matID in RecentMaterials) {
-		RecentMaterials[matID] += 1
+		RecentMaterials[matID] += 1;
 	} else {
-		RecentMaterials[matID] = 1
+		RecentMaterials[matID] = 1;
 	}
 
 	if (RecentMaterials[matID] <= 0) {
-		delete RecentMaterials[matID]
+		delete RecentMaterials[matID];
 	}
 
 	console.log(RecentMaterials);
@@ -376,9 +376,9 @@ function updateDialog(): void {
 			});
 
 			if (DefaultMaterial in RecentMaterials) {
-				RecentMaterials[DefaultMaterial] += 1
+				RecentMaterials[DefaultMaterial] += 1;
 			} else {
-				RecentMaterials[DefaultMaterial] = 1
+				RecentMaterials[DefaultMaterial] = 1;
 			}
 
 			SampleDialog.hide();
@@ -446,7 +446,7 @@ function updateSampleCards(): void {
 		for (const matID in RecentMaterials) {
 			if (Object.prototype.hasOwnProperty.call(RecentMaterials, matID)) {
 				const uses = RecentMaterials[matID];
-				const material = MaterialLib[matID.split("/")[0]][matID.split("/")[1]]
+				const material = MaterialLib[matID.split("/")[0]][matID.split("/")[1]];
 
 				if (material === null) {
 					// silently ignore deleted materials; the user will just have
@@ -454,35 +454,35 @@ function updateSampleCards(): void {
 					continue;
 				}
 
-				const item = document.createElement("sl-menu-item")
-				item.textContent = material.label
-				item.value = matID
+				const item = document.createElement("sl-menu-item");
+				item.textContent = material.label;
+				item.value = matID;
 
 				// * This is a really stupid way to do this. Does not take into
 				// * account final value for the samples when submitted, just what was
 				// * last clicked, and hoping there is no deviation.
 				item.onclick = () => {
 					// Remove one count from current material
-					RecentMaterials[sample.materialID] -= 1
+					RecentMaterials[sample.materialID] -= 1;
 
 					// Change material
 					console.log("Set matid 	" + matID);
-					SessionSamples[index].materialID = matID
+					SessionSamples[index].materialID = matID;
 					console.log(sample);
 
 					// Add one count to new material
-					RecentMaterials[matID] += 1
+					RecentMaterials[matID] += 1;
 				};
-				materialSelect.appendChild(item)
+				materialSelect.appendChild(item);
 			}
 		}
 
 		const air = document.createElement("sl-menu-item");
-		air.textContent = "Air"
-		air.value = "special/air"
+		air.textContent = "Air";
+		air.value = "special/air";
 		air.onclick = () => {
-			sample.materialID = "special/air"
-		}
+			sample.materialID = "special/air";
+		};
 
 		const divider3 = document.createElement("sl-divider");
 
@@ -498,7 +498,7 @@ function updateSampleCards(): void {
 			showMaterialLibrary(true);
 		};
 
-		materialSelect.appendChild(air)
+		materialSelect.appendChild(air);
 		materialSelect.appendChild(divider3);
 		materialSelect.appendChild(custom);
 
@@ -563,7 +563,7 @@ function updateMaterialDialog(): void {
 
 			const ctpanel = document.createElement("sl-tab-panel");
 			ctpanel.name = categoryKey;
-			ctpanel.setAttribute("catid", categoryKey)
+			ctpanel.setAttribute("catid", categoryKey);
 
 			const ctgroup = document.createElement("sl-tab-group");
 			ctgroup.placement = "start";
@@ -581,7 +581,7 @@ function updateMaterialDialog(): void {
 
 					const cmtpanel = document.createElement("sl-tab-panel");
 					cmtpanel.name = material.label;
-					cmtpanel.setAttribute("materialid", materialKey)
+					cmtpanel.setAttribute("materialid", materialKey);
 
 					const form = document.createElement("form");
 					form.classList.add("materialform");
@@ -591,12 +591,12 @@ function updateMaterialDialog(): void {
 					nameInput.helpText = "A short alphanumeric material name.";
 					nameInput.placeholder = "Copper";
 					nameInput.value = material.label;
-					nameInput.name = "label"
+					nameInput.name = "label";
 
 					const deleteButton = document.createElement("sl-button");
 					deleteButton.outline = true;
 					deleteButton.variant = "danger";
-					deleteButton.type = "button"
+					deleteButton.type = "button";
 					const deleteButtonIcon = document.createElement("sl-icon");
 					deleteButtonIcon.name = "trash-fill";
 					deleteButton.appendChild(deleteButtonIcon);
@@ -607,13 +607,13 @@ function updateMaterialDialog(): void {
 					descriptionInput.placeholder = "Atomically pure Copper sheet";
 					descriptionInput.classList.add("wide");
 					descriptionInput.value = material.description;
-					descriptionInput.name = "description"
+					descriptionInput.name = "description";
 
 					const typeSelect = document.createElement("sl-select");
 					typeSelect.hoist = true;
 					typeSelect.label = "Material Type";
 					typeSelect.value = "element";
-					typeSelect.name = "type"
+					typeSelect.name = "type";
 
 					const elementType = document.createElement("sl-menu-item");
 					elementType.value = "element";
@@ -642,11 +642,11 @@ function updateMaterialDialog(): void {
 					densityInput.type = "number";
 					densityInput.step = 0.01;
 					densityInput.value = material.density + "";
-					densityInput.name = "density"
+					densityInput.name = "density";
 					const densityUnits = document.createElement("span");
-					densityUnits.textContent = "g/cm^2"
-					densityUnits.slot = "suffix"
-					densityInput.appendChild(densityUnits)
+					densityUnits.textContent = "g/cm^2";
+					densityUnits.slot = "suffix";
+					densityInput.appendChild(densityUnits);
 
 					const divider = document.createElement("sl-divider");
 
@@ -655,7 +655,7 @@ function updateMaterialDialog(): void {
 					const elementInput = document.createElement("sl-input");
 					elementInput.label = "Element";
 					elementInput.helpText = "Elemental Symbol (Cl, O, Au, etc)";
-					elementInput.name = "element"
+					elementInput.name = "element";
 					elementDiv.appendChild(elementInput);
 
 
@@ -665,7 +665,7 @@ function updateMaterialDialog(): void {
 					const compoundInput = document.createElement("sl-input");
 					compoundInput.label = "Compound";
 					compoundInput.helpText = "Material Compound (H2O)";
-					compoundInput.name = "compound"
+					compoundInput.name = "compound";
 					compoundDiv.appendChild(compoundInput);
 
 					const mixtureDiv = document.createElement("div");
@@ -679,7 +679,7 @@ function updateMaterialDialog(): void {
 					const huInput = document.createElement("sl-input");
 					huInput.label = "HU Value";
 					huInput.helpText = "Hounsfield unit (CT number)";
-					huInput.name = "hu"
+					huInput.name = "hu";
 					huDiv.appendChild(huInput);
 
 					function SelectEvent() {
@@ -688,23 +688,23 @@ function updateMaterialDialog(): void {
 							mixtureDiv.classList.add("hidden");
 							compoundDiv.classList.add("hidden");
 							huDiv.classList.add("hidden");
-							densityInput.classList.remove("hidden")
+							densityInput.classList.remove("hidden");
 						} else if (typeSelect.value == "mixture") {
 							elementDiv.classList.add("hidden");
 							mixtureDiv.classList.remove("hidden");
 							compoundDiv.classList.add("hidden");
 							huDiv.classList.add("hidden");
-							densityInput.classList.remove("hidden")
+							densityInput.classList.remove("hidden");
 						} else if (typeSelect.value == "compound") {
 							elementDiv.classList.add("hidden");
 							mixtureDiv.classList.add("hidden");
 							compoundDiv.classList.remove("hidden");
 							huDiv.classList.add("hidden");
-							densityInput.classList.remove("hidden")
+							densityInput.classList.remove("hidden");
 						} else if (typeSelect.value == "hu") {
 							elementDiv.classList.add("hidden");
 							mixtureDiv.classList.add("hidden");
-							densityInput.classList.add("hidden")
+							densityInput.classList.add("hidden");
 							compoundDiv.classList.add("hidden");
 							huDiv.classList.remove("hidden");
 						}
@@ -714,38 +714,38 @@ function updateMaterialDialog(): void {
 
 					// Current element settings
 					switch (material.material[0]) {
-						case "element":
-							elementInput.value = material.material[1]
-							typeSelect.value = "element"
-							break;
-						case "compound":
-							compoundInput.value = material.material[1]
-							typeSelect.value = "compound"
-							break;
-						case "hu":
-							huInput.value = material.material[1] + ""
-							typeSelect.value = "hu"
-							break;
-						case "special":
-							typeSelect.value = "Special"
-							typeSelect.textContent = "Special"
-							typeSelect.disabled = true
-							break;
-						case "mixture":
-							typeSelect.value = "mixture"
-							typeSelect.disabled = true
-							break;
-						default:
-							break;
+					case "element":
+						elementInput.value = material.material[1];
+						typeSelect.value = "element";
+						break;
+					case "compound":
+						compoundInput.value = material.material[1];
+						typeSelect.value = "compound";
+						break;
+					case "hu":
+						huInput.value = material.material[1] + "";
+						typeSelect.value = "hu";
+						break;
+					case "special":
+						typeSelect.value = "Special";
+						typeSelect.textContent = "Special";
+						typeSelect.disabled = true;
+						break;
+					case "mixture":
+						typeSelect.value = "mixture";
+						typeSelect.disabled = true;
+						break;
+					default:
+						break;
 					}
-					SelectEvent()
+					SelectEvent();
 
-					let hiddenSave = document.createElement("button")
-					hiddenSave.type = "submit"
-					hiddenSave.style.display = "none"
-					form.onsubmit = () => { SaveCurrentMaterial(); return false }
+					const hiddenSave = document.createElement("button");
+					hiddenSave.type = "submit";
+					hiddenSave.style.display = "none";
+					form.onsubmit = () => { SaveCurrentMaterial(); return false; };
 
-					form.appendChild(hiddenSave)
+					form.appendChild(hiddenSave);
 					form.appendChild(nameInput);
 					form.appendChild(deleteButton);
 					form.appendChild(descriptionInput);
@@ -768,7 +768,7 @@ function updateMaterialDialog(): void {
 			addMaterialButton.size = "small";
 			addMaterialButton.outline = true;
 			addMaterialButton.circle = true;
-			addMaterialButton.type = "button"
+			addMaterialButton.type = "button";
 
 			const materialPlusIcon = document.createElement("sl-icon");
 			materialPlusIcon.name = "plus";
@@ -786,7 +786,7 @@ function updateMaterialDialog(): void {
 	addCategoryButton.size = "small";
 	addCategoryButton.outline = true;
 	addCategoryButton.circle = true;
-	addCategoryButton.type = "button"
+	addCategoryButton.type = "button";
 
 	const categoryPlusIcon = document.createElement("sl-icon");
 	categoryPlusIcon.name = "plus";
@@ -800,13 +800,13 @@ function updateMaterialDialog(): void {
 function showMaterialLibrary(selecting: boolean): void {
 
 	if (selecting) {
-		MaterialSubmitButton.outline = false
-		MaterialSubmitButton.disabled = false
-		MaterialSubmitButton.variant = "success"
+		MaterialSubmitButton.outline = false;
+		MaterialSubmitButton.disabled = false;
+		MaterialSubmitButton.variant = "success";
 	} else {
-		MaterialSubmitButton.outline = true
-		MaterialSubmitButton.disabled = true
-		MaterialSubmitButton.variant = "neutral"
+		MaterialSubmitButton.outline = true;
+		MaterialSubmitButton.disabled = true;
+		MaterialSubmitButton.variant = "neutral";
 	}
 	MaterialDialog.show();
 }
@@ -827,52 +827,52 @@ type MaterialFormData = {
 
 function SaveCurrentMaterial(): void {
 	// Get currently selected material.
-	let [catID, matID, form] = getSelectedMaterial()
+	const [catID, matID, form] = getSelectedMaterial();
 
 	if (form == undefined) {
 		// ! throw an error
-		return
+		return;
 	}
 
 	form.addEventListener("sl-change", () => {
 		MaterialSaveButton.outline = false;
 	});
 
-	let data: MaterialFormData = serialize(form) as unknown as MaterialFormData
-	MaterialSaveButton.disabled = true
-	MaterialSaveButton.outline = true
+	const data: MaterialFormData = serialize(form) as unknown as MaterialFormData;
+	MaterialSaveButton.disabled = true;
+	MaterialSaveButton.outline = true;
 
 	console.log(form);
 	console.log(data);
 	// Get panel elements
-	let mat: Material["material"] = ["special", "air"]
+	let mat: Material["material"] = ["special", "air"];
 
 	switch (data.type) {
-		case "element":
-			mat = ["element", data.element]
-			break;
-		case "compound":
-			mat = ["compound", data.compound]
-			break;
-		case "hu":
-			mat = ["hu", parseFloat(data.hu)]
-		default:
-			break;
+	case "element":
+		mat = ["element", data.element];
+		break;
+	case "compound":
+		mat = ["compound", data.compound];
+		break;
+	case "hu":
+		mat = ["hu", parseFloat(data.hu)];
+	default:
+		break;
 	}
 
 	// Get new attributes.
 	// Upload local material, and update server.
-	let nMat: SamplesRequestRegistry["materialDataRequest"] = {
+	const nMat: SamplesRequestRegistry["materialDataRequest"] = {
 		label: data.label,
 		density: parseFloat(data.density),
 		description: data.description,
 		material: mat,
 		category: catID
-	}
+	};
 
 	console.log(nMat);
 	sendMaterialData(nMat).finally(() => {
-		MaterialSaveButton.disabled = false
+		MaterialSaveButton.disabled = false;
 	});
 
 }

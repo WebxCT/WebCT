@@ -11,9 +11,10 @@ from webct.components.Samples import Sample
 
 from webct.components.sim.SimSession import Sim
 
-from webct import logger, model_folder, material_folder
+from webct import model_folder, material_folder
 
-def add_material_file(category:str, file:Path) -> None:
+
+def add_material_file(category: str, file: Path) -> None:
 	if file.name[0] == ".":
 		return
 	if file.absolute().name[-4:] == "json":
@@ -27,13 +28,14 @@ def add_material_file(category:str, file:Path) -> None:
 					MATERIALS[category] = {}
 					if mat.label in MATERIALS[category]:
 						raise TypeError(f"Cannot import {file} as '{mat.label}' is already loaded.")
-				MATERIALS[category][file.name[:-5]] =  mat
+				MATERIALS[category][file.name[:-5]] = mat
 			except Exception as e:
-				traceback.print_exception(type(e),e,e.__traceback__)
+				traceback.print_exception(type(e), e, e.__traceback__)
 				print(f"fail to import: {file.name}: {type(e)}: {e}")
 				return
 
-def add_folder(folder:Path) -> None:
+
+def add_folder(folder: Path) -> None:
 	if not folder.is_dir():
 		return
 
@@ -48,6 +50,7 @@ def add_folder(folder:Path) -> None:
 			add_material_file(category, file)
 	return
 
+
 def preloadMaterials() -> None:
 	folder = Path(material_folder)
 	if not folder.exists():
@@ -57,6 +60,7 @@ def preloadMaterials() -> None:
 
 	# Enumerate contents in data folder
 	print(f"Loaded {len(MATERIALS)} materials categories.")
+
 
 @bp.route("/samples/list", methods=["GET"])
 def getSampleList() -> Response:
@@ -98,7 +102,7 @@ def setSamples() -> Response:
 	simdata = Sim(session)
 
 	# Create a set of modelpaths so we can avoid re-adding models
-	samples:List[Sample] = []
+	samples: List[Sample] = []
 	for sample in data["samples"]:
 		samples.append(Sample.from_json(sample))
 
@@ -106,8 +110,7 @@ def setSamples() -> Response:
 	return Response(None, 200)
 
 
-
-@bp.route("/samples/upload",methods=["POST"])
+@bp.route("/samples/upload", methods=["POST"])
 def uploadModel() -> Response:
 	# upload model
 	if "file" not in request.files:
@@ -118,7 +121,7 @@ def uploadModel() -> Response:
 		return Response(None, 400)
 	if file and file.filename.split(".")[-1] == "stl":
 		filename = secure_filename(file.filename)
-		path = Path(model_folder+filename)
+		path = Path(model_folder + filename)
 		if path.exists():
 			# don't allow overwriting for now...
 			return Response(None, 400)
@@ -132,6 +135,7 @@ def getMaterialList() -> Response:
 	# Use a custom encoder for dumping materials.
 	result = json.dumps(MATERIALS, cls=MaterialEncoder)
 	return Response(result, 200, mimetype="application/json")
+
 
 @bp.route("/material/set", methods=["PUT"])
 def setMaterial() -> Response:
@@ -170,7 +174,7 @@ def setMaterial() -> Response:
 			return Response(None, 400)
 
 	with nPath.open("w") as f:
-		json.dump(material.to_json(), f,indent="\t")
+		json.dump(material.to_json(), f, indent="\t")
 
 	add_material_file("/".join(data["category"].split("/")[:-1]), nPath)
 
