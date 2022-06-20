@@ -103,7 +103,7 @@ function previewDetector(): void {
 		return;
 	}
 
-	const pixSize = parseFloat(PanePixelSizeElement.value);
+	const pixSize = parseFloat(PanePixelSizeElement.value) / 1000;
 	const height = Math.round(parseFloat(PaneHeightElement.value) / pixSize);
 	const width = Math.round(parseFloat(PaneWidthElement.value) / pixSize);
 	SetPreviewSize(height, width);
@@ -156,7 +156,7 @@ export function UpdateDetector(): Promise<void> {
 			// no implicit cast from number to string, really js?
 			PaneHeightElement.value = properties.paneHeight + "";
 			PaneWidthElement.value = properties.paneWidth + "";
-			PanePixelSizeElement.value = properties.pixelSize + "";
+			PanePixelSizeElement.value = properties.pixelSize * 1000 + "";
 
 			previewDetector();
 		}).catch(() => {
@@ -179,7 +179,7 @@ function setDetector(): Promise<void> {
 	const detector = prepareRequest({
 		paneHeight: parseFloat(PaneHeightElement.value),
 		paneWidth: parseFloat(PaneWidthElement.value),
-		pixelSize: parseFloat(PanePixelSizeElement.value),
+		pixelSize: parseFloat(PanePixelSizeElement.value) / 1000,
 	});
 
 	return sendDetectorData(detector).then((response: Response) => {
