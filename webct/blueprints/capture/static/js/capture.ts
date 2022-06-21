@@ -245,7 +245,7 @@ function SetPreviewImage(imagestr: string, width: number, height: number): void 
 		const image = PreviewImages[index];
 		image.width = width;
 		image.height = height;
-		image.src = "data:video/mpeg;base64," + imagestr;
+		image.src = "data:video/mp4;base64," + imagestr;
 	}
 }
 

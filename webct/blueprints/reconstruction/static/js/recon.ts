@@ -298,15 +298,15 @@ function MarkError(): void {
 function SetPreviewImages(preview: ReconstructionPreview): void {
 	for (let index = 0; index < SliceImages.length; index++) {
 		const image = SliceImages[index];
-		image.src = "data:video/mpeg;base64," + preview.slice.video;
+		image.src = "data:video/mp4;base64," + preview.slice.video;
 	}
 	for (let index = 0; index < SinogramImages.length; index++) {
 		const image = SinogramImages[index];
-		image.src = "data:video/mpeg;base64," + preview.sino.video;
+		image.src = "data:video/mp4;base64," + preview.sino.video;
 	}
 	for (let index = 0; index < ReconImages.length; index++) {
 		const image = ReconImages[index];
-		image.src = "data:video/mpeg;base64," + preview.recon.video;
+		image.src = "data:video/mp4;base64," + preview.recon.video;
 	}
 }
 // ====================================================== //
