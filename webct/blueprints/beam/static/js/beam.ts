@@ -7,6 +7,8 @@
 // otherwise vague unhelpful runtime errors will occur...
 import { SlButton, SlInput, SlSelect } from "@shoelace-style/shoelace";
 import { AlertType, showAlert } from "../../../base/static/js/base";
+import { AlgElement } from "../../../reconstruction/static/js/recon";
+import { ReconMethod } from "../../../reconstruction/static/js/types";
 import { BeamResponseRegistry, prepareRequest, processResponse, requestBeamData, sendBeamData } from "./api";
 import { BeamConfigError, BeamRequestError, showError } from "./errors";
 import { SpectraDisplay, ViewFormat } from "./types";
@@ -154,6 +156,20 @@ export function setupBeam(): boolean {
 		spectraNormPercentButton.variant = "primary";
 
 		Spectra.viewFormat = "Percentage";
+	};
+
+	BeamTypeElement.onclick = () => {
+		const alg = AlgElement.value as ReconMethod;
+
+		if (BeamTypeElement.value == "parallel") {
+			if (alg == "FDK") {
+				AlgElement.value = "FBP";
+			}
+		} else if (BeamTypeElement.value == "point") {
+			if (alg == "FBP") {
+				AlgElement.value = "FDK";
+			}
+		}
 	};
 
 	validateBeam();

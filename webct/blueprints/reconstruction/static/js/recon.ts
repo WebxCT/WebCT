@@ -14,7 +14,7 @@ import { validateMethod } from "./validation";
 // ================== Document Elements ================= //
 // ====================================================== //
 
-let AlgElement: SlSelect;
+export let AlgElement: SlSelect;
 let AlgGroup: HTMLDivElement;
 let QualityElement: SlSelect;
 let QualityDescription: HTMLParagraphElement;
