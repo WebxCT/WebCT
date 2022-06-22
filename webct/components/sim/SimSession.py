@@ -1,3 +1,4 @@
+from enum import Enum
 from functools import cache
 from random import Random
 from threading import Semaphore
@@ -8,6 +9,7 @@ import spekpy as sp
 import xpecgen.xpecgen as xp
 from cil.framework import AcquisitionGeometry
 from cil.utilities.display import show_geometry
+from cil.processors import AbsorptionTransmissionConverter
 from flask import session
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.figure import Figure
@@ -23,6 +25,15 @@ from webct.components.sim.clients.SimClient import SimClient
 from webct.components.sim.Quality import Quality
 from webct.components.sim.SimManager import getClient
 
+class ProjCorrection(Enum):
+	# No correction is done, projections are a direct result from the detector.
+	NONE = 1
+
+	# Flatfield and darkfield normalisation has taken place.
+	FLATFIELD = 2
+
+	# Conversion from absorbtion measurements to transmission measurements have taken place.
+	ABSORBTION = 3
 
 class SimSession:
 	"""
@@ -181,8 +192,13 @@ class SimSession:
 		print(self.flatfield.mean())
 		print(self.darkfield.mean())
 
-	def _corrected(self, projection):
-		print("correction")
+	def _corrected(self, projection, correction=ProjCorrection.FLATFIELD):
+		if correction==ProjCorrection.NONE:
+			# Perform no correction
+			return projection
+
+		proj = None
+
 		# resize fields to patch the image
 		if (projection.shape[-2:] != self.flatfield.shape):
 			print(projection.shape)
@@ -191,8 +207,14 @@ class SimSession:
 
 			flatfield = np.array(Image.fromarray(self.flatfield).resize(projection.shape[-2:]))
 			darkfield = np.array(Image.fromarray(self.darkfield).resize(projection.shape[-2:]))
-			return (projection - darkfield) / (flatfield - darkfield)
-		return (projection - self.darkfield) / (self.flatfield - self.darkfield)
+			proj = (projection - darkfield) / (flatfield - darkfield)
+		else:
+			# Don't need to resize
+			proj = (projection - self.darkfield) / (self.flatfield - self.darkfield)
+
+		if correction == ProjCorrection.FLATFIELD:
+			return proj
+		raise NotImplementedError(f"Projection Correction {correction} is not implemented.")
 
 	def projection(self, quality=Quality.MEDIUM, corrected=True) -> np.ndarray:
 		with self._lock:
@@ -288,7 +310,6 @@ class SimSession:
 			self._lock.acquire()
 
 			projections = self._corrected(projections)
-			projections = np.log(projections) * -1
 
 			self._reconstruction[quality] = reconstruct(projections, self._capture_param, self._beam_param, self._detector_param, self._recon_param)
 			return self._reconstruction[quality]
