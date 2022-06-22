@@ -172,6 +172,7 @@ export function setupBeam(): boolean {
 		}
 	};
 
+	spectraNormPercentButton.click();
 	validateBeam();
 	return true;
 }
