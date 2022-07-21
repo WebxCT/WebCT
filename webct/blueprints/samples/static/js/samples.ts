@@ -536,6 +536,14 @@ function updateModelSelect(): void {
 	updateDialog();
 }
 
+function createElementInput(): SlInput {
+	const elementInput = document.createElement("sl-input");
+	elementInput.label = "Element";
+	elementInput.helpText = "Elemental Symbol (Cl, O, Au, etc)";
+	elementInput.name = "element";
+	return elementInput;
+}
+
 /**
  * Update material dialog with categories and materials based on the
  * MaterialLibrary global.
@@ -626,7 +634,7 @@ function updateMaterialDialog(): void {
 					const mixtureType = document.createElement("sl-menu-item");
 					mixtureType.value = "mixture";
 					mixtureType.textContent = "Mixture";
-					mixtureType.disabled = true;
+					// mixtureType.disabled = true;
 
 					const huType = document.createElement("sl-menu-item");
 					huType.value = "hu";
@@ -652,10 +660,7 @@ function updateMaterialDialog(): void {
 
 					const elementDiv = document.createElement("div");
 					elementDiv.classList.add("element");
-					const elementInput = document.createElement("sl-input");
-					elementInput.label = "Element";
-					elementInput.helpText = "Elemental Symbol (Cl, O, Au, etc)";
-					elementInput.name = "element";
+					const elementInput = createElementInput();
 					elementDiv.appendChild(elementInput);
 
 
@@ -671,6 +676,106 @@ function updateMaterialDialog(): void {
 					const mixtureDiv = document.createElement("div");
 					// todo: mixture
 					mixtureDiv.classList.add("mixture");
+
+					// Create inputs for each mixture element and percentage
+					const mixtureList = document.createElement("ul");
+
+					const mixture = material.material[1] as (string | number)[];
+
+					const listElementTitle = document.createElement("p");
+					listElementTitle.textContent = "Element";
+					const listMixtureTitle = document.createElement("p");
+					const fillerDiv = document.createElement("div");
+					listMixtureTitle.textContent = "Mixture (%)";
+					const listTitle = document.createElement("li");
+					listTitle.appendChild(fillerDiv);
+					listTitle.appendChild(listElementTitle);
+					listTitle.appendChild(listMixtureTitle);
+					mixtureList.appendChild(listTitle);
+
+					function mixtureItem(element:string, weight:number, index:number) {
+						const listItem = document.createElement("li");
+
+						const delMixture = document.createElement("sl-button");
+						delMixture.variant = "danger";
+						delMixture.type = "button";
+						delMixture.onclick = () => {
+							listItem.remove();
+							if (mixtureList.children.length == 1) {
+								mixtureItem("", 1, mixtureList.children.length);
+							}
+						};
+
+						const delMixtureIcon = document.createElement("sl-icon");
+						delMixtureIcon.name = "dash";
+						delMixture.appendChild(delMixtureIcon);
+
+						const elInput = document.createElement("sl-input");
+						elInput.name = "element-"+index;
+						elInput.value = element;
+
+						const weightUnits = document.createElement("span");
+						weightUnits.textContent = "%";
+						weightUnits.slot = "suffix";
+
+						const weightInput = document.createElement("sl-input");
+						weightInput.type = "number";
+						weightInput.min = "0.0";
+						weightInput.max = "100";
+						weightInput.step = 0.01;
+						weightInput.value = weight * 100 + "";
+						weightInput.appendChild(weightUnits);
+
+						// Make list entry
+						listItem.appendChild(delMixture);
+						listItem.appendChild(elInput);
+						listItem.appendChild(weightInput);
+						mixtureList.appendChild(listItem);
+					}
+
+					for (let index = 0; index < mixture.length; index+=2) {
+						const element = mixture[index] as string;
+						const weight = mixture[index+1] as number;
+						mixtureItem(element, weight, index);
+					}
+
+					// Create fake inputs to generate new list items
+					const newMixtureButton = document.createElement("sl-button");
+					const newMixtureButtonIcon = document.createElement("sl-icon");
+					newMixtureButton.classList.add("newMixtureEntry");
+					newMixtureButtonIcon.name = "plus";
+					newMixtureButton.appendChild(newMixtureButtonIcon);
+					newMixtureButton.variant = "success";
+
+					function remainingPercentage() {
+						let percentage = 0.0;
+						for (let index = 0; index < mixtureList.children.length; index++) {
+							const item = mixtureList.children[index];
+							console.log(item);
+							const percentageElement = item.querySelector("sl-input[type='number']") as SlInput | null;
+							if (percentageElement === null) {
+								continue;
+							}
+							percentage += parseFloat(percentageElement.value);
+						}
+						return parseFloat(((100 - percentage)/100).toFixed(4));
+					}
+
+					newMixtureButton.onclick = () => {
+						// Autofill weight to be the remaining percentage as ease of use.
+						let weight = remainingPercentage();
+						if (weight < 0) {
+							weight = 0;
+						}
+
+						mixtureItem("", weight, mixtureList.children.length);
+						if (mixtureList.children.length == 0) {
+							mixtureItem("", 1, mixtureList.children.length);
+						}
+					};
+
+					mixtureDiv.appendChild(mixtureList);
+					mixtureDiv.appendChild(newMixtureButton);
 					mixtureDiv.classList.add("hidden");
 
 					const huDiv = document.createElement("div");
@@ -733,7 +838,7 @@ function updateMaterialDialog(): void {
 						break;
 					case "mixture":
 						typeSelect.value = "mixture";
-						typeSelect.disabled = true;
+						// typeSelect.disabled = true;
 						break;
 					default:
 						break;
@@ -842,8 +947,23 @@ function SaveCurrentMaterial(): void {
 	MaterialSaveButton.disabled = true;
 	MaterialSaveButton.outline = true;
 
+	// Enumerate mixture materials
+	const mixture = [];
+	const mixtureElements = form.querySelector("div.mixture > ul")?.childNodes as NodeListOf<ChildNode>;
+	for (let index = 0; index < mixtureElements.length; index++) {
+		const element = mixtureElements[index] as HTMLLIElement;
+		if (element.firstChild?.nodeName == "DIV") {
+			continue;
+		}
+		const mixelement = (element.querySelector("sl-input[type='text']") as SlInput).value;
+		const mixweight = (parseFloat((element.querySelector("sl-input[type='number']") as SlInput).value) / 100).toFixed(4);
+		mixture.push(mixelement);
+		mixture.push(mixweight);
+	}
+
 	console.log(form);
 	console.log(data);
+	console.log(mixture);
 	// Get panel elements
 	let mat: Material["material"] = ["special", "air"];
 
@@ -856,6 +976,10 @@ function SaveCurrentMaterial(): void {
 		break;
 	case "hu":
 		mat = ["hu", parseFloat(data.hu)];
+		break;
+	case "mixture":
+		mat = ["mixture", mixture];
+		break;
 	default:
 		break;
 	}
