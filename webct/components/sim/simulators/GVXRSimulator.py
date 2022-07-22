@@ -162,6 +162,10 @@ class GVXRSimulator(Simulator):
 		gvxr.setDetectorPosition(*value.detector_position, "mm")
 		gvxr.setSourcePosition(*value.beam_position, "mm")
 
+		# Changing detector/source position will effect if the source is in
+		# parallel or point mode. We re-set the beam value to fix this.
+		self.beam = self._beam
+
 		# Undo rotations in order to reset scene rotation matrix
 		gvxr.rotateScene(-1 * self.total_rotation[2], 0, 0, 1)
 		gvxr.rotateScene(-1 * self.total_rotation[1], 0, 1, 0)
