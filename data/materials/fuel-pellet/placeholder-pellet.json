@@ -1,0 +1,10 @@
+{
+	"label": "Placeholder-Pellet",
+	"description": "Placeholder uranium pellet interior material",
+	"density": 5.68,
+	"compound": "ZrO2",
+	"material": [
+		"compound",
+		"ZrO2"
+	]
+}

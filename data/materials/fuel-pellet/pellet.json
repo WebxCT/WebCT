@@ -1,0 +1,6 @@
+{
+	"label": "Uranium-Pellet",
+	"description": "Uranium pellet interior material",
+	"density": 10.97,
+	"material": ["compound", "UO2"]
+}
