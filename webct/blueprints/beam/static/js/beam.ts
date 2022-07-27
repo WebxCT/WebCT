@@ -35,7 +35,7 @@ let SpectraCanvas: HTMLCanvasElement;
 
 let spectraNormNoneButton: SlButton;
 let spectraNorm01Button: SlButton;
-let spectraNormPercentButton: SlButton;
+export let spectraNormPercentButton: SlButton;
 
 // ====================================================== //
 // ======================= Globals ====================== //
@@ -172,7 +172,6 @@ export function setupBeam(): boolean {
 		}
 	};
 
-	spectraNormPercentButton.click();
 	validateBeam();
 	return true;
 }

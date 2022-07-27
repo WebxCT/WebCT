@@ -1,7 +1,7 @@
 // export * from "@shoelace-style/shoelace";
 
 import { SlButton, SlProgressBar } from "@shoelace-style/shoelace";
-import { setupBeam, SyncBeam, UpdateBeam } from "../../../beam/static/js/beam";
+import { setupBeam, spectraNormPercentButton, SyncBeam, UpdateBeam } from "../../../beam/static/js/beam";
 import { setupCapture, SyncCapture, UpdateCapture, UpdateCapturePreview } from "../../../capture/static/js/capture";
 import { setupDetector, SyncDetector, UpdateDetector } from "../../../detector/static/js/detector";
 import { MarkLoading, setupPreview, updateProjection } from "../../../preview/static/js/sim/projection";
@@ -12,7 +12,7 @@ import { setupConfig } from "./configuration";
 let UpdateButtons: HTMLCollectionOf<SlButton>;
 let CaptureButtons: HTMLCollectionOf<SlButton>;
 let ReconButtons: HTMLCollectionOf<SlButton>;
-let LoadingBar:SlProgressBar;
+let LoadingBar: SlProgressBar;
 
 function bindGroupButtons() {
 	const groups = document.getElementsByClassName("group");
@@ -121,7 +121,7 @@ function bindReconstructionButtons(): void {
 	}
 }
 
-function setupEvents():void {
+function setupEvents(): void {
 	window.addEventListener("stopLoading", () => {
 		setPageLoading(false);
 	});
@@ -155,9 +155,9 @@ function loadApp() {
 	InitialUpdate();
 }
 
-type LoadingType = "default" | "long"
+type LoadingType = "default" | "long";
 
-function setPageLoading(loading: boolean, type:LoadingType="default"): void {
+function setPageLoading(loading: boolean, type: LoadingType = "default"): void {
 	if (loading) {
 		console.log("## Button Loading");
 
@@ -205,7 +205,7 @@ function setPageLoading(loading: boolean, type:LoadingType="default"): void {
 /**
  * Initially get all parameters from the server,
  */
-function InitialUpdate():void {
+function InitialUpdate(): void {
 	setPageLoading(true);
 	MarkLoading();
 	UpdateBeam()
@@ -214,7 +214,10 @@ function InitialUpdate():void {
 		.then(() => UpdateCapture())
 		.then(() => UpdateRecon())
 		.then(() => updateProjection())
-		.finally(() => setPageLoading(false));
+		.finally(() => {
+			setPageLoading(false);
+			spectraNormPercentButton.click();
+		});
 }
 
 function UpdatePage(): Promise<void> {
@@ -232,7 +235,7 @@ function UpdatePage(): Promise<void> {
 }
 
 function updatePreviewCapture(): void {
-	UpdatePage().then(()=>{
+	UpdatePage().then(() => {
 		// Due to the way things work with nested requests, we need to make an event listener
 		setPageLoading(true, "long");
 		UpdateCapturePreview();
@@ -240,7 +243,7 @@ function updatePreviewCapture(): void {
 }
 
 function updatePreviewRecon(): void {
-	UpdatePage().then(()=>{
+	UpdatePage().then(() => {
 		// Due to the way things work with nested requests, we need to make an event listener
 		setPageLoading(true, "long");
 
