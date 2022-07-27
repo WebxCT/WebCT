@@ -1,0 +1,10 @@
+{
+	"label": "Kernels",
+	"description": "Ceramic kernels in fuel mixture",
+	"density": 6.085,
+	"compound": "ZrB2",
+	"material": [
+		"compound",
+		"ZrB2"
+	]
+}

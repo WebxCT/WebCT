@@ -45,7 +45,7 @@ export type Material = {
 	 * Density of the material [g/cm3]
 	 */
 	density: number;
-	material: ["element" | "compound", string] | ["hu", number] | ["mixture", (string | number)[]] | ["special", "air"]
+	material: ["element" | "compound", string] | ["hu", number] | ["mixture", [string , number][]] | ["special", "air"]
 }
 
 export interface MaterialLibrary {

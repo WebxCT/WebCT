@@ -1,7 +1,8 @@
 {
 	"label": "Copper",
 	"description": "Copper Metal",
-	"density": 10.97,
+	"density": 8.96,
+	"element": "Cu",
 	"material": [
 		"element",
 		"Cu"

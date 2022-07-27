@@ -3,11 +3,12 @@
  * @author Iwan Mitchell
  */
 
-import { SlButton, SlDialog, SlInput, SlProgressBar, SlRadio, SlSelect, SlTab, SlTabGroup, SlTabPanel } from "@shoelace-style/shoelace";
+import { SlButton, SlDialog, SlInput, SlProgressBar, SlRadio, SlSelect, SlTabGroup, SlTabPanel } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form";
 import { AlertType, showAlert } from "../../../base/static/js/base";
 import { prepareSampleRequest, processResponse, requestMaterialList, requestModelList, requestSampleData, SamplesResponseRegistry, sendMaterialData, sendSamplesData, uploadSample, SamplesRequestRegistry } from "./api";
 import { DetectorRequestError, showError } from "./errors";
+import { MixtureInputList, updateMaterialDialog } from "./materialDialogue";
 import { Material, MaterialLibrary, SampleProperties } from "./types";
 
 // ====================================================== //
@@ -46,7 +47,7 @@ let AvailableModels: string[];
 let UploadRequest: XMLHttpRequest | null;
 let UploadData: FormData | null;
 
-let MaterialLib: MaterialLibrary;
+export let MaterialLib: MaterialLibrary;
 
 let SelectedMaterial: string;
 let SelectedMaterialCategory: string;
@@ -68,6 +69,8 @@ export const DefaultMaterial = "element/copper";
 export function setupSamples(): boolean {
 	console.log("setupSamples");
 	SessionSamples = [];
+
+	window.customElements.define("mixture-input-list", MixtureInputList, { extends: "ul" });
 
 	// (document.getElementById("test") as SlButton).onclick = () => {
 	// 	console.log("material test");
@@ -536,372 +539,6 @@ function updateModelSelect(): void {
 	updateDialog();
 }
 
-function createElementInput(): SlInput {
-	const elementInput = document.createElement("sl-input");
-	elementInput.label = "Element";
-	elementInput.helpText = "Elemental Symbol (Cl, O, Au, etc)";
-	elementInput.name = "element";
-	return elementInput;
-}
-
-/**
- * Update material dialog with categories and materials based on the
- * MaterialLibrary global.
- */
-function updateMaterialDialog(): void {
-	console.log("updateMaterialDialog");
-	console.log("MaterialLibrary has " + Object.keys(MaterialLib).length) + " keys.";
-
-	MaterialTab.replaceChildren(...[]);
-
-	for (const categoryKey in MaterialLib) {
-		if (Object.prototype.hasOwnProperty.call(MaterialLib, categoryKey)) {
-			console.log("Processing category " + categoryKey);
-
-			const category = MaterialLib[categoryKey];
-			if (Object.keys(category).length === 0) {
-				console.log("Early exit on category " + categoryKey);
-				continue;
-			}
-			// Create category
-			const ctab: SlTab = document.createElement("sl-tab");
-			ctab.slot = "nav";
-			ctab.panel = categoryKey;
-			ctab.textContent = categoryKey;
-
-			const ctpanel = document.createElement("sl-tab-panel");
-			ctpanel.name = categoryKey;
-			ctpanel.setAttribute("catid", categoryKey);
-
-			const ctgroup = document.createElement("sl-tab-group");
-			ctgroup.placement = "start";
-
-			// Create material panels
-			for (const materialKey in category) {
-				console.log("Processing material " + categoryKey + "/" + materialKey);
-				if (Object.prototype.hasOwnProperty.call(category, materialKey)) {
-					const material = category[materialKey];
-
-					const cmtab = document.createElement("sl-tab");
-					cmtab.slot = "nav";
-					cmtab.panel = material.label;
-					cmtab.textContent = material.label;
-
-					const cmtpanel = document.createElement("sl-tab-panel");
-					cmtpanel.name = material.label;
-					cmtpanel.setAttribute("materialid", materialKey);
-
-					const form = document.createElement("form");
-					form.classList.add("materialform");
-
-					const nameInput = document.createElement("sl-input");
-					nameInput.label = "Name";
-					nameInput.helpText = "A short alphanumeric material name.";
-					nameInput.placeholder = "Copper";
-					nameInput.value = material.label;
-					nameInput.name = "label";
-
-					const deleteButton = document.createElement("sl-button");
-					deleteButton.outline = true;
-					deleteButton.variant = "danger";
-					deleteButton.type = "button";
-					const deleteButtonIcon = document.createElement("sl-icon");
-					deleteButtonIcon.name = "trash-fill";
-					deleteButton.appendChild(deleteButtonIcon);
-
-					const descriptionInput = document.createElement("sl-input");
-					descriptionInput.label = "Description";
-					descriptionInput.helpText = "A brief description of the material.";
-					descriptionInput.placeholder = "Atomically pure Copper sheet";
-					descriptionInput.classList.add("wide");
-					descriptionInput.value = material.description;
-					descriptionInput.name = "description";
-
-					const typeSelect = document.createElement("sl-select");
-					typeSelect.hoist = true;
-					typeSelect.label = "Material Type";
-					typeSelect.value = "element";
-					typeSelect.name = "type";
-
-					const elementType = document.createElement("sl-menu-item");
-					elementType.value = "element";
-					elementType.textContent = "Element";
-
-					const compoundType = document.createElement("sl-menu-item");
-					compoundType.value = "compound";
-					compoundType.textContent = "Compound";
-
-					const mixtureType = document.createElement("sl-menu-item");
-					mixtureType.value = "mixture";
-					mixtureType.textContent = "Mixture";
-					// mixtureType.disabled = true;
-
-					const huType = document.createElement("sl-menu-item");
-					huType.value = "hu";
-					huType.textContent = "HU Value";
-
-					typeSelect.appendChild(elementType);
-					typeSelect.appendChild(compoundType);
-					typeSelect.appendChild(mixtureType);
-					typeSelect.appendChild(huType);
-
-					const densityInput = document.createElement("sl-input");
-					densityInput.label = "Density";
-					densityInput.type = "number";
-					densityInput.step = 0.01;
-					densityInput.value = material.density + "";
-					densityInput.name = "density";
-					const densityUnits = document.createElement("span");
-					densityUnits.textContent = "g/cm^2";
-					densityUnits.slot = "suffix";
-					densityInput.appendChild(densityUnits);
-
-					const divider = document.createElement("sl-divider");
-
-					const elementDiv = document.createElement("div");
-					elementDiv.classList.add("element");
-					const elementInput = createElementInput();
-					elementDiv.appendChild(elementInput);
-
-
-					const compoundDiv = document.createElement("div");
-					compoundDiv.classList.add("compound");
-					compoundDiv.classList.add("hidden");
-					const compoundInput = document.createElement("sl-input");
-					compoundInput.label = "Compound";
-					compoundInput.helpText = "Material Compound (H2O)";
-					compoundInput.name = "compound";
-					compoundDiv.appendChild(compoundInput);
-
-					const mixtureDiv = document.createElement("div");
-					// todo: mixture
-					mixtureDiv.classList.add("mixture");
-
-					// Create inputs for each mixture element and percentage
-					const mixtureList = document.createElement("ul");
-
-					const mixture = material.material[1] as (string | number)[];
-
-					const listElementTitle = document.createElement("p");
-					listElementTitle.textContent = "Element";
-					const listMixtureTitle = document.createElement("p");
-					const fillerDiv = document.createElement("div");
-					listMixtureTitle.textContent = "Mixture (%)";
-					const listTitle = document.createElement("li");
-					listTitle.appendChild(fillerDiv);
-					listTitle.appendChild(listElementTitle);
-					listTitle.appendChild(listMixtureTitle);
-					mixtureList.appendChild(listTitle);
-
-					function mixtureItem(element:string, weight:number, index:number) {
-						const listItem = document.createElement("li");
-
-						const delMixture = document.createElement("sl-button");
-						delMixture.variant = "danger";
-						delMixture.type = "button";
-						delMixture.onclick = () => {
-							listItem.remove();
-							if (mixtureList.children.length == 1) {
-								mixtureItem("", 1, mixtureList.children.length);
-							}
-						};
-
-						const delMixtureIcon = document.createElement("sl-icon");
-						delMixtureIcon.name = "dash";
-						delMixture.appendChild(delMixtureIcon);
-
-						const elInput = document.createElement("sl-input");
-						elInput.name = "element-"+index;
-						elInput.value = element;
-
-						const weightUnits = document.createElement("span");
-						weightUnits.textContent = "%";
-						weightUnits.slot = "suffix";
-
-						const weightInput = document.createElement("sl-input");
-						weightInput.type = "number";
-						weightInput.min = "0.0";
-						weightInput.max = "100";
-						weightInput.step = 0.01;
-						weightInput.value = weight * 100 + "";
-						weightInput.appendChild(weightUnits);
-
-						// Make list entry
-						listItem.appendChild(delMixture);
-						listItem.appendChild(elInput);
-						listItem.appendChild(weightInput);
-						mixtureList.appendChild(listItem);
-					}
-
-					for (let index = 0; index < mixture.length; index+=2) {
-						const element = mixture[index] as string;
-						const weight = mixture[index+1] as number;
-						mixtureItem(element, weight, index);
-					}
-
-					// Create fake inputs to generate new list items
-					const newMixtureButton = document.createElement("sl-button");
-					const newMixtureButtonIcon = document.createElement("sl-icon");
-					newMixtureButton.classList.add("newMixtureEntry");
-					newMixtureButtonIcon.name = "plus";
-					newMixtureButton.appendChild(newMixtureButtonIcon);
-					newMixtureButton.variant = "success";
-
-					function remainingPercentage() {
-						let percentage = 0.0;
-						for (let index = 0; index < mixtureList.children.length; index++) {
-							const item = mixtureList.children[index];
-							console.log(item);
-							const percentageElement = item.querySelector("sl-input[type='number']") as SlInput | null;
-							if (percentageElement === null) {
-								continue;
-							}
-							percentage += parseFloat(percentageElement.value);
-						}
-						return parseFloat(((100 - percentage)/100).toFixed(4));
-					}
-
-					newMixtureButton.onclick = () => {
-						// Autofill weight to be the remaining percentage as ease of use.
-						let weight = remainingPercentage();
-						if (weight < 0) {
-							weight = 0;
-						}
-
-						mixtureItem("", weight, mixtureList.children.length);
-						if (mixtureList.children.length == 0) {
-							mixtureItem("", 1, mixtureList.children.length);
-						}
-					};
-
-					mixtureDiv.appendChild(mixtureList);
-					mixtureDiv.appendChild(newMixtureButton);
-					mixtureDiv.classList.add("hidden");
-
-					const huDiv = document.createElement("div");
-					huDiv.classList.add("hu");
-					huDiv.classList.add("hidden");
-					const huInput = document.createElement("sl-input");
-					huInput.label = "HU Value";
-					huInput.helpText = "Hounsfield unit (CT number)";
-					huInput.name = "hu";
-					huDiv.appendChild(huInput);
-
-					function SelectEvent() {
-						if (typeSelect.value == "element") {
-							elementDiv.classList.remove("hidden");
-							mixtureDiv.classList.add("hidden");
-							compoundDiv.classList.add("hidden");
-							huDiv.classList.add("hidden");
-							densityInput.classList.remove("hidden");
-						} else if (typeSelect.value == "mixture") {
-							elementDiv.classList.add("hidden");
-							mixtureDiv.classList.remove("hidden");
-							compoundDiv.classList.add("hidden");
-							huDiv.classList.add("hidden");
-							densityInput.classList.remove("hidden");
-						} else if (typeSelect.value == "compound") {
-							elementDiv.classList.add("hidden");
-							mixtureDiv.classList.add("hidden");
-							compoundDiv.classList.remove("hidden");
-							huDiv.classList.add("hidden");
-							densityInput.classList.remove("hidden");
-						} else if (typeSelect.value == "hu") {
-							elementDiv.classList.add("hidden");
-							mixtureDiv.classList.add("hidden");
-							densityInput.classList.add("hidden");
-							compoundDiv.classList.add("hidden");
-							huDiv.classList.remove("hidden");
-						}
-					}
-
-					typeSelect.addEventListener("sl-change", SelectEvent);
-
-					// Current element settings
-					switch (material.material[0]) {
-					case "element":
-						elementInput.value = material.material[1];
-						typeSelect.value = "element";
-						break;
-					case "compound":
-						compoundInput.value = material.material[1];
-						typeSelect.value = "compound";
-						break;
-					case "hu":
-						huInput.value = material.material[1] + "";
-						typeSelect.value = "hu";
-						break;
-					case "special":
-						typeSelect.value = "Special";
-						typeSelect.textContent = "Special";
-						typeSelect.disabled = true;
-						break;
-					case "mixture":
-						typeSelect.value = "mixture";
-						// typeSelect.disabled = true;
-						break;
-					default:
-						break;
-					}
-					SelectEvent();
-
-					const hiddenSave = document.createElement("button");
-					hiddenSave.type = "submit";
-					hiddenSave.style.display = "none";
-					form.onsubmit = () => { SaveCurrentMaterial(); return false; };
-
-					form.appendChild(hiddenSave);
-					form.appendChild(nameInput);
-					form.appendChild(deleteButton);
-					form.appendChild(descriptionInput);
-					form.appendChild(typeSelect);
-					form.appendChild(divider);
-					form.appendChild(densityInput);
-					form.appendChild(elementDiv);
-					form.appendChild(compoundDiv);
-					form.appendChild(mixtureDiv);
-					form.appendChild(huDiv);
-
-					cmtpanel.appendChild(form);
-
-					ctgroup.appendChild(cmtab);
-					ctgroup.appendChild(cmtpanel);
-				}
-			}
-			const addMaterialButton = document.createElement("sl-button");
-			addMaterialButton.slot = "nav";
-			addMaterialButton.size = "small";
-			addMaterialButton.outline = true;
-			addMaterialButton.circle = true;
-			addMaterialButton.type = "button";
-
-			const materialPlusIcon = document.createElement("sl-icon");
-			materialPlusIcon.name = "plus";
-
-			addMaterialButton.appendChild(materialPlusIcon);
-			ctgroup.appendChild(addMaterialButton);
-			ctpanel.append(ctgroup);
-			MaterialTab.appendChild(ctab);
-			MaterialTab.append(ctpanel);
-		}
-	}
-
-	const addCategoryButton = document.createElement("sl-button");
-	addCategoryButton.slot = "nav";
-	addCategoryButton.size = "small";
-	addCategoryButton.outline = true;
-	addCategoryButton.circle = true;
-	addCategoryButton.type = "button";
-
-	const categoryPlusIcon = document.createElement("sl-icon");
-	categoryPlusIcon.name = "plus";
-
-	addCategoryButton.appendChild(categoryPlusIcon);
-	MaterialTab.appendChild(addCategoryButton);
-
-	return;
-}
-
 function showMaterialLibrary(selecting: boolean): void {
 
 	if (selecting) {
@@ -928,7 +565,7 @@ type MaterialFormData = {
 	label: string,
 	compound: string,
 	type: "compound" | "element" | "hu" | "mixture",
-}
+};
 
 function SaveCurrentMaterial(): void {
 	// Get currently selected material.
@@ -948,7 +585,7 @@ function SaveCurrentMaterial(): void {
 	MaterialSaveButton.outline = true;
 
 	// Enumerate mixture materials
-	const mixture = [];
+	const mixture: [string, number][] = [];
 	const mixtureElements = form.querySelector("div.mixture > ul")?.childNodes as NodeListOf<ChildNode>;
 	for (let index = 0; index < mixtureElements.length; index++) {
 		const element = mixtureElements[index] as HTMLLIElement;
@@ -956,9 +593,8 @@ function SaveCurrentMaterial(): void {
 			continue;
 		}
 		const mixelement = (element.querySelector("sl-input[type='text']") as SlInput).value;
-		const mixweight = (parseFloat((element.querySelector("sl-input[type='number']") as SlInput).value) / 100).toFixed(4);
-		mixture.push(mixelement);
-		mixture.push(mixweight);
+		const mixweight = +(parseFloat((element.querySelector("sl-input[type='number']") as SlInput).value) / 100).toFixed(4);
+		mixture.push([mixelement, mixweight]);
 	}
 
 	console.log(form);
@@ -984,15 +620,34 @@ function SaveCurrentMaterial(): void {
 		break;
 	}
 
-	// Get new attributes.
-	// Upload local material, and update server.
-	const nMat: SamplesRequestRegistry["materialDataRequest"] = {
+	// Update local
+	MaterialLib[catID][matID] = {
 		label: data.label,
 		density: parseFloat(data.density),
 		description: data.description,
 		material: mat,
-		category: catID
 	};
+
+	let nMat: SamplesRequestRegistry["materialDataRequest"];
+
+	// Flatten mixture materials
+	if (mat[0] == "mixture") {
+		nMat = {
+			label: data.label,
+			density: parseFloat(data.density),
+			description: data.description,
+			material: ["mixture", mat[1].flat()],
+			category: catID
+		};
+	} else {
+		nMat = {
+			label: data.label,
+			density: parseFloat(data.density),
+			description: data.description,
+			material: mat,
+			category: catID
+		};
+	}
 
 	console.log(nMat);
 	sendMaterialData(nMat).finally(() => {
@@ -1072,7 +727,8 @@ export function UpdateMaterials(): Promise<void> {
 
 		result.then((result: unknown) => {
 			MaterialLib = processResponse(result as SamplesResponseRegistry["materialListResponse"], "materialListResponse") as MaterialLibrary;
-			updateMaterialDialog();
+			console.log(MaterialLib);
+			updateMaterialDialog(MaterialTab);
 		});
 
 	});

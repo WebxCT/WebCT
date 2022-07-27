@@ -168,12 +168,17 @@ class MixtureMaterial(Material):
 	weights: Tuple[float]
 
 	def to_json(self) -> dict:
-		parent = super().to_json()
+		parent = super().to_json().copy()
 		parent["material"] = ["mixture", []]
+
 		for i, element in enumerate(self.elements):
 			parent["material"][1].append(element)
 			parent["material"][1].append(self.weights[i])
+
+		del parent["elements"]
+		del parent["weights"]
 		return parent
+
 
 	@staticmethod
 	def from_json(json: dict):
@@ -211,7 +216,6 @@ class MixtureMaterial(Material):
 			raise ValueError(
 				f"Must have same number of elements and weights ({len(elements)} elements, {len(weights)} weights)."
 			)
-
 
 		return MixtureMaterial(parent.label, parent.description, parent.density, elements, weights)
 
