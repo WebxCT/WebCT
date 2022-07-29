@@ -205,6 +205,21 @@ div.mixture {
 	grid-column: 2 / 4;
 }
 
+#tabMaterial {
+	overflow: hidden;
+	max-height: 70vh;
+}
+
+::part(tabs) {
+	overflow-x: hidden;
+	overflow-y: auto;
+	scrollbar-width: thin;
+}
+
+::part(tabs)::-webkit-scrollbar-track {
+	width: 10px;
+}
+
 sl-button > sl-icon {
 	// font-size: 1.25rem;
 }

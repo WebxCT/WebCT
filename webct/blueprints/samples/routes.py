@@ -1,6 +1,6 @@
 import json
 import traceback
-from typing import Dict, List
+from typing import Dict, List, Optional
 from flask import jsonify, request, session
 from flask.wrappers import Response
 from werkzeug.utils import secure_filename
@@ -14,7 +14,7 @@ from webct.components.sim.SimSession import Sim
 from webct import model_folder, material_folder
 
 
-def add_material_file(category: str, file: Path) -> None:
+def add_material_file(category: str, file: Path) -> Optional[str]:
 	if file.name[0] == ".":
 		return
 	if file.absolute().name[-4:] == "json":
@@ -28,7 +28,9 @@ def add_material_file(category: str, file: Path) -> None:
 					MATERIALS[category] = {}
 					if mat.label in MATERIALS[category]:
 						raise TypeError(f"Cannot import {file} as '{mat.label}' is already loaded.")
+				print(f"Imported {category}/{file.name[:-5]}")
 				MATERIALS[category][file.name[:-5]] = mat
+				return file.name[:-5]
 			except Exception as e:
 				traceback.print_exception(type(e), e, e.__traceback__)
 				print(f"fail to import: {file.name}: {type(e)}: {e}")
@@ -176,6 +178,7 @@ def setMaterial() -> Response:
 	with nPath.open("w") as f:
 		json.dump(material.to_json(), f, indent="\t")
 
-	add_material_file("/".join(data["category"].split("/")[:-1]), nPath)
+	matID = add_material_file(str(cat), nPath)
+	print(f"New Material ID: {cat}/{matID}")
 
-	return Response(None, 200)
+	return jsonify({"catID":str(cat),"matID":str(matID)})

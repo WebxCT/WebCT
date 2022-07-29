@@ -3,12 +3,13 @@
  * @author Iwan Mitchell
  */
 
-import { SlButton, SlDialog, SlInput, SlProgressBar, SlRadio, SlSelect, SlTabGroup, SlTabPanel } from "@shoelace-style/shoelace";
+import { SlButton, SlDialog, SlInput, SlProgressBar, SlRadio, SlSelect, SlTabGroup } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form";
 import { AlertType, showAlert } from "../../../base/static/js/base";
 import { prepareSampleRequest, processResponse, requestMaterialList, requestModelList, requestSampleData, SamplesResponseRegistry, sendMaterialData, sendSamplesData, uploadSample, SamplesRequestRegistry } from "./api";
 import { DetectorRequestError, showError } from "./errors";
-import { MixtureInputList, updateMaterialDialog } from "./materialDialogue";
+import { getSelectedMaterial, MixtureInputList, setSelectedMaterial, updateMaterialDialog } from "./materialDialogue";
+
 import { Material, MaterialLibrary, SampleProperties } from "./types";
 
 // ====================================================== //
@@ -292,17 +293,7 @@ export function setupSamples(): boolean {
 }
 
 
-function getSelectedMaterial(): [string, string, HTMLFormElement?] {
-	const catID = (document.querySelector("#tabMaterial > sl-tab-panel[active]") as unknown as SlTabPanel).getAttribute("catID");
-	const form = document.querySelector("#tabMaterial > sl-tab-panel[active] > sl-tab-group > sl-tab-panel[active] > form") as HTMLFormElement;
-	const matID = (document.querySelector("#tabMaterial > sl-tab-panel[active] > sl-tab-group > sl-tab-panel[active]") as unknown as SlTabPanel).getAttribute("materialid");
 
-	if (catID == null || matID == null) {
-		return ["", "", undefined];
-	}
-
-	return [catID, matID, form];
-}
 
 // ====================================================== //
 // =================== Display and UI =================== //
@@ -650,7 +641,22 @@ function SaveCurrentMaterial(): void {
 	}
 
 	console.log(nMat);
-	sendMaterialData(nMat).finally(() => {
+
+
+	sendMaterialData(nMat).then((response) => {
+		return response.json().then((data)=>{
+			if (data["catID"] == undefined || data["matID"]==undefined) {
+				return;
+			}
+			console.log("New material created at " + data["catID"] + "/" + data["matID"]);
+			return UpdateMaterials().then(() => {
+				console.log("set selected material to "+data["catID"] + "/" + data["matID"]);
+
+				setSelectedMaterial(data["catID"], data["matID"]);
+			});
+		});
+	}
+	).finally(() => {
 		MaterialSaveButton.disabled = false;
 	});
 
@@ -725,7 +731,7 @@ export function UpdateMaterials(): Promise<void> {
 
 		const result = response.json();
 
-		result.then((result: unknown) => {
+		return result.then((result: unknown) => {
 			MaterialLib = processResponse(result as SamplesResponseRegistry["materialListResponse"], "materialListResponse") as MaterialLibrary;
 			console.log(MaterialLib);
 			updateMaterialDialog(MaterialTab);

@@ -3,7 +3,7 @@
  * @author Iwan Mitchell
  */
 
-import { SlButton, SlInput, SlTabGroup } from "@shoelace-style/shoelace";
+import { SlButton, SlInput, SlTab, SlTabGroup, SlTabPanel } from "@shoelace-style/shoelace";
 import { MaterialLib } from "./samples";
 import { Material } from "./types";
 
@@ -152,8 +152,6 @@ export class MixtureInputList extends HTMLUListElement {
 		newMixtureButton.appendChild(newMixtureButtonIcon);
 
 		newMixtureButton.onclick = () => {
-			console.log("click");
-			console.log(this);
 			let weight = this.remainingPercentage();
 			if (weight < 0) {
 				weight = 0;
@@ -266,7 +264,6 @@ function createMaterialForm(rootPanel: HTMLElement, categoryKey: string, materia
 	const inputMixture = createMixtureInput();
 	mixtureDiv.classList.add("mixture");
 	mixtureDiv.appendChild(inputMixture);
-	console.log(inputMixture);
 	mixtureDiv.appendChild(inputMixture.createAddButton());
 
 	// Hidden form control
@@ -296,7 +293,6 @@ function createMaterialForm(rootPanel: HTMLElement, categoryKey: string, materia
 	case "mixture":
 		inputType.value = "mixture";
 		inputMixture.elements = material.material[1];
-		console.log(material.material[1]);
 		break;
 	}
 
@@ -360,9 +356,9 @@ function createMaterialPanel(tabGroup: SlTabGroup, categoryKey: string, material
 	materialTab.slot = "nav";
 	materialTab.panel = material.label;
 	materialTab.textContent = material.label;
+	materialTab.setAttribute("materialid", materialKey);
 
 	materialPanel.name = material.label;
-	materialPanel.setAttribute("materialid", materialKey);
 
 	createMaterialForm(materialPanel, categoryKey, materialKey);
 	tabGroup.append(materialTab);
@@ -379,10 +375,10 @@ function createCategoryPanel(rootPanel: HTMLElement, categoryKey: string) {
 	categoryTab.slot = "nav";
 	categoryTab.panel = categoryKey;
 	categoryTab.textContent = categoryKey;
+	categoryTab.setAttribute("catid", categoryKey);
 
 	const categoryPanel = document.createElement("sl-tab-panel");
 	categoryPanel.name = categoryKey;
-	categoryPanel.setAttribute("catid", categoryKey);
 
 	const categoryMaterialGroup = document.createElement("sl-tab-group");
 	categoryMaterialGroup.placement = "start";
@@ -392,39 +388,96 @@ function createCategoryPanel(rootPanel: HTMLElement, categoryKey: string) {
 		if (Object.prototype.hasOwnProperty.call(category, materialKey)) {
 			createMaterialPanel(categoryMaterialGroup, categoryKey, materialKey);
 		}
-
-		// Create an add material button for each category
-		const addMaterialButton = document.createElement("sl-button");
-		addMaterialButton.slot = "nav";
-		addMaterialButton.size = "small";
-		addMaterialButton.outline = true;
-		addMaterialButton.circle = true;
-		addMaterialButton.type = "button";
-		const materialPlusIcon = document.createElement("sl-icon");
-		materialPlusIcon.name = "plus";
-		addMaterialButton.appendChild(materialPlusIcon);
-		addMaterialButton.onclick = () => {
-			// Create a default material
-			const newMaterial: Material = {
-				label: "New Material",
-				density: 1.0,
-				description: "",
-				material: ["element", "C"]
-			};
-			MaterialLib[categoryKey]["newmaterial"] = newMaterial;
-			console.log(MaterialLib[categoryKey]);
-
-			// Remove button from tab group panel first
-			categoryMaterialGroup.lastChild?.remove();
-			createMaterialPanel(categoryMaterialGroup, categoryKey, "newmaterial");
-			categoryMaterialGroup.appendChild(addMaterialButton);
-		};
 	}
+
+	// Create an add material button for each category
+	const addMaterialButton = document.createElement("sl-button");
+	addMaterialButton.slot = "nav";
+	addMaterialButton.size = "small";
+	addMaterialButton.outline = true;
+	addMaterialButton.circle = true;
+	addMaterialButton.type = "button";
+	const materialPlusIcon = document.createElement("sl-icon");
+	materialPlusIcon.name = "plus";
+	addMaterialButton.appendChild(materialPlusIcon);
+	addMaterialButton.onclick = () => {
+		// Create a default material
+		const matName = ("Material" + Object.keys(category).length).toLowerCase();
+		const newMaterial: Material = {
+			label: matName,
+			density: 1.0,
+			description: "",
+			material: ["element", "C"]
+		};
+		MaterialLib[categoryKey][matName] = newMaterial;
+
+		// Remove button from tab group panel first
+		categoryMaterialGroup.lastChild?.remove();
+
+		// Add new material
+		createMaterialPanel(categoryMaterialGroup, categoryKey, matName);
+
+		// Re-add button and select new material
+		categoryMaterialGroup.appendChild(addMaterialButton);
+		setSelectedMaterial(categoryKey, matName);
+	};
 
 	// Build
 	categoryPanel.append(categoryMaterialGroup);
+	categoryMaterialGroup.appendChild(addMaterialButton);
 	rootPanel.appendChild(categoryTab);
 	rootPanel.appendChild(categoryPanel);
+}
+
+export function getSelectedMaterial(): [string, string, HTMLFormElement?] {
+	const catID = (document.querySelector("#tabMaterial > sl-tab[active]") as unknown as SlTab).getAttribute("catID");
+	const matID = (document.querySelector("#tabMaterial > sl-tab-panel[active] > sl-tab-group > sl-tab[active]") as unknown as SlTab).getAttribute("materialid");
+	const form = document.querySelector("#tabMaterial > sl-tab-panel[active] > sl-tab-group > sl-tab-panel[active] > form") as HTMLFormElement;
+
+	if (catID == null || matID == null) {
+		return ["", "", undefined];
+	}
+
+	return [catID, matID, form];
+}
+
+export function setSelectedMaterial(catID: string, matID: string) {
+	const catTabs = document.querySelectorAll("#tabMaterial > sl-tab") as NodeListOf<SlTab>;
+	const catGroup = document.querySelector("#tabMaterial") as SlTabGroup;
+	let catPanel: SlTabPanel | undefined;
+
+	for (let index = 0; index < catTabs.length; index++) {
+		const tab = catTabs[index];
+		console.log(tab.getAttribute("catid"));
+		if (tab.getAttribute("catid") == catID) {
+			catPanel = catGroup.querySelector("sl-tab-panel[name='" + tab.panel + "'") as SlTabPanel;
+
+			// Ensure tab and panels are synced, especially just after adding
+			// new tabs and selecting them.
+			catGroup.requestUpdate();
+			catGroup.syncTabsAndPanels();
+			catGroup.setActiveTab(tab, { emitEvents: true, scrollBehavior: "smooth" });
+		}
+	}
+
+	if (catPanel === undefined) {
+		return;
+	}
+
+	const matGroup = catPanel.querySelector("sl-tab-group") as SlTabGroup;
+	const matTabs = catPanel.querySelectorAll("sl-tab-group > sl-tab") as NodeListOf<SlTab>;
+	for (let index = 0; index < matTabs.length; index++) {
+		const tab = matTabs[index];
+		if (tab.getAttribute("materialid") == matID) {
+			// Ensure tab and panels are synced, especially just after adding
+			// new tabs and selecting them.
+			matGroup.requestUpdate();
+			matGroup.syncTabsAndPanels();
+
+			matGroup.setActiveTab(tab, { emitEvents: true, scrollBehavior: "smooth" });
+			break;
+		}
+	}
 }
 
 export function updateMaterialDialog(MaterialTab: SlTabGroup): void {
