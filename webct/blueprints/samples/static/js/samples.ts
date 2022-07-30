@@ -10,12 +10,12 @@ import { prepareSampleRequest, processResponse, requestMaterialList, requestMode
 import { DetectorRequestError, showError } from "./errors";
 import { getSelectedMaterial, MixtureInputList, setSelectedMaterial, updateMaterialDialog } from "./materialDialogue";
 
-import { Material, MaterialLibrary, SampleProperties } from "./types";
+import { EventNewCategory, Material, MaterialLibrary, SampleProperties } from "./types";
 
 // ====================================================== //
 // ================== Document Elements ================= //
 // ====================================================== //
-let MaterialDialog: SlDialog;
+export let MaterialDialog: SlDialog;
 let MaterialCloseButton: SlButton;
 let MaterialViewButton: SlButton;
 let MaterialSubmitButton: SlButton;
@@ -38,6 +38,11 @@ let SampleDialogRadio2: SlRadio;
 let SampleDialogSelect: SlSelect;
 let SampleDialogInput: SlInput;
 
+export let CategoryDialog: SlDialog;
+let CategoryDialogName: SlInput;
+let CategoryDialogSubmit: SlButton;
+let CategoryDialogClose: SlButton;
+
 
 // ====================================================== //
 // ======================= Globals ====================== //
@@ -50,8 +55,6 @@ let UploadData: FormData | null;
 
 export let MaterialLib: MaterialLibrary;
 
-let SelectedMaterial: string;
-let SelectedMaterialCategory: string;
 const SelectedSample = 0;
 
 let RecentMaterials: Record<string, number> = {};
@@ -72,24 +75,6 @@ export function setupSamples(): boolean {
 	SessionSamples = [];
 
 	window.customElements.define("mixture-input-list", MixtureInputList, { extends: "ul" });
-
-	// (document.getElementById("test") as SlButton).onclick = () => {
-	// 	console.log("material test");
-
-	// 	fetch("material/set", {
-	// 		method: "PUT",
-	// 		body: JSON.stringify({
-	// 			label:"Test Material",
-	// 			description: "Fake Test Material",
-	// 			element:"Al",
-	// 			density: 2.70,
-	// 			category: "Element/aluminium"
-	// 		}),
-	// 		headers: {
-	// 			"Content-Type": "application/json"
-	// 		}
-	// 	});
-	// };
 
 	const dialogue_complete_upload = document.getElementById("dialogueUploadComplete");
 	const button_complete_close = document.getElementById("buttonUploadClose");
@@ -114,6 +99,11 @@ export function setupSamples(): boolean {
 	const sample_upload_label = document.getElementById("inputSampleLabel");
 	const sample_upload_select = document.getElementById("selectSample");
 
+	const category_dialog = document.getElementById("dialogCategory");
+	const category_dialog_name = document.getElementById("inputCategoryName");
+	const category_dialog_submit = document.getElementById("buttonCategorySubmit");
+	const category_dialog_close = document.getElementById("buttonCategoryClose");
+
 	if (tab_material == null ||
 		button_material_open == null ||
 		dialogue_material_library == null ||
@@ -132,7 +122,11 @@ export function setupSamples(): boolean {
 		sample_upload_radio1 == null ||
 		sample_upload_radio2 == null ||
 		sample_upload_label == null ||
-		sample_upload_select == null) {
+		sample_upload_select == null ||
+		category_dialog == null ||
+		category_dialog_name == null ||
+		category_dialog_submit == null ||
+		category_dialog_close == null) {
 
 		console.log(dialogue_material_library);
 		console.log(button_material_close);
@@ -152,6 +146,10 @@ export function setupSamples(): boolean {
 		console.log(sample_upload_radio2);
 		console.log(sample_upload_label);
 		console.log(sample_upload_select);
+		console.log(category_dialog);
+		console.log(category_dialog_name);
+		console.log(category_dialog_submit);
+		console.log(category_dialog_close);
 
 		showAlert("Samples setup failure", AlertType.ERROR);
 		return false;
@@ -180,15 +178,14 @@ export function setupSamples(): boolean {
 	};
 	MaterialSubmitButton = button_material_submit as SlButton;
 	MaterialSubmitButton.onclick = () => {
+		SaveCurrentMaterial();
 		const [catID, matID, panel] = getSelectedMaterial();
 
 		if (catID == "" || matID == "") {
 			return;
 		}
 
-		SelectedMaterialCategory = catID;
-		SelectedMaterial = matID;
-		setSampleElement();
+		setSampleElement(catID, matID);
 		MaterialDialog.hide();
 	};
 
@@ -289,8 +286,45 @@ export function setupSamples(): boolean {
 		updateDialog();
 	};
 
+	CategoryDialog = category_dialog as SlDialog;
+	CategoryDialogName = category_dialog_name as SlInput;
+	CategoryDialogSubmit = category_dialog_submit as SlButton;
+	CategoryDialogClose = category_dialog_close as SlButton;
+	CategoryDialogClose.onclick = () => {
+		CategoryDialog.hide();
+	};
+
+	CategoryDialogSubmit.onclick = () => {
+		// validate
+		const catName = CategoryDialogName.value;
+		if (catName == "") {
+			console.log("catName is empty");
+			return;
+		} else if (catName.toLowerCase() in MaterialLib) {
+			console.log("catName in MaterialLib");
+			return;
+		}
+
+		window.dispatchEvent(new CustomEvent("newCategory", {
+			bubbles: true,
+			cancelable: false,
+			composed: false,
+			detail: {
+				name: catName,
+			}
+		} as EventNewCategory));
+		CategoryDialog.hide();
+	};
+	CategoryDialog.addEventListener("sl-hide", () => {
+		MaterialDialog.show();
+	});
+
+
+
+
 	return true;
 }
+
 
 
 
@@ -299,26 +333,26 @@ export function setupSamples(): boolean {
 // =================== Display and UI =================== //
 // ====================================================== //
 
-function setSampleElement(): void {
-	if (SelectedMaterial == null || SelectedMaterialCategory == null || SelectedSample == null) {
+function setSampleElement(catID:string, matID:string): void {
+	if (matID == null || catID == null || SelectedSample == null) {
 		return;
 	}
 
-	const matID = SelectedMaterialCategory + "/" + SelectedMaterial;
+	const fullmatID = catID + "/" + matID;
 
-	if (matID in RecentMaterials) {
-		RecentMaterials[matID] += 1;
+	if (fullmatID in RecentMaterials) {
+		RecentMaterials[fullmatID] += 1;
 	} else {
-		RecentMaterials[matID] = 1;
+		RecentMaterials[fullmatID] = 1;
 	}
 
-	if (RecentMaterials[matID] <= 0) {
-		delete RecentMaterials[matID];
+	if (RecentMaterials[fullmatID] <= 0) {
+		delete RecentMaterials[fullmatID];
 	}
 
 	console.log(RecentMaterials);
 
-	SessionSamples[SelectedSample].materialID = matID;
+	SessionSamples[SelectedSample].materialID = fullmatID;
 
 	updateSampleCards();
 }
@@ -489,6 +523,7 @@ function updateSampleCards(): void {
 		customIcon.name = "gear";
 		custom.appendChild(customIcon);
 		custom.onclick = () => {
+			console.log("custom click");
 			showMaterialLibrary(true);
 		};
 
@@ -541,6 +576,8 @@ function showMaterialLibrary(selecting: boolean): void {
 		MaterialSubmitButton.disabled = true;
 		MaterialSubmitButton.variant = "neutral";
 	}
+	console.log("show false");
+
 	MaterialDialog.show();
 }
 

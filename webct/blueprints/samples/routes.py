@@ -26,8 +26,6 @@ def add_material_file(category: str, file: Path) -> Optional[str]:
 				if category not in MATERIALS:
 					# We may be called without the category existing.
 					MATERIALS[category] = {}
-					if mat.label in MATERIALS[category]:
-						raise TypeError(f"Cannot import {file} as '{mat.label}' is already loaded.")
 				print(f"Imported {category}/{file.name[:-5]}")
 				MATERIALS[category][file.name[:-5]] = mat
 				return file.name[:-5]
@@ -155,7 +153,7 @@ def setMaterial() -> Response:
 	material = MaterialFromJson(material)
 
 	# Clean category and label for filepath usage
-	cat = Path(secure_filename(data["category"]))
+	cat = Path(secure_filename(data["category"].lower()))
 	file = Path(secure_filename(data["label"].lower())).with_suffix(".json")
 
 	# check to see if the folder
@@ -171,6 +169,9 @@ def setMaterial() -> Response:
 		nPath = orPath.with_name(fname)
 		if nPath.resolve().is_relative_to(Path(material_folder).resolve()):
 			# create path
+			# Create category folder if not existing
+			if not nPath.parent.exists():
+				nPath.parent.mkdir()
 			nPath.touch()
 		else:
 			return Response(None, 400)

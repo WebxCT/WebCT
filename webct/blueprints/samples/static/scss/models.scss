@@ -67,6 +67,10 @@ sl-dialog > div.buttons > sl-button#buttonMaterialSubmit {
 	grid-column-start: 5;
 }
 
+sl-dialog > div.buttons > sl-button#buttonCategorySubmit {
+	grid-column-start: 5;
+}
+
 sl-dialog > div:first-child > * {
 	margin-top: 0;
 }
@@ -218,8 +222,4 @@ div.mixture {
 
 ::part(tabs)::-webkit-scrollbar-track {
 	width: 10px;
-}
-
-sl-button > sl-icon {
-	// font-size: 1.25rem;
 }

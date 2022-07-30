@@ -4,8 +4,8 @@
  */
 
 import { SlButton, SlInput, SlTab, SlTabGroup, SlTabPanel } from "@shoelace-style/shoelace";
-import { MaterialLib } from "./samples";
-import { Material } from "./types";
+import { CategoryDialog, MaterialDialog, MaterialLib } from "./samples";
+import { EventNewCategory, Material } from "./types";
 
 function createElementInput(): SlInput {
 	const inputElement = document.createElement("sl-input");
@@ -365,9 +365,9 @@ function createMaterialPanel(tabGroup: SlTabGroup, categoryKey: string, material
 	tabGroup.append(materialPanel);
 }
 
-function createCategoryPanel(rootPanel: HTMLElement, categoryKey: string) {
+function createCategoryPanel(rootPanel: HTMLElement, categoryKey: string, blank=false) {
 	const category = MaterialLib[categoryKey];
-	if (Object.keys(category).length == 0) {
+	if (Object.keys(category).length == 0 && !blank) {
 		console.log("No material in category " + categoryKey);
 		return;
 	}
@@ -390,7 +390,7 @@ function createCategoryPanel(rootPanel: HTMLElement, categoryKey: string) {
 		}
 	}
 
-	// Create an add material button for each category
+	// Create an add material button for adding categories
 	const addMaterialButton = document.createElement("sl-button");
 	addMaterialButton.slot = "nav";
 	addMaterialButton.size = "small";
@@ -444,7 +444,7 @@ export function getSelectedMaterial(): [string, string, HTMLFormElement?] {
 export function setSelectedMaterial(catID: string, matID: string) {
 	const catTabs = document.querySelectorAll("#tabMaterial > sl-tab") as NodeListOf<SlTab>;
 	const catGroup = document.querySelector("#tabMaterial") as SlTabGroup;
-	let catPanel: SlTabPanel | undefined;
+	let catPanel: SlTabPanel | null | undefined;
 
 	for (let index = 0; index < catTabs.length; index++) {
 		const tab = catTabs[index];
@@ -457,10 +457,11 @@ export function setSelectedMaterial(catID: string, matID: string) {
 			catGroup.requestUpdate();
 			catGroup.syncTabsAndPanels();
 			catGroup.setActiveTab(tab, { emitEvents: true, scrollBehavior: "smooth" });
+			break;
 		}
 	}
 
-	if (catPanel === undefined) {
+	if (catPanel === undefined || catPanel == null) {
 		return;
 	}
 
@@ -499,6 +500,33 @@ export function updateMaterialDialog(MaterialTab: SlTabGroup): void {
 	addCategoryButton.outline = true;
 	addCategoryButton.circle = true;
 	addCategoryButton.type = "button";
+	addCategoryButton.onclick = () => {
+		MaterialDialog.hide();
+		CategoryDialog.show();
+	};
+
+	// Create an event listener to respond from the new category dialog
+	window.addEventListener("newCategory", (e) => {
+		const event = (e as EventNewCategory).detail;
+		console.log(e);
+		console.log(event);
+		MaterialLib[event.name] = {"material1":{
+			label: "material1",
+			density: 1.0,
+			description: "",
+			material: ["element", "C"]
+		}};
+
+		// Remove button from tab group panel first
+		MaterialTab.lastChild?.remove();
+
+		// Add new category
+		createCategoryPanel(MaterialTab, event.name, true);
+
+		// Re-add button and select new material
+		MaterialTab.appendChild(addCategoryButton);
+		setSelectedMaterial(event.name, "");
+	});
 
 	const categoryPlusIcon = document.createElement("sl-icon");
 	categoryPlusIcon.name = "plus";

@@ -53,3 +53,9 @@ export interface MaterialLibrary {
 		[key: string]: Material
 	};
 }
+
+export interface EventNewCategory extends CustomEvent {
+	detail: {
+		name:string
+	}
+}
