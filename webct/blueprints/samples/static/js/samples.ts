@@ -592,6 +592,11 @@ function SaveCurrentMaterial(): void {
 	// Get currently selected material.
 	const [catID, matID, form] = getSelectedMaterial();
 
+	if (catID == "special") {
+		console.error("Attempted to save a special material!");
+		return;
+	}
+
 	if (form == undefined) {
 		// ! throw an error
 		return;
