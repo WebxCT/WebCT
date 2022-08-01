@@ -1,10 +1,12 @@
 from dataclasses import dataclass
-from typing import Optional, Tuple, Union, cast
+from typing import Dict, Literal, Optional, Tuple, Union, cast
 
 import numpy as np
-from cil.framework import AcquisitionData, AcquisitionGeometry, ImageData
+from cil.framework import AcquisitionData, AcquisitionGeometry, ImageData, ImageGeometry
 from cil.optimisation.functions import (BlockFunction, IndicatorBox)
-from cil.optimisation.operators import (Operator)
+from cil.optimisation.operators import (Operator, IdentityOperator, BlockOperator, GradientOperator)
+from cil.optimisation.algorithms import CGLS
+from cil.plugins.astra.operators import ProjectionOperator
 from cil.recon import FBP, FDK
 from cil.processors import AbsorptionTransmissionConverter
 
@@ -17,29 +19,59 @@ from webct.components.sim.Quality import Quality
 use("Agg")
 
 
+class IterativeOperator:
+	@staticmethod
+	def get(ig:ImageGeometry, acData:AcquisitionData) -> BlockOperator:
+		...
+
+class ProjectionBlock(IterativeOperator):
+	@staticmethod
+	def get(ig:ImageGeometry, acData:AcquisitionData) -> BlockOperator:
+		opProj = ProjectionOperator(ig,acData.geometry)
+		opblock_proj = BlockOperator(opProj)
+
+		return opblock_proj
+
+class IdentityBlock(IterativeOperator):
+	@staticmethod
+	def get(ig:ImageGeometry, acData:AcquisitionData, alpha:float=0.1) -> BlockOperator:
+		opProj = ProjectionOperator(ig,acData.geometry)
+		opIdent = IdentityOperator(ig)
+
+		opblock_ident = BlockOperator(opProj, alpha * opIdent)
+		return opblock_ident
+
+class GradientBlock:
+	@staticmethod
+	def get(ig:ImageGeometry, acData:AcquisitionData, alpha:float=0.1, boundary:Union[Literal["Neumann"], Literal["Periodic"]]="Neumann") -> BlockOperator:
+		opProj = ProjectionOperator(ig, acData.geometry)
+		opGrad = GradientOperator(acData.geometry, bnd_cond=boundary)
+
+		opblock_grad = BlockOperator(opProj, alpha * opGrad)
+		return opblock_grad
+
 @dataclass(frozen=True)
 class ReconParameters:
 	quality: Quality
 	method: str
 
-
 @dataclass(frozen=True)
 class FDKParam(ReconParameters):
 	method: str = "FDK"
-	filter: Union[str, np.ndarray] = "ram_lak"
+	filter: str = "ram_lak"
 
 
 @dataclass(frozen=True)
 class FBPParam(ReconParameters):
 	method: str = "FBP"
-	filter: Union[str, np.ndarray] = "ram_lak"
-
+	filter: str = "ram_lak"
 
 @dataclass(frozen=True)
 class CGLSParam(ReconParameters):
 	method: str = "CGLS"
 	variant: str = ""
-
+	iterations: int = 10
+	operator: str = "projection"
 
 @dataclass(frozen=True)
 class PDHGParam(ReconParameters):
@@ -71,7 +103,6 @@ ReconMethods = {
 	# }
 }
 
-
 def reconstruct(projections: np.ndarray, capture: CaptureParameters, beam: BeamParameters, detector: DetectorParameters, params: ReconParameters) -> np.ndarray:
 	# Get reconstruction method
 	method_name = params.method.upper()
@@ -89,15 +120,15 @@ def reconstruct(projections: np.ndarray, capture: CaptureParameters, beam: BeamP
 	elif beam.projection == PROJECTION.POINT:
 		geo = AcquisitionGeometry.create_Cone3D(source_position=capture.beam_position, detector_position=capture.detector_position)
 	assert geo is not None
-	# Aquisition geometry
+	# Acquisition geometry
 
 	# Panel is height x width
 	geo.set_panel(projections.shape[1:][::-1], detector.pixel_size)
 	geo.set_angles(capture.angles)
 	geo.set_labels(["angle", "vertical", "horizontal"])
 
-	# Aquisition data
-	acData = geo.allocate()
+	# Acquisition data
+	acData:AcquisitionData = geo.allocate()
 	acData.fill(projections)
 
 	# Correction
@@ -106,7 +137,7 @@ def reconstruct(projections: np.ndarray, capture: CaptureParameters, beam: BeamP
 	rec: Optional[ImageData] = None
 	ig = geo.get_ImageGeometry()
 
-	# FDK Reconsturction
+	# FDK Reconstruction
 	if method_name == "FDK":
 		acData.reorder("tigre")
 		params = cast(FDKParam, params)
@@ -117,15 +148,29 @@ def reconstruct(projections: np.ndarray, capture: CaptureParameters, beam: BeamP
 		params = cast(FBPParam, params)
 		rec = FBP(acData, ig, params.filter).run()
 
-	# elif method_name == "CLGS":
-	# 	params = cast(CGLSParam, params)
-	# 	if params.variant == "Conv":
-	# 		...
-	# 	elif params.variant == "Tik":
-	# 		...
-	# 	elif params.variant == "Tv":
-	# 		...
-	# 	...
+	elif method_name == "CGLS":
+		acData.reorder("astra")
+		params = cast(CGLSParam, params)
+
+
+		# Reconstruction operators
+		operator = ProjectionBlock
+		if params.operator == "":
+			operator = ProjectionBlock.get(ig, acData)
+		elif params.operator == "identity":
+			operator = IdentityBlock.get(ig, acData)
+		elif params.operator == "gradient":
+			operator = GradientBlock.get(ig, acData)
+		else:
+			raise NotImplementedError(f"Operator {params.operator} is not implemented.")
+
+		# Run Reconstruction
+		cgls = CGLS(operator=operator,
+					data=acData,
+					max_iteration = params.iterations)
+		cgls.run(verbose=True)
+
+		rec = cgls.solution
 
 	# elif method_name == "PDHG":
 		...
@@ -138,7 +183,7 @@ def reconstruct(projections: np.ndarray, capture: CaptureParameters, beam: BeamP
 		# g = IndicatorBox(lower=0)
 		# rec = PDHG(f=f, g=g,operator=op,**params).run()
 	else:
-		raise NotImplementedError("Projection method is not implemented.")
+		raise NotImplementedError(f"Reconstruction method {method_name} is not implemented.")
 
 	assert rec is not None
 	return rec.as_array()
@@ -192,5 +237,7 @@ def ReconstructionFromJson(json: dict) -> ReconParameters:
 		if "filter" in json:
 			filter = str(json["filter"])
 		return FBPParam(quality=quality, filter=filter)
+	elif method == "CGLS":
+		return CGLSParam(quality=quality)
 	else:
 		raise TypeError(f"Recon paramaters for '{method}' is not supported.")
