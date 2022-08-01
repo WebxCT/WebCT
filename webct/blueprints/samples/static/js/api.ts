@@ -20,6 +20,7 @@ const Endpoint = {
 	uploadSamples: "samples/upload",
 	listMaterials: "material/list",
 	setMaterial: "material/set",
+	deleteMaterial: "material/delete",
 };
 
 // ====================================================== //
@@ -30,8 +31,8 @@ type MaterialTransmission = {
 	label: string,
 	description: string,
 	density: number,
-	material: ["element" | "compound", string] | ["hu", number] | ["mixture", (string | number)[]] | ["special", "air"]
-}
+	material: ["element" | "compound", string] | ["hu", number] | ["mixture", (string | number)[]] | ["special", "air"];
+};
 
 /**
  * Registry containing direct-api transmission responses before conversion to
@@ -99,9 +100,17 @@ export interface SamplesRequestRegistry {
 		label: string;
 		description: string;
 		density: number,
-		material: ["element" | "compound", string] | ["hu", number] | ["mixture", (string | number)[]] | ["special", "air"]
+		material: ["element" | "compound", string] | ["hu", number] | ["mixture", (string | number)[]] | ["special", "air"];
 		category: string,
 	};
+
+	/**
+	 * Request sent when deleting an existing material.
+	 */
+	materialDeleteRequest: {
+		categoryID: string,
+		materialID: string,
+	}
 }
 
 // ====================================================== //
@@ -172,6 +181,16 @@ export function uploadSample(): XMLHttpRequest {
 	return request;
 }
 
+export async function deleteMaterialData(data: SamplesRequestRegistry["materialDeleteRequest"]): Promise<Response> {
+	return await fetch(Endpoint.deleteMaterial, {
+		method: "DELETE",
+		body: JSON.stringify(data),
+		headers: {
+			"Content-Type": "application/json"
+		}
+	});
+}
+
 // ====================================================== //
 // ===================== Conversion ===================== //
 // ====================================================== //
@@ -185,6 +204,7 @@ export function processResponse(data: SamplesResponseRegistry[keyof SamplesRespo
 	// can't declare variables in switch statements...
 	const samples: SampleProperties[] = [];
 	const files: string[] = [];
+	let mixtureMat: [string, number][] = [];
 
 	switch (type) {
 	case "sampleDataResponse":
@@ -210,11 +230,30 @@ export function processResponse(data: SamplesResponseRegistry[keyof SamplesRespo
 	case "materialListResponse":
 		data = data as SamplesResponseRegistry["materialListResponse"];
 		// convert data into material objects and store in an object format
-		console.log(data);
 		for (const key in data) {
 			if (Object.prototype.hasOwnProperty.call(data, key)) {
-				const element = data[key];
-				console.log(element);
+				const category = data[key];
+				for (const matKey in category) {
+					if (Object.prototype.hasOwnProperty.call(category, matKey)) {
+						const material = category[matKey];
+						if ("material" in material) {
+							if (material.material[0] == "mixture") {
+								if (material.material[1].length % 2 != 0) {
+									console.error("Received an invalid mixture material in '" + key + "/" + matKey + "'");
+									continue;
+								}
+								mixtureMat = [];
+								for (let index = 0; index < material.material[1].length; index += 2) {
+									const element = material.material[1][index] + "";
+									const weight = parseFloat(material.material[1][index + 1] + "");
+									mixtureMat.push([element, weight * 100]);
+								}
+								(data[key][matKey] as Material).material[1] = mixtureMat;
+							}
+						}
+					}
+
+				}
 			}
 		}
 		return data as unknown as MaterialLibrary;

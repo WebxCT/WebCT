@@ -96,6 +96,6 @@ class Sample:
 	def render(self) -> RenderedSample:
 		mat = self.get_material()
 		if mat is None:
-			raise ValueError("Unable to render sample: Material ID cannot be found.")
+			raise ValueError("Unable to render sample: Material ID '"+self.materialID+"' cannot be found.")
 		sizeUnit = "mm" if self.sizeUnit is None else self.sizeUnit
 		return RenderedSample(self.label, self.modelPath, sizeUnit, self.materialID, mat)

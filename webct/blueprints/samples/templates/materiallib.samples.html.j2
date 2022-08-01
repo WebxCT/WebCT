@@ -1,5 +1,6 @@
 
-<sl-dialog label="Material Library" id="dialogueMaterial">
+<sl-dialog label="" id="dialogueMaterial">
+	<span slot="label" style="margin 0;"><sl-icon name="boxes"></sl-icon> Material Library</span>
 	<sl-tab-group placement="start" id="tabMaterial">
 		<sl-tab slot="nav" panel="Elements">Elements</sl-tab>
 		<sl-tab slot="nav" panel="Rods">Rods</sl-tab>
@@ -22,7 +23,7 @@
 					<sl-select label="Material Type" value="element" hoist>
 						<sl-menu-item value="element">Element</sl-menu-item>
 						<sl-menu-item value="compound">Compound</sl-menu-item>
-						<sl-menu-item value="mixture" disabled>Mixture</sl-menu-item>
+						<sl-menu-item value="mixture">Mixture</sl-menu-item>
 					</sl-select>
 
 					<sl-input label="Density" type="number" help-text="Material density in g/cm^2.">8.96</sl-input>
@@ -77,7 +78,18 @@
 
 	<div class="buttons">
 		<sl-button variant="" class="close" id="buttonMaterialClose" type="button">Close</sl-button>
-		<sl-button outline variant="warning" id="buttonMaterialSave" type="button"><sl-icon slot="prefix" name="journal-check"></sl-icon>Save</sl-button>
+		<sl-button outline variant="success" id="buttonMaterialSave" type="button"><sl-icon slot="prefix" name="journal-check"></sl-icon>Save</sl-button>
 		<sl-button variant="success" id="buttonMaterialSubmit" outline disabled="" type="button">Select Material</sl-button>
+	</div>
+</sl-dialog>
+
+<sl-dialog label="New Category" id="dialogCategory">
+	<sl-input label="Category Name" placeholder="New Category" id="inputCategoryName"></sl-input>
+
+	<sl-divider></sl-divider>
+
+	<div class="buttons">
+		<sl-button variant="" class="close" id="buttonCategoryClose">Close</sl-button>
+		<sl-button variant="success" id="buttonCategorySubmit">Add Category</sl-button>
 	</div>
 </sl-dialog>

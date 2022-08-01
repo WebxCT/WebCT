@@ -1,6 +1,0 @@
-{
-	"label": "Rod-Fuel",
-	"description": "Uranium pellet interior fuel",
-	"density": 10.97,
-	"material": ["compound", "UO2"]
-}

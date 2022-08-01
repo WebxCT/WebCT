@@ -1,6 +1,6 @@
 import json
 import traceback
-from typing import Dict, List
+from typing import Dict, List, Optional
 from flask import jsonify, request, session
 from flask.wrappers import Response
 from werkzeug.utils import secure_filename
@@ -14,7 +14,7 @@ from webct.components.sim.SimSession import Sim
 from webct import model_folder, material_folder
 
 
-def add_material_file(category: str, file: Path) -> None:
+def add_material_file(category: str, file: Path) -> Optional[str]:
 	if file.name[0] == ".":
 		return
 	if file.absolute().name[-4:] == "json":
@@ -26,9 +26,9 @@ def add_material_file(category: str, file: Path) -> None:
 				if category not in MATERIALS:
 					# We may be called without the category existing.
 					MATERIALS[category] = {}
-					if mat.label in MATERIALS[category]:
-						raise TypeError(f"Cannot import {file} as '{mat.label}' is already loaded.")
+				print(f"Imported {category}/{file.name[:-5]}")
 				MATERIALS[category][file.name[:-5]] = mat
+				return file.name[:-5]
 			except Exception as e:
 				traceback.print_exception(type(e), e, e.__traceback__)
 				print(f"fail to import: {file.name}: {type(e)}: {e}")
@@ -153,7 +153,7 @@ def setMaterial() -> Response:
 	material = MaterialFromJson(material)
 
 	# Clean category and label for filepath usage
-	cat = Path(secure_filename(data["category"]))
+	cat = Path(secure_filename(data["category"].lower()))
 	file = Path(secure_filename(data["label"].lower())).with_suffix(".json")
 
 	# check to see if the folder
@@ -169,6 +169,9 @@ def setMaterial() -> Response:
 		nPath = orPath.with_name(fname)
 		if nPath.resolve().is_relative_to(Path(material_folder).resolve()):
 			# create path
+			# Create category folder if not existing
+			if not nPath.parent.exists():
+				nPath.parent.mkdir()
 			nPath.touch()
 		else:
 			return Response(None, 400)
@@ -176,6 +179,49 @@ def setMaterial() -> Response:
 	with nPath.open("w") as f:
 		json.dump(material.to_json(), f, indent="\t")
 
-	add_material_file("/".join(data["category"].split("/")[:-1]), nPath)
+	matID = add_material_file(str(cat), nPath)
+	print(f"New Material ID: {cat}/{matID}")
 
+	return jsonify({"catID":str(cat),"matID":str(matID)})
+
+@bp.route("/material/delete", methods=["DELETE"])
+def deleteMaterial() -> Response:
+	data = request.get_json()
+	if data is None:
+		return Response(None, 400)
+	if "categoryID" not in data:
+		return Response(None, 400)
+	if "materialID" not in data:
+		return Response(None, 400)
+
+	catID = data["categoryID"]
+	matID = data["materialID"]
+
+	if (catID not in MATERIALS) or (matID not in MATERIALS[catID]):
+		return Response(None, 200)
+
+	mat = MATERIALS[catID][matID]
+
+	cat = Path(secure_filename(catID.lower()))
+	file = Path(secure_filename(mat.label.lower())).with_suffix(".json")
+
+	# check to see if the folder is relative
+	orPath = Path(material_folder) / cat / file
+
+	if not orPath.is_relative_to(material_folder):
+		return Response(None, 400)
+
+	if (orPath.exists() and orPath.is_file()):
+		# Path exists
+		orPath.unlink()
+	else:
+		# Default path doesn't exist, get one for the material
+		fname = secure_filename(orPath.name)
+		nPath = orPath.with_name(fname)
+		if nPath.resolve().is_relative_to(Path(material_folder).resolve()):
+			nPath.unlink()
+		else:
+			return Response(None, 400)
+
+	del MATERIALS[catID][matID]
 	return Response(None, 200)

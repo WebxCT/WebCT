@@ -45,11 +45,17 @@ export type Material = {
 	 * Density of the material [g/cm3]
 	 */
 	density: number;
-	material: ["element" | "compound", string] | ["hu", number] | ["mixture", (string | number)[]] | ["special", "air"]
+	material: ["element" | "compound", string] | ["hu", number] | ["mixture", [string , number][]] | ["special", "air"]
 }
 
 export interface MaterialLibrary {
 	[key: string]: {
 		[key: string]: Material
 	};
+}
+
+export interface EventNewCategory extends CustomEvent {
+	detail: {
+		name:string
+	}
 }

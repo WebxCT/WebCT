@@ -3,17 +3,19 @@
  * @author Iwan Mitchell
  */
 
-import { SlButton, SlDialog, SlInput, SlProgressBar, SlRadio, SlSelect, SlTab, SlTabGroup, SlTabPanel } from "@shoelace-style/shoelace";
+import { SlButton, SlDialog, SlInput, SlProgressBar, SlRadio, SlSelect, SlTabGroup } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form";
 import { AlertType, showAlert } from "../../../base/static/js/base";
-import { prepareSampleRequest, processResponse, requestMaterialList, requestModelList, requestSampleData, SamplesResponseRegistry, sendMaterialData, sendSamplesData, uploadSample, SamplesRequestRegistry } from "./api";
+import { prepareSampleRequest, processResponse, requestMaterialList, requestModelList, requestSampleData, SamplesResponseRegistry, sendMaterialData, sendSamplesData, uploadSample, SamplesRequestRegistry, deleteMaterialData } from "./api";
 import { DetectorRequestError, showError } from "./errors";
-import { Material, MaterialLibrary, SampleProperties } from "./types";
+import { getSelectedMaterial, MixtureInputList, setSelectedMaterial, updateMaterialDialog } from "./materialDialogue";
+
+import { EventNewCategory, Material, MaterialLibrary, SampleProperties } from "./types";
 
 // ====================================================== //
 // ================== Document Elements ================= //
 // ====================================================== //
-let MaterialDialog: SlDialog;
+export let MaterialDialog: SlDialog;
 let MaterialCloseButton: SlButton;
 let MaterialViewButton: SlButton;
 let MaterialSubmitButton: SlButton;
@@ -36,6 +38,11 @@ let SampleDialogRadio2: SlRadio;
 let SampleDialogSelect: SlSelect;
 let SampleDialogInput: SlInput;
 
+export let CategoryDialog: SlDialog;
+let CategoryDialogName: SlInput;
+let CategoryDialogSubmit: SlButton;
+let CategoryDialogClose: SlButton;
+
 
 // ====================================================== //
 // ======================= Globals ====================== //
@@ -46,10 +53,8 @@ let AvailableModels: string[];
 let UploadRequest: XMLHttpRequest | null;
 let UploadData: FormData | null;
 
-let MaterialLib: MaterialLibrary;
+export let MaterialLib: MaterialLibrary;
 
-let SelectedMaterial: string;
-let SelectedMaterialCategory: string;
 const SelectedSample = 0;
 
 let RecentMaterials: Record<string, number> = {};
@@ -69,23 +74,7 @@ export function setupSamples(): boolean {
 	console.log("setupSamples");
 	SessionSamples = [];
 
-	// (document.getElementById("test") as SlButton).onclick = () => {
-	// 	console.log("material test");
-
-	// 	fetch("material/set", {
-	// 		method: "PUT",
-	// 		body: JSON.stringify({
-	// 			label:"Test Material",
-	// 			description: "Fake Test Material",
-	// 			element:"Al",
-	// 			density: 2.70,
-	// 			category: "Element/aluminium"
-	// 		}),
-	// 		headers: {
-	// 			"Content-Type": "application/json"
-	// 		}
-	// 	});
-	// };
+	window.customElements.define("mixture-input-list", MixtureInputList, { extends: "ul" });
 
 	const dialogue_complete_upload = document.getElementById("dialogueUploadComplete");
 	const button_complete_close = document.getElementById("buttonUploadClose");
@@ -110,6 +99,11 @@ export function setupSamples(): boolean {
 	const sample_upload_label = document.getElementById("inputSampleLabel");
 	const sample_upload_select = document.getElementById("selectSample");
 
+	const category_dialog = document.getElementById("dialogCategory");
+	const category_dialog_name = document.getElementById("inputCategoryName");
+	const category_dialog_submit = document.getElementById("buttonCategorySubmit");
+	const category_dialog_close = document.getElementById("buttonCategoryClose");
+
 	if (tab_material == null ||
 		button_material_open == null ||
 		dialogue_material_library == null ||
@@ -128,7 +122,11 @@ export function setupSamples(): boolean {
 		sample_upload_radio1 == null ||
 		sample_upload_radio2 == null ||
 		sample_upload_label == null ||
-		sample_upload_select == null) {
+		sample_upload_select == null ||
+		category_dialog == null ||
+		category_dialog_name == null ||
+		category_dialog_submit == null ||
+		category_dialog_close == null) {
 
 		console.log(dialogue_material_library);
 		console.log(button_material_close);
@@ -148,6 +146,10 @@ export function setupSamples(): boolean {
 		console.log(sample_upload_radio2);
 		console.log(sample_upload_label);
 		console.log(sample_upload_select);
+		console.log(category_dialog);
+		console.log(category_dialog_name);
+		console.log(category_dialog_submit);
+		console.log(category_dialog_close);
 
 		showAlert("Samples setup failure", AlertType.ERROR);
 		return false;
@@ -176,15 +178,14 @@ export function setupSamples(): boolean {
 	};
 	MaterialSubmitButton = button_material_submit as SlButton;
 	MaterialSubmitButton.onclick = () => {
+		SaveCurrentMaterial();
 		const [catID, matID, panel] = getSelectedMaterial();
 
 		if (catID == "" || matID == "") {
 			return;
 		}
 
-		SelectedMaterialCategory = catID;
-		SelectedMaterial = matID;
-		setSampleElement();
+		setSampleElement(catID, matID);
 		MaterialDialog.hide();
 	};
 
@@ -285,46 +286,66 @@ export function setupSamples(): boolean {
 		updateDialog();
 	};
 
+	CategoryDialog = category_dialog as SlDialog;
+	CategoryDialogName = category_dialog_name as SlInput;
+	CategoryDialogSubmit = category_dialog_submit as SlButton;
+	CategoryDialogClose = category_dialog_close as SlButton;
+	CategoryDialogClose.onclick = () => {
+		CategoryDialog.hide();
+	};
+
+	CategoryDialogSubmit.onclick = () => {
+		// validate
+		const catName = CategoryDialogName.value;
+		if (catName == "") {
+			console.log("catName is empty");
+			return;
+		}
+
+		window.dispatchEvent(new CustomEvent("newCategory", {
+			bubbles: true,
+			cancelable: false,
+			composed: false,
+			detail: {
+				name: catName,
+			}
+		} as EventNewCategory));
+		CategoryDialog.hide();
+	};
+	CategoryDialog.addEventListener("sl-hide", () => {
+		MaterialDialog.show();
+	});
+
+
+
+
 	return true;
-}
-
-
-function getSelectedMaterial(): [string, string, HTMLFormElement?] {
-	const catID = (document.querySelector("#tabMaterial > sl-tab-panel[active]") as unknown as SlTabPanel).getAttribute("catID");
-	const form = document.querySelector("#tabMaterial > sl-tab-panel[active] > sl-tab-group > sl-tab-panel[active] > form") as HTMLFormElement;
-	const matID = (document.querySelector("#tabMaterial > sl-tab-panel[active] > sl-tab-group > sl-tab-panel[active]") as unknown as SlTabPanel).getAttribute("materialid");
-
-	if (catID == null || matID == null) {
-		return ["", "", undefined];
-	}
-
-	return [catID, matID, form];
 }
 
 // ====================================================== //
 // =================== Display and UI =================== //
 // ====================================================== //
 
-function setSampleElement(): void {
-	if (SelectedMaterial == null || SelectedMaterialCategory == null || SelectedSample == null) {
+function setSampleElement(catID: string, matID: string): void {
+	if (matID == null || catID == null || SelectedSample == null) {
 		return;
 	}
 
-	const matID = SelectedMaterialCategory + "/" + SelectedMaterial;
+	const fullmatID = catID + "/" + matID;
 
-	if (matID in RecentMaterials) {
-		RecentMaterials[matID] += 1;
+	if (fullmatID in RecentMaterials) {
+		RecentMaterials[fullmatID] += 1;
 	} else {
-		RecentMaterials[matID] = 1;
+		RecentMaterials[fullmatID] = 1;
 	}
 
-	if (RecentMaterials[matID] <= 0) {
-		delete RecentMaterials[matID];
+	if (RecentMaterials[fullmatID] <= 0) {
+		delete RecentMaterials[fullmatID];
 	}
 
 	console.log(RecentMaterials);
 
-	SessionSamples[SelectedSample].materialID = matID;
+	SessionSamples[SelectedSample].materialID = fullmatID;
 
 	updateSampleCards();
 }
@@ -495,6 +516,7 @@ function updateSampleCards(): void {
 		customIcon.name = "gear";
 		custom.appendChild(customIcon);
 		custom.onclick = () => {
+			console.log("custom click");
 			showMaterialLibrary(true);
 		};
 
@@ -536,267 +558,6 @@ function updateModelSelect(): void {
 	updateDialog();
 }
 
-/**
- * Update material dialog with categories and materials based on the
- * MaterialLibrary global.
- */
-function updateMaterialDialog(): void {
-	console.log("updateMaterialDialog");
-	console.log("MaterialLibrary has " + Object.keys(MaterialLib).length) + " keys.";
-
-	MaterialTab.replaceChildren(...[]);
-
-	for (const categoryKey in MaterialLib) {
-		if (Object.prototype.hasOwnProperty.call(MaterialLib, categoryKey)) {
-			console.log("Processing category " + categoryKey);
-
-			const category = MaterialLib[categoryKey];
-			if (Object.keys(category).length === 0) {
-				console.log("Early exit on category " + categoryKey);
-				continue;
-			}
-			// Create category
-			const ctab: SlTab = document.createElement("sl-tab");
-			ctab.slot = "nav";
-			ctab.panel = categoryKey;
-			ctab.textContent = categoryKey;
-
-			const ctpanel = document.createElement("sl-tab-panel");
-			ctpanel.name = categoryKey;
-			ctpanel.setAttribute("catid", categoryKey);
-
-			const ctgroup = document.createElement("sl-tab-group");
-			ctgroup.placement = "start";
-
-			// Create material panels
-			for (const materialKey in category) {
-				console.log("Processing material " + categoryKey + "/" + materialKey);
-				if (Object.prototype.hasOwnProperty.call(category, materialKey)) {
-					const material = category[materialKey];
-
-					const cmtab = document.createElement("sl-tab");
-					cmtab.slot = "nav";
-					cmtab.panel = material.label;
-					cmtab.textContent = material.label;
-
-					const cmtpanel = document.createElement("sl-tab-panel");
-					cmtpanel.name = material.label;
-					cmtpanel.setAttribute("materialid", materialKey);
-
-					const form = document.createElement("form");
-					form.classList.add("materialform");
-
-					const nameInput = document.createElement("sl-input");
-					nameInput.label = "Name";
-					nameInput.helpText = "A short alphanumeric material name.";
-					nameInput.placeholder = "Copper";
-					nameInput.value = material.label;
-					nameInput.name = "label";
-
-					const deleteButton = document.createElement("sl-button");
-					deleteButton.outline = true;
-					deleteButton.variant = "danger";
-					deleteButton.type = "button";
-					const deleteButtonIcon = document.createElement("sl-icon");
-					deleteButtonIcon.name = "trash-fill";
-					deleteButton.appendChild(deleteButtonIcon);
-
-					const descriptionInput = document.createElement("sl-input");
-					descriptionInput.label = "Description";
-					descriptionInput.helpText = "A brief description of the material.";
-					descriptionInput.placeholder = "Atomically pure Copper sheet";
-					descriptionInput.classList.add("wide");
-					descriptionInput.value = material.description;
-					descriptionInput.name = "description";
-
-					const typeSelect = document.createElement("sl-select");
-					typeSelect.hoist = true;
-					typeSelect.label = "Material Type";
-					typeSelect.value = "element";
-					typeSelect.name = "type";
-
-					const elementType = document.createElement("sl-menu-item");
-					elementType.value = "element";
-					elementType.textContent = "Element";
-
-					const compoundType = document.createElement("sl-menu-item");
-					compoundType.value = "compound";
-					compoundType.textContent = "Compound";
-
-					const mixtureType = document.createElement("sl-menu-item");
-					mixtureType.value = "mixture";
-					mixtureType.textContent = "Mixture";
-					mixtureType.disabled = true;
-
-					const huType = document.createElement("sl-menu-item");
-					huType.value = "hu";
-					huType.textContent = "HU Value";
-
-					typeSelect.appendChild(elementType);
-					typeSelect.appendChild(compoundType);
-					typeSelect.appendChild(mixtureType);
-					typeSelect.appendChild(huType);
-
-					const densityInput = document.createElement("sl-input");
-					densityInput.label = "Density";
-					densityInput.type = "number";
-					densityInput.step = 0.01;
-					densityInput.value = material.density + "";
-					densityInput.name = "density";
-					const densityUnits = document.createElement("span");
-					densityUnits.textContent = "g/cm^2";
-					densityUnits.slot = "suffix";
-					densityInput.appendChild(densityUnits);
-
-					const divider = document.createElement("sl-divider");
-
-					const elementDiv = document.createElement("div");
-					elementDiv.classList.add("element");
-					const elementInput = document.createElement("sl-input");
-					elementInput.label = "Element";
-					elementInput.helpText = "Elemental Symbol (Cl, O, Au, etc)";
-					elementInput.name = "element";
-					elementDiv.appendChild(elementInput);
-
-
-					const compoundDiv = document.createElement("div");
-					compoundDiv.classList.add("compound");
-					compoundDiv.classList.add("hidden");
-					const compoundInput = document.createElement("sl-input");
-					compoundInput.label = "Compound";
-					compoundInput.helpText = "Material Compound (H2O)";
-					compoundInput.name = "compound";
-					compoundDiv.appendChild(compoundInput);
-
-					const mixtureDiv = document.createElement("div");
-					// todo: mixture
-					mixtureDiv.classList.add("mixture");
-					mixtureDiv.classList.add("hidden");
-
-					const huDiv = document.createElement("div");
-					huDiv.classList.add("hu");
-					huDiv.classList.add("hidden");
-					const huInput = document.createElement("sl-input");
-					huInput.label = "HU Value";
-					huInput.helpText = "Hounsfield unit (CT number)";
-					huInput.name = "hu";
-					huDiv.appendChild(huInput);
-
-					function SelectEvent() {
-						if (typeSelect.value == "element") {
-							elementDiv.classList.remove("hidden");
-							mixtureDiv.classList.add("hidden");
-							compoundDiv.classList.add("hidden");
-							huDiv.classList.add("hidden");
-							densityInput.classList.remove("hidden");
-						} else if (typeSelect.value == "mixture") {
-							elementDiv.classList.add("hidden");
-							mixtureDiv.classList.remove("hidden");
-							compoundDiv.classList.add("hidden");
-							huDiv.classList.add("hidden");
-							densityInput.classList.remove("hidden");
-						} else if (typeSelect.value == "compound") {
-							elementDiv.classList.add("hidden");
-							mixtureDiv.classList.add("hidden");
-							compoundDiv.classList.remove("hidden");
-							huDiv.classList.add("hidden");
-							densityInput.classList.remove("hidden");
-						} else if (typeSelect.value == "hu") {
-							elementDiv.classList.add("hidden");
-							mixtureDiv.classList.add("hidden");
-							densityInput.classList.add("hidden");
-							compoundDiv.classList.add("hidden");
-							huDiv.classList.remove("hidden");
-						}
-					}
-
-					typeSelect.addEventListener("sl-change", SelectEvent);
-
-					// Current element settings
-					switch (material.material[0]) {
-					case "element":
-						elementInput.value = material.material[1];
-						typeSelect.value = "element";
-						break;
-					case "compound":
-						compoundInput.value = material.material[1];
-						typeSelect.value = "compound";
-						break;
-					case "hu":
-						huInput.value = material.material[1] + "";
-						typeSelect.value = "hu";
-						break;
-					case "special":
-						typeSelect.value = "Special";
-						typeSelect.textContent = "Special";
-						typeSelect.disabled = true;
-						break;
-					case "mixture":
-						typeSelect.value = "mixture";
-						typeSelect.disabled = true;
-						break;
-					default:
-						break;
-					}
-					SelectEvent();
-
-					const hiddenSave = document.createElement("button");
-					hiddenSave.type = "submit";
-					hiddenSave.style.display = "none";
-					form.onsubmit = () => { SaveCurrentMaterial(); return false; };
-
-					form.appendChild(hiddenSave);
-					form.appendChild(nameInput);
-					form.appendChild(deleteButton);
-					form.appendChild(descriptionInput);
-					form.appendChild(typeSelect);
-					form.appendChild(divider);
-					form.appendChild(densityInput);
-					form.appendChild(elementDiv);
-					form.appendChild(compoundDiv);
-					form.appendChild(mixtureDiv);
-					form.appendChild(huDiv);
-
-					cmtpanel.appendChild(form);
-
-					ctgroup.appendChild(cmtab);
-					ctgroup.appendChild(cmtpanel);
-				}
-			}
-			const addMaterialButton = document.createElement("sl-button");
-			addMaterialButton.slot = "nav";
-			addMaterialButton.size = "small";
-			addMaterialButton.outline = true;
-			addMaterialButton.circle = true;
-			addMaterialButton.type = "button";
-
-			const materialPlusIcon = document.createElement("sl-icon");
-			materialPlusIcon.name = "plus";
-
-			addMaterialButton.appendChild(materialPlusIcon);
-			ctgroup.appendChild(addMaterialButton);
-			ctpanel.append(ctgroup);
-			MaterialTab.appendChild(ctab);
-			MaterialTab.append(ctpanel);
-		}
-	}
-
-	const addCategoryButton = document.createElement("sl-button");
-	addCategoryButton.slot = "nav";
-	addCategoryButton.size = "small";
-	addCategoryButton.outline = true;
-	addCategoryButton.circle = true;
-	addCategoryButton.type = "button";
-
-	const categoryPlusIcon = document.createElement("sl-icon");
-	categoryPlusIcon.name = "plus";
-
-	addCategoryButton.appendChild(categoryPlusIcon);
-	MaterialTab.appendChild(addCategoryButton);
-
-	return;
-}
-
 function showMaterialLibrary(selecting: boolean): void {
 
 	if (selecting) {
@@ -808,6 +569,8 @@ function showMaterialLibrary(selecting: boolean): void {
 		MaterialSubmitButton.disabled = true;
 		MaterialSubmitButton.variant = "neutral";
 	}
+	console.log("show false");
+
 	MaterialDialog.show();
 }
 
@@ -823,11 +586,16 @@ type MaterialFormData = {
 	label: string,
 	compound: string,
 	type: "compound" | "element" | "hu" | "mixture",
-}
+};
 
 function SaveCurrentMaterial(): void {
 	// Get currently selected material.
 	const [catID, matID, form] = getSelectedMaterial();
+
+	if (catID == "special") {
+		console.error("Attempted to save a special material!");
+		return;
+	}
 
 	if (form == undefined) {
 		// ! throw an error
@@ -842,8 +610,22 @@ function SaveCurrentMaterial(): void {
 	MaterialSaveButton.disabled = true;
 	MaterialSaveButton.outline = true;
 
+	// Enumerate mixture materials
+	const mixture: [string, number][] = [];
+	const mixtureElements = form.querySelector("div.mixture > ul")?.childNodes as NodeListOf<ChildNode>;
+	for (let index = 0; index < mixtureElements.length; index++) {
+		const element = mixtureElements[index] as HTMLLIElement;
+		if (element.firstChild?.nodeName == "DIV") {
+			continue;
+		}
+		const mixelement = (element.querySelector("sl-input[type='text']") as SlInput).value;
+		const mixweight = +(parseFloat((element.querySelector("sl-input[type='number']") as SlInput).value) / 100).toFixed(4);
+		mixture.push([mixelement, mixweight]);
+	}
+
 	console.log(form);
 	console.log(data);
+	console.log(mixture);
 	// Get panel elements
 	let mat: Material["material"] = ["special", "air"];
 
@@ -856,25 +638,87 @@ function SaveCurrentMaterial(): void {
 		break;
 	case "hu":
 		mat = ["hu", parseFloat(data.hu)];
+		break;
+	case "mixture":
+		mat = ["mixture", mixture];
+		break;
 	default:
 		break;
 	}
 
-	// Get new attributes.
-	// Upload local material, and update server.
-	const nMat: SamplesRequestRegistry["materialDataRequest"] = {
+	// Update local
+	MaterialLib[catID][matID] = {
 		label: data.label,
 		density: parseFloat(data.density),
 		description: data.description,
 		material: mat,
-		category: catID
 	};
 
+	let nMat: SamplesRequestRegistry["materialDataRequest"];
+
+	// Flatten mixture materials
+	if (mat[0] == "mixture") {
+		nMat = {
+			label: data.label,
+			density: parseFloat(data.density),
+			description: data.description,
+			material: ["mixture", mat[1].flat()],
+			category: catID
+		};
+	} else {
+		nMat = {
+			label: data.label,
+			density: parseFloat(data.density),
+			description: data.description,
+			material: mat,
+			category: catID
+		};
+	}
+
 	console.log(nMat);
-	sendMaterialData(nMat).finally(() => {
+
+
+	sendMaterialData(nMat).then((response) => {
+		return response.json().then((data) => {
+			if (data["catID"] == undefined || data["matID"] == undefined) {
+				return;
+			}
+			console.log("New material created at " + data["catID"] + "/" + data["matID"]);
+			return UpdateMaterials().then(() => {
+				console.log("set selected material to " + data["catID"] + "/" + data["matID"]);
+
+				setSelectedMaterial(data["catID"], data["matID"]);
+			});
+		});
+	}
+	).finally(() => {
 		MaterialSaveButton.disabled = false;
 	});
 
+}
+
+export function DeleteMaterial(categoryKey: string, materialKey: string) {
+	if (categoryKey == "special") {
+		console.error("Attempted to delete a special material. Aborting!");
+		return;
+	}
+
+
+
+	if (!Object.prototype.hasOwnProperty.call(MaterialLib, categoryKey)) {
+		console.error("Unable to find category '" + categoryKey + "' in materialLib for deletion");
+		return;
+	}
+
+	const category = MaterialLib[categoryKey];
+	if (!Object.prototype.hasOwnProperty.call(category, materialKey)) {
+		console.error("Unable to find material '" + materialKey + "' in " + categoryKey + "/ for deletion");
+		return;
+	}
+
+	deleteMaterialData({ categoryID: categoryKey, materialID: materialKey }).finally(() => {
+		SyncSamples();
+	});
 }
 
 /**
@@ -946,14 +790,14 @@ export function UpdateMaterials(): Promise<void> {
 
 		const result = response.json();
 
-		result.then((result: unknown) => {
+		return result.then((result: unknown) => {
 			MaterialLib = processResponse(result as SamplesResponseRegistry["materialListResponse"], "materialListResponse") as MaterialLibrary;
-			updateMaterialDialog();
+			console.log(MaterialLib);
+			updateMaterialDialog(MaterialTab);
 		});
 
 	});
 }
-
 
 /**
  * Send sample parameters to the server.
