@@ -6,7 +6,7 @@
 import { SlButton, SlDialog, SlInput, SlProgressBar, SlRadio, SlSelect, SlTabGroup } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form";
 import { AlertType, showAlert } from "../../../base/static/js/base";
-import { prepareSampleRequest, processResponse, requestMaterialList, requestModelList, requestSampleData, SamplesResponseRegistry, sendMaterialData, sendSamplesData, uploadSample, SamplesRequestRegistry } from "./api";
+import { prepareSampleRequest, processResponse, requestMaterialList, requestModelList, requestSampleData, SamplesResponseRegistry, sendMaterialData, sendSamplesData, uploadSample, SamplesRequestRegistry, deleteMaterialData } from "./api";
 import { DetectorRequestError, showError } from "./errors";
 import { getSelectedMaterial, MixtureInputList, setSelectedMaterial, updateMaterialDialog } from "./materialDialogue";
 
@@ -300,9 +300,6 @@ export function setupSamples(): boolean {
 		if (catName == "") {
 			console.log("catName is empty");
 			return;
-		} else if (catName.toLowerCase() in MaterialLib) {
-			console.log("catName in MaterialLib");
-			return;
 		}
 
 		window.dispatchEvent(new CustomEvent("newCategory", {
@@ -325,15 +322,11 @@ export function setupSamples(): boolean {
 	return true;
 }
 
-
-
-
-
 // ====================================================== //
 // =================== Display and UI =================== //
 // ====================================================== //
 
-function setSampleElement(catID:string, matID:string): void {
+function setSampleElement(catID: string, matID: string): void {
 	if (matID == null || catID == null || SelectedSample == null) {
 		return;
 	}
@@ -681,13 +674,13 @@ function SaveCurrentMaterial(): void {
 
 
 	sendMaterialData(nMat).then((response) => {
-		return response.json().then((data)=>{
-			if (data["catID"] == undefined || data["matID"]==undefined) {
+		return response.json().then((data) => {
+			if (data["catID"] == undefined || data["matID"] == undefined) {
 				return;
 			}
 			console.log("New material created at " + data["catID"] + "/" + data["matID"]);
 			return UpdateMaterials().then(() => {
-				console.log("set selected material to "+data["catID"] + "/" + data["matID"]);
+				console.log("set selected material to " + data["catID"] + "/" + data["matID"]);
 
 				setSelectedMaterial(data["catID"], data["matID"]);
 			});
@@ -697,6 +690,30 @@ function SaveCurrentMaterial(): void {
 		MaterialSaveButton.disabled = false;
 	});
 
+}
+
+export function DeleteMaterial(categoryKey: string, materialKey: string) {
+	if (categoryKey == "special") {
+		console.error("Attempted to delete a special material. Aborting!");
+		return;
+	}
+
+
+
+	if (!Object.prototype.hasOwnProperty.call(MaterialLib, categoryKey)) {
+		console.error("Unable to find category '" + categoryKey + "' in materialLib for deletion");
+		return;
+	}
+
+	const category = MaterialLib[categoryKey];
+	if (!Object.prototype.hasOwnProperty.call(category, materialKey)) {
+		console.error("Unable to find material '" + materialKey + "' in " + categoryKey + "/ for deletion");
+		return;
+	}
+
+	deleteMaterialData({ categoryID: categoryKey, materialID: materialKey }).finally(() => {
+		SyncSamples();
+	});
 }
 
 /**
@@ -776,7 +793,6 @@ export function UpdateMaterials(): Promise<void> {
 
 	});
 }
-
 
 /**
  * Send sample parameters to the server.

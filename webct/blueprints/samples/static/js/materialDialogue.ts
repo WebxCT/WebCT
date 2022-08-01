@@ -4,7 +4,7 @@
  */
 
 import { SlButton, SlInput, SlTab, SlTabGroup, SlTabPanel } from "@shoelace-style/shoelace";
-import { CategoryDialog, MaterialDialog, MaterialLib } from "./samples";
+import { CategoryDialog, DeleteMaterial, MaterialDialog, MaterialLib } from "./samples";
 import { EventNewCategory, Material } from "./types";
 
 function createElementInput(): SlInput {
@@ -196,6 +196,34 @@ function createMaterialForm(rootPanel: HTMLElement, categoryKey: string, materia
 	inputName.placeholder = "A Short alphanumeric name";
 	inputName.name = "label";
 
+	// Per-material settings
+	const dropdownSettings = document.createElement("sl-dropdown");
+	const dropdownMenu = document.createElement("sl-menu");
+
+	// Delete material
+	const dropdownDelete = document.createElement("sl-menu-item");
+	dropdownDelete.textContent = "Delete Material";
+	const dropdownDeleteIcon = document.createElement("sl-icon");
+	dropdownDeleteIcon.name = "trash";
+	dropdownDeleteIcon.slot = "prefix";
+	dropdownDelete.classList.add("danger");
+	dropdownDelete.appendChild(dropdownDeleteIcon);
+	dropdownDelete.onclick = () => {
+		// Delete material
+		DeleteMaterial(categoryKey, materialKey);
+	};
+
+	dropdownMenu.appendChild(dropdownDelete);
+	dropdownSettings.appendChild(dropdownMenu);
+
+	const buttonSettings = document.createElement("sl-icon-button");
+	buttonSettings.name = "gear";
+	buttonSettings.label = "Material Settings";
+	buttonSettings.slot = "trigger";
+	const buttonSettingsTooltip = document.createElement("sl-tooltip");
+	buttonSettingsTooltip.content = "Material Settings";
+	dropdownSettings.appendChild(buttonSettings);
+
 	// Description
 	const inputDescription = document.createElement("sl-input");
 	inputDescription.label = "Description";
@@ -329,6 +357,7 @@ function createMaterialForm(rootPanel: HTMLElement, categoryKey: string, materia
 
 	// Build form
 	form.appendChild(hiddenSave);
+	form.appendChild(dropdownSettings);
 	form.appendChild(inputName);
 	form.appendChild(inputDescription);
 	form.appendChild(inputType);
@@ -402,7 +431,9 @@ function createCategoryPanel(rootPanel: HTMLElement, categoryKey: string, blank=
 	addMaterialButton.appendChild(materialPlusIcon);
 	addMaterialButton.onclick = () => {
 		// Create a default material
-		const matName = ("Material" + Object.keys(category).length).toLowerCase();
+		console.log("category");
+		console.log(category);
+		const matName = ("Material" + (Object.keys(category).length+1)).toLowerCase();
 		const newMaterial: Material = {
 			label: matName,
 			density: 1.0,
@@ -510,6 +541,21 @@ export function updateMaterialDialog(MaterialTab: SlTabGroup): void {
 		const event = (e as EventNewCategory).detail;
 		console.log(e);
 		console.log(event);
+
+		if (Object.prototype.hasOwnProperty.call(MaterialLib, event.name)) {
+			// Attempting to create an already existing category.
+			// Check to see if the category has any materials
+			if (Object.keys(MaterialLib[event.name]).length > 0) {
+				// Material category has materials, switch to it instead.
+				setSelectedMaterial(event.name, "");
+				return;
+			}
+
+			// If the category exists, but has no materials, it won't have a
+			// panel due to previous updates on the material dialogue.
+			// In this case, the normal approach to making new categories works fine.
+		}
+
 		MaterialLib[event.name] = {"material1":{
 			label: "material1",
 			density: 1.0,
@@ -517,14 +563,7 @@ export function updateMaterialDialog(MaterialTab: SlTabGroup): void {
 			material: ["element", "C"]
 		}};
 
-		// Remove button from tab group panel first
-		MaterialTab.lastChild?.remove();
-
-		// Add new category
-		createCategoryPanel(MaterialTab, event.name, true);
-
-		// Re-add button and select new material
-		MaterialTab.appendChild(addCategoryButton);
+		updateMaterialDialog(MaterialTab);
 		setSelectedMaterial(event.name, "");
 	});
 

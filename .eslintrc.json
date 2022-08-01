@@ -33,7 +33,8 @@
 		"semi": [
 			"error",
 			"always"
-		]
+		],
+		"no-inner-declarations": "off"
 	},
 	"ignorePatterns": "**/js/*.js"
 }

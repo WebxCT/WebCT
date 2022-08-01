@@ -183,3 +183,45 @@ def setMaterial() -> Response:
 	print(f"New Material ID: {cat}/{matID}")
 
 	return jsonify({"catID":str(cat),"matID":str(matID)})
+
+@bp.route("/material/delete", methods=["DELETE"])
+def deleteMaterial() -> Response:
+	data = request.get_json()
+	if data is None:
+		return Response(None, 400)
+	if "categoryID" not in data:
+		return Response(None, 400)
+	if "materialID" not in data:
+		return Response(None, 400)
+
+	catID = data["categoryID"]
+	matID = data["materialID"]
+
+	if (catID not in MATERIALS) or (matID not in MATERIALS[catID]):
+		return Response(None, 200)
+
+	mat = MATERIALS[catID][matID]
+
+	cat = Path(secure_filename(catID.lower()))
+	file = Path(secure_filename(mat.label.lower())).with_suffix(".json")
+
+	# check to see if the folder is relative
+	orPath = Path(material_folder) / cat / file
+
+	if not orPath.is_relative_to(material_folder):
+		return Response(None, 400)
+
+	if (orPath.exists() and orPath.is_file()):
+		# Path exists
+		orPath.unlink()
+	else:
+		# Default path doesn't exist, get one for the material
+		fname = secure_filename(orPath.name)
+		nPath = orPath.with_name(fname)
+		if nPath.resolve().is_relative_to(Path(material_folder).resolve()):
+			nPath.unlink()
+		else:
+			return Response(None, 400)
+
+	del MATERIALS[catID][matID]
+	return Response(None, 200)

@@ -20,6 +20,7 @@ const Endpoint = {
 	uploadSamples: "samples/upload",
 	listMaterials: "material/list",
 	setMaterial: "material/set",
+	deleteMaterial: "material/delete",
 };
 
 // ====================================================== //
@@ -102,6 +103,14 @@ export interface SamplesRequestRegistry {
 		material: ["element" | "compound", string] | ["hu", number] | ["mixture", (string | number)[]] | ["special", "air"];
 		category: string,
 	};
+
+	/**
+	 * Request sent when deleting an existing material.
+	 */
+	materialDeleteRequest: {
+		categoryID: string,
+		materialID: string,
+	}
 }
 
 // ====================================================== //
@@ -170,6 +179,16 @@ export function uploadSample(): XMLHttpRequest {
 	const request = new XMLHttpRequest();
 	request.open("POST", Endpoint.uploadSamples);
 	return request;
+}
+
+export async function deleteMaterialData(data: SamplesRequestRegistry["materialDeleteRequest"]): Promise<Response> {
+	return await fetch(Endpoint.deleteMaterial, {
+		method: "DELETE",
+		body: JSON.stringify(data),
+		headers: {
+			"Content-Type": "application/json"
+		}
+	});
 }
 
 // ====================================================== //
