@@ -1,5 +1,5 @@
 from typing import List, Tuple
-import gvxrPython3.gvxrPython3 as gvxr
+from gvxrPython3 import gvxr
 import numpy as np
 
 from webct.components.Beam import PROJECTION, Beam
