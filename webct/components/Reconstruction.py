@@ -1,11 +1,11 @@
 from dataclasses import dataclass
-from typing import Dict, Literal, Optional, Tuple, Union, cast
+from typing import Callable, ClassVar, Dict, Literal, Optional, Tuple, Type, Union, cast
 
 import numpy as np
-from cil.framework import AcquisitionData, AcquisitionGeometry, ImageData, ImageGeometry
+from cil.framework import AcquisitionData, AcquisitionGeometry, ImageData, ImageGeometry, BlockDataContainer
 from cil.optimisation.functions import (BlockFunction, IndicatorBox)
 from cil.optimisation.operators import (Operator, IdentityOperator, BlockOperator, GradientOperator)
-from cil.optimisation.algorithms import CGLS
+from cil.optimisation.algorithms import CGLS, SIRT
 from cil.plugins.astra.operators import ProjectionOperator
 from cil.recon import FBP, FDK
 from cil.processors import AbsorptionTransmissionConverter
@@ -18,37 +18,69 @@ from webct.components.sim.Quality import Quality
 
 use("Agg")
 
+class IterativeBlockParams():
+	...
 
+@dataclass(frozen=True)
 class IterativeOperator:
+	method:str
+	params:IterativeBlockParams
+
 	@staticmethod
-	def get(ig:ImageGeometry, acData:AcquisitionData) -> BlockOperator:
+	def get(ig:ImageGeometry, acData:AcquisitionData, params:IterativeBlockParams) -> Tuple[BlockOperator, Operator]:
 		...
 
+@dataclass(frozen=True)
+class ProjectionBlockParams(IterativeBlockParams):
+	...
+
+@dataclass(frozen=True)
 class ProjectionBlock(IterativeOperator):
+	method:str = "projection"
+	params:ProjectionBlockParams = ProjectionBlockParams()
+
 	@staticmethod
-	def get(ig:ImageGeometry, acData:AcquisitionData) -> BlockOperator:
+	def get(ig:ImageGeometry, acData:AcquisitionData, params:ProjectionBlockParams) -> Tuple[Operator, None]:
 		opProj = ProjectionOperator(ig,acData.geometry)
-		opblock_proj = BlockOperator(opProj)
+		# Wrapping a projectionoperator in a block operator causes an invalid reconstruction output
+		# opblock_proj = BlockOperator(opProj)
 
-		return opblock_proj
+		return opProj, None
 
+@dataclass(frozen=True)
+class IdentityBlockParams(IterativeBlockParams):
+	alpha:float=0.1
+
+@dataclass(frozen=True)
 class IdentityBlock(IterativeOperator):
+	method:str = "identity"
+	params:IdentityBlockParams = IdentityBlockParams()
+
 	@staticmethod
-	def get(ig:ImageGeometry, acData:AcquisitionData, alpha:float=0.1) -> BlockOperator:
+	def get(ig:ImageGeometry, acData:AcquisitionData, params:IdentityBlockParams) -> Tuple[BlockOperator, Operator]:
 		opProj = ProjectionOperator(ig,acData.geometry)
 		opIdent = IdentityOperator(ig)
 
-		opblock_ident = BlockOperator(opProj, alpha * opIdent)
-		return opblock_ident
+		opblock_ident = BlockOperator(opProj, params.alpha * opIdent)
+		return opblock_ident, opIdent
 
-class GradientBlock:
+@dataclass(frozen=True)
+class GradientBlockParams(IterativeBlockParams):
+	alpha:float = 0.1
+	boundary:Union[Literal["Neumann"], Literal["Periodic"]] = "Neumann"
+
+@dataclass(frozen=True)
+class GradientBlock(IterativeOperator):
+	method:str = "gradient"
+	params:GradientBlockParams = GradientBlockParams()
+
 	@staticmethod
-	def get(ig:ImageGeometry, acData:AcquisitionData, alpha:float=0.1, boundary:Union[Literal["Neumann"], Literal["Periodic"]]="Neumann") -> BlockOperator:
+	def get(ig:ImageGeometry, acData:AcquisitionData, params:GradientBlockParams) -> Tuple[BlockOperator, Operator]:
 		opProj = ProjectionOperator(ig, acData.geometry)
-		opGrad = GradientOperator(acData.geometry, bnd_cond=boundary)
+		opGrad = GradientOperator(ig, bnd_cond=params.boundary)
 
-		opblock_grad = BlockOperator(opProj, alpha * opGrad)
-		return opblock_grad
+		opblock_grad = BlockOperator(opProj, params.alpha * opGrad)
+		return opblock_grad, opGrad
 
 @dataclass(frozen=True)
 class ReconParameters:
@@ -69,9 +101,9 @@ class FBPParam(ReconParameters):
 @dataclass(frozen=True)
 class CGLSParam(ReconParameters):
 	method: str = "CGLS"
-	variant: str = ""
 	iterations: int = 10
-	operator: str = "projection"
+	tolerance:float = 1
+	operator: IterativeOperator = ProjectionBlock()
 
 @dataclass(frozen=True)
 class PDHGParam(ReconParameters):
@@ -83,6 +115,20 @@ class PDHGParam(ReconParameters):
 	max_iterations: int
 	update_objective_interval: int
 
+IterativeOperators:Dict[str, Dict[str, Union[Type[IterativeOperator], Type[IterativeBlockParams]]]] = {
+	"projection": {
+		"type": ProjectionBlock,
+		"params":ProjectionBlockParams
+	},
+	"identity": {
+		"type": IdentityBlock,
+		"params":IdentityBlockParams
+	},
+	"gradient": {
+		"type": GradientBlock,
+		"params":GradientBlockParams
+	}
+}
 
 ReconMethods = {
 	"FDK": {
@@ -152,24 +198,28 @@ def reconstruct(projections: np.ndarray, capture: CaptureParameters, beam: BeamP
 		acData.reorder("astra")
 		params = cast(CGLSParam, params)
 
+		# Reconstruction operator
+		# Note: A projection operator will return (Operator, None)
+		blockOp, Lop = params.operator.get(ig, acData, params.operator.params)
 
-		# Reconstruction operators
-		operator = ProjectionBlock
-		if params.operator == "":
-			operator = ProjectionBlock.get(ig, acData)
-		elif params.operator == "identity":
-			operator = IdentityBlock.get(ig, acData)
-		elif params.operator == "gradient":
-			operator = GradientBlock.get(ig, acData)
-		else:
-			raise NotImplementedError(f"Operator {params.operator} is not implemented.")
+		# Need to allocate data into a BlockDataContainer when using
+		# block operations. The projection block operator is just a
+		# wrapped ProjectionOperator, and does not work on
+		# BlockDataContainer.
+		data = acData
+		if params.operator.method != "projection":
+			if Lop.range is not None:
+				data = BlockDataContainer(acData, Lop.range.allocate(0))
+			else:
+				raise ValueError(f"Unexpected None range of block projection operator '{params.operator.method}' for CGLS")
 
-		# Run Reconstruction
-		cgls = CGLS(operator=operator,
-					data=acData,
+		# Run CGLS Reconstruction
+		cgls = CGLS(operator=blockOp,
+					data=data,
 					max_iteration = params.iterations)
 		cgls.run(verbose=True)
 
+		# Get the last solution
 		rec = cgls.solution
 
 	# elif method_name == "PDHG":
@@ -214,7 +264,7 @@ def asSinogram(projections: np.ndarray, capture: CaptureParameters, beam: BeamPa
 
 
 def ReconstructionFromJson(json: dict) -> ReconParameters:
-	"""Select and create reconstruction paramaters from a json dict."""
+	"""Select and create reconstruction parameters from a json dict."""
 	if "method" not in json:
 		raise KeyError("Given dict does not contain a 'method' key.")
 	method = json["method"].upper()
@@ -238,6 +288,55 @@ def ReconstructionFromJson(json: dict) -> ReconParameters:
 			filter = str(json["filter"])
 		return FBPParam(quality=quality, filter=filter)
 	elif method == "CGLS":
-		return CGLSParam(quality=quality)
+		# Variant
+		variant:str = ""
+		if "variant" in json:
+			...
+
+		# Operator
+		operator:IterativeOperator = ProjectionBlock()
+		if "operator" in json:
+			if "method" not in json["operator"]:
+				raise KeyError("Operator key lacks a method key.")
+			if "params" not in json["operator"]:
+				raise KeyError("Operator key lacks a param key.")
+
+			if json["operator"]["method"] in IterativeOperators:
+				opType:Type[IterativeOperator] = cast(Type[IterativeOperator], IterativeOperators[json["operator"]["method"]]["type"])
+				opParams = json["operator"]["params"]
+
+				if opType == ProjectionBlock:
+					operator = ProjectionBlock()
+
+				elif opType == IdentityBlock:
+					alpha = 0.1
+					if "alpha" in opParams:
+						alpha = float(opParams["alpha"])
+					operatorParams = IdentityBlockParams(alpha)
+					operator = IdentityBlock(params=operatorParams)
+
+				elif opType == GradientBlock:
+					alpha = 0.1
+					if "alpha" in opParams:
+						alpha = float(opParams["alpha"])
+					boundary = "Neumann"
+
+					if "boundary" in opParams:
+						if opParams["boundary"].lower() == "periodic":
+							boundary = "Periodic"
+
+					operatorParams = GradientBlockParams(alpha, boundary)
+					operator = GradientBlock(params=operatorParams)
+
+				else:
+					raise NotImplementedError(f"Iterative operator {opType} is not implemented.")
+			else:
+				raise NotImplementedError(f"Iterative operator {json['operator']['method']} is not supported.")
+
+		iterations:int = 10
+		if "iterations" in json:
+			iterations = int(json["iterations"])
+
+		return CGLSParam(quality=quality, iterations=iterations, operator=operator)
 	else:
 		raise TypeError(f"Recon paramaters for '{method}' is not supported.")

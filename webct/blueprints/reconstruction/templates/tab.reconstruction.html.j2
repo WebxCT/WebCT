@@ -18,9 +18,9 @@
 			<sl-menu-item value="FBP">FBP<span> Filtered Back Projection</span></sl-menu-item>
 			<sl-divider></sl-divider>
 			<sl-menu-label>Iterative Methods</sl-menu-label>
-			<sl-menu-item value="MLEM">MLEM<span> Maximum Likelihood Estimation Method</span></sl-menu-item>
-			<sl-menu-item value="SIRT">SIRT<span> Simultaneous Iterative Reconstructive Technique</span></sl-menu-item>
 			<sl-menu-item value="CGLS">CGLS<span> Conjugate Gradient Least Squares</span></sl-menu-item>
+			<sl-menu-item value="MLEM" disabled>MLEM<span> Maximum Likelihood Estimation Method</span></sl-menu-item>
+			<sl-menu-item value="SIRT" disabled>SIRT<span> Simultaneous Iterative Reconstructive Technique</span></sl-menu-item>
 		</sl-select>
 		<sl-select label="Reconstruction Quality" value="medium" id="selectReconQuality" advanced>
 			<sl-menu-item value="0">High
@@ -59,24 +59,40 @@
 <div class="group hidden" id="settingsCGLS">
 	<div>
 		<h2>CGLS Settings</h2>
-		<sl-select label="CGLS Variant" id="selectVariantCGLS" class="hidden" value="">
-			<sl-menu-item value="">No Varient</sl-menu-item>
-			<sl-menu-item value="Conv">Convolution</sl-menu-item>
-			<sl-menu-item value="Tik">Tikhonov Regularization</sl-menu-item>
-			<sl-menu-item value="TV">TV Regularisation<span> Total Variation</span></sl-menu-item>
-		</sl-select>
+		<sl-input type="number" label="Iterations" step=1 min=1 value="5" id="inputCGLSIterations"></sl-input>
+		<sl-input type="number" label="Tolerance" step=1 min=1 value="1" id="inputCGLSTolerance"><span slot="suffix">e-6</span></sl-input>
 	</div>
 	<!-- <button></button> -->
 </div>
 
-<div class="group" id="settingsOperator">
+<div class="group hidden" id="settingsSIRT">
 	<div>
-		<sl-select label="Iterative Operator" id="selectIterativeOperator" class="" value="">
-			<sl-menu-item value="projection">Projection Operator<span>No Regularisation</span></sl-menu-item>
+		<h2>SIRT Settings</h2>
+		<sl-input type="number" label="Iterations" step=1 min=1 value="5"></sl-input>
+		<div class="check-property">
+		<sl-checkbox></sl-checkbox>
+		<sl-input type="number" label="Upper Constraint" step=1 min=1 value="5"></sl-input>
+		</div>
+		<div class="check-property">
+		<sl-checkbox></sl-checkbox>
+		<sl-input type="number" label="Lower Constraint" step=1 min=1 value="5"></sl-input>
+		</div>
+	</div>
+	<!-- <button></button> -->
+</div>
+
+<div class="group" id="settingsTikhonov">
+	<div>
+		<sl-select label="Tikhonov Regularization Operator" id="selectTikOperator" class="" value="projection">
+			<sl-menu-item value="projection">Projection Operator<span><br>No Regularisation</span></sl-menu-item>
 			<sl-menu-item value="identity">Identity Operator</sl-menu-item>
 			<sl-menu-item value="gradient">Gradient Operator</sl-menu-item>
 		</sl-select>
-		<sl-input type="number" label="alpha"></sl-input>
+		<sl-input type="number" label="Alpha" value="0.1" id="inputTikAlpha"></sl-input>
+		<sl-select label="Boundary Condition" advanced value="Neumann" id="selectTikBoundary">
+			<sl-menu-item value="Neumann">Neumann</sl-menu-item>
+			<sl-menu-item value="Periodic">Periodic</sl-menu-item>
+		</sl-select>
 	</div>
-	<!-- <button></button> -->
+	<button></button>
 </div>

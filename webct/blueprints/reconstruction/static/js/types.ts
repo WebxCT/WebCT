@@ -19,6 +19,16 @@ export interface FilteredReconstructionParams extends ReconstructionParams {
 	filter: Filter
 }
 
+
+export type TikhonovMethod = "projection" | "identity" | "gradient"
+export interface TikhonovRegulariser {
+	method: TikhonovMethod
+	params: {
+		alpha: number,
+		boundary: "Neumann" | "Periodic"
+	}
+}
+
 type Filter = string
 
 export interface IterativeReconstructionParams extends ReconstructionParams {
@@ -47,20 +57,23 @@ export class FBPParams implements FilteredReconstructionParams {
 	}
 }
 
-export type CGLSVariant = "" | "conv" | "tik" | "tv"
 
 export class CGLSParams implements IterativeReconstructionParams {
 	readonly method = "CGLS" as const
 	quality: ReconQuality
 	iterations: number
-	variant: CGLSVariant
+	tolerance: number
+	operator: TikhonovRegulariser
 
-	constructor(quality: ReconQuality, iterations: number, variant: CGLSVariant) {
+	constructor(quality: ReconQuality, iterations: number, tolerance:number, operator: TikhonovRegulariser) {
 		this.quality = quality;
 		this.iterations = iterations;
-		this.variant = variant;
+		this.tolerance = tolerance;
+		this.operator = operator;
 	}
 }
+
+
 
 export interface ReconstructionPreview {
 	recon: {

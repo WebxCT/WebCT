@@ -2,7 +2,7 @@
  * api.ts : API functions for communicating between the client and server.
  * @author Iwan Mitchell
  */
-import { CGLSParams, CGLSVariant, FBPParams, FDKParams, ReconMethod, ReconQuality, ReconstructionParams, ReconstructionPreview } from "./types";
+import { CGLSParams, FBPParams, FDKParams, ReconMethod, ReconQuality, ReconstructionParams, ReconstructionPreview, TikhonovRegulariser } from "./types";
 
 // ====================================================== //
 // ====================== Endpoints ===================== //
@@ -36,7 +36,7 @@ export interface ReconResponseRegistry {
 	reconResponse: {
 		quality: ReconQuality;
 		method: ReconMethod;
-		[key: string]: string | number | boolean;
+		[key: string]: string | number | boolean | TikhonovRegulariser;
 	};
 
 	reconPreviewResponse: {
@@ -144,8 +144,16 @@ export function processResponse(data: ReconResponseRegistry[keyof ReconResponseR
 			return {
 				quality: data.quality,
 				method: data.method,
-				variant: data.variant as CGLSVariant,
-				iterations:100,
+				iterations: data.iterations,
+				tolerance: data.tolerance,
+				operator: {
+					method: (data.operator as TikhonovRegulariser).method,
+					params: {
+						alpha: (data.operator as TikhonovRegulariser).params.alpha,
+						boundary: (data.operator as TikhonovRegulariser).params.boundary,
+					},
+				} as TikhonovRegulariser,
+				// data.,
 			} as CGLSParams;
 		default:
 			break;
