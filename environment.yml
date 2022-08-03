@@ -6,12 +6,9 @@ channels:
   - intel
   - astra-toolbox
 dependencies:
-  - cmake # Needed only for docker
-
   # Runtime
   - python>=3.9
   - flask
-  # - gvirtualxray # Installed by docker container
   - scipy
   - matplotlib<3.5
   - opencv
@@ -26,6 +23,7 @@ dependencies:
   - pip
   - pip:
     # Runtime
+    - gvxr
     - imageio[ffmpeg]
     - git+https://bitbucket.org/spekpy/spekpy_release.git
     - xpecgen
