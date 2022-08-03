@@ -2,8 +2,7 @@ from dataclasses import dataclass
 from enum import Enum
 import json
 from typing import Dict, Iterator, Tuple
-from gvxrPython3.gvxrPython3 import getElementAtomicNumber
-
+from gvxrPython3 import gvxr
 
 @dataclass(frozen=True)
 class SaveableParameters:
@@ -127,7 +126,7 @@ class ElementMaterial(Material):
 		Returns:
 			int: The atomic number of the element.
 		"""
-		return getElementAtomicNumber(self.element)
+		return gvxr.getElementAtomicNumber(self.element)
 
 
 @dataclass(frozen=True)
@@ -223,7 +222,7 @@ class MixtureMaterial(Material):
 	def atomicNumbers(self) -> Tuple[int, ...]:
 		atomics = []
 		for element in self.elements:
-			atomics.append(getElementAtomicNumber(element))
+			atomics.append(gvxr.getElementAtomicNumber(element))
 		return tuple(atomics)
 
 	def __iter__(self) -> Iterator[str]:
