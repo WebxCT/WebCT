@@ -2,7 +2,7 @@
  * api.ts : API functions for communicating between the client and server.
  * @author Iwan Mitchell
  */
-import { CGLSParams, FBPParams, FDKParams, ReconMethod, ReconQuality, ReconstructionParams, ReconstructionPreview, TikhonovRegulariser } from "./types";
+import { BoxConstraint, CGLSParams, Constraint, FBPParams, FDKParams, ReconMethod, ReconQuality, ReconstructionParams, ReconstructionPreview, SIRTParams, TikhonovRegulariser, TVConstraint } from "./types";
 
 // ====================================================== //
 // ====================== Endpoints ===================== //
@@ -36,7 +36,7 @@ export interface ReconResponseRegistry {
 	reconResponse: {
 		quality: ReconQuality;
 		method: ReconMethod;
-		[key: string]: string | number | boolean | TikhonovRegulariser;
+		[key: string]: string | number | boolean | TikhonovRegulariser | Constraint;
 	};
 
 	reconPreviewResponse: {
@@ -124,6 +124,8 @@ export async function sendReconData(data: ReconRequestRegistry["reconRequest"]):
  */
 export function processResponse(data: ReconResponseRegistry[keyof ReconResponseRegistry], type: keyof ReconResponseRegistry): ReconstructionParams | ReconstructionPreview | undefined {
 	// Todo: Convert and check params for each reconstruction method
+	let constraint:Constraint;
+	let dataConstraint:Constraint;
 	switch (type) {
 	case "reconResponse":
 		data = data as ReconResponseRegistry["reconResponse"];
@@ -155,8 +157,49 @@ export function processResponse(data: ReconResponseRegistry[keyof ReconResponseR
 				} as TikhonovRegulariser,
 				// data.,
 			} as CGLSParams;
-		default:
-			break;
+		case "SIRT":
+			dataConstraint = data.constraint as Constraint;
+			if (dataConstraint.method == "tv") {
+				constraint = {
+					method: dataConstraint.method,
+					params: {
+						isotropic: dataConstraint.params.isotropic,
+						iterations: dataConstraint.params.iterations,
+						tolerance: dataConstraint.params.tolerance,
+						lower: dataConstraint.params.lower,
+						upper: dataConstraint.params.upper,
+					}
+				} as TVConstraint;
+			} else if (dataConstraint.method == "box") {
+				constraint = {
+					method: dataConstraint.method,
+					params: {
+						upper: dataConstraint.params.upper,
+						lower: dataConstraint.params.lower,
+					}
+				} as BoxConstraint;
+			} else {
+				constraint = {
+					method: "box",
+					params: {
+						upper: null,
+						lower: null,
+					}
+				} as BoxConstraint;
+			}
+			return {
+				quality: data.quality,
+				method: data.method,
+				iterations: data.iterations,
+				operator: {
+					method: (data.operator as TikhonovRegulariser).method,
+					params: {
+						alpha: (data.operator as TikhonovRegulariser).params.alpha,
+						boundary: (data.operator as TikhonovRegulariser).params.boundary,
+					},
+				} as TikhonovRegulariser,
+				constraint: constraint
+			} as SIRTParams;
 		}
 		break;
 	case "reconPreviewResponse":

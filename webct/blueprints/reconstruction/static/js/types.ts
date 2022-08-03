@@ -29,6 +29,33 @@ export interface TikhonovRegulariser {
 	}
 }
 
+export type ConstraintMethod = "box" | "tv"
+export interface Constraint {
+	method: ConstraintMethod
+	params: {
+		[key: string]: string | number | null | boolean
+	}
+}
+
+export interface BoxConstraint extends Constraint {
+	readonly method: "box"
+	params: {
+		lower: number|null
+		upper: number|null
+	}
+}
+
+export interface TVConstraint extends Constraint {
+	readonly method: "tv",
+	params: {
+		iterations: number,
+		tolerance: number,
+		isotropic: boolean,
+		lower: number|null,
+		upper: number|null,
+	}
+}
+
 type Filter = string
 
 export interface IterativeReconstructionParams extends ReconstructionParams {
@@ -73,6 +100,20 @@ export class CGLSParams implements IterativeReconstructionParams {
 	}
 }
 
+export class SIRTParams implements IterativeReconstructionParams {
+	readonly method = "SIRT" as const
+	quality:ReconQuality
+	iterations:number
+	constraint: Constraint
+	operator: TikhonovRegulariser
+
+	constructor(quality:ReconQuality, iterations:number, constraint:Constraint, operator:TikhonovRegulariser) {
+		this.quality = quality;
+		this.iterations = iterations;
+		this.constraint = constraint;
+		this.operator = operator;
+	}
+}
 
 
 export interface ReconstructionPreview {

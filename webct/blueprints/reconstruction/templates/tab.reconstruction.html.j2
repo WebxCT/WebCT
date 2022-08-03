@@ -14,17 +14,17 @@
 		<sl-select label="Reconstruction Algorithm" value="FDK" id="selectReconstruction">
 			<sl-menu-label>Non-Iterative</sl-menu-label>
 			{# Span elements do not show up when selected.#}
-			<sl-menu-item value="FDK">FDK<span> Feldkamp, David & Kress</span></sl-menu-item>
-			<sl-menu-item value="FBP">FBP<span> Filtered Back Projection</span></sl-menu-item>
+			<sl-menu-item value="FDK">FDK<span><sl-tag variant="success" pill size="small">GPU</sl-tag> Feldkamp, David & Kress</span></sl-menu-item>
+			<sl-menu-item value="FBP">FBP<span><sl-tag variant="success" pill size="small">GPU</sl-tag> Filtered Back Projection</span></sl-menu-item>
 			<sl-divider></sl-divider>
 			<sl-menu-label>Iterative Methods</sl-menu-label>
-			<sl-menu-item value="CGLS">CGLS<span> Conjugate Gradient Least Squares</span></sl-menu-item>
-			<sl-menu-item value="MLEM" disabled>MLEM<span> Maximum Likelihood Estimation Method</span></sl-menu-item>
-			<sl-menu-item value="SIRT" disabled>SIRT<span> Simultaneous Iterative Reconstructive Technique</span></sl-menu-item>
+			<sl-menu-item value="CGLS">CGLS<span><sl-tag variant="warning" pill size="small">CPU</sl-tag> Conjugate Gradient Least Squares</span></sl-menu-item>
+			<sl-menu-item value="SIRT">SIRT<span><sl-tag variant="warning" pill size="small">CPU</sl-tag> Simultaneous Iterative Reconstructive Technique</span></sl-menu-item>
+			<sl-menu-item value="MLEM" disabled>MLEM<span><sl-tag variant="success" pill size="small">GPU</sl-tag> Maximum Likelihood Estimation Method</span></sl-menu-item>
 		</sl-select>
 		<sl-select label="Reconstruction Quality" value="medium" id="selectReconQuality" advanced>
 			<sl-menu-item value="0">High
-				<sl-tag slot="suffix" variant="danger" pill size="small">GPU Intensive</sl-pill>
+				<sl-tag slot="suffix" variant="danger" pill size="small">Memory Intensive</sl-tag>
 			</sl-menu-item>
 			<sl-menu-item value="1">Medium</sl-menu-item>
 			<sl-menu-item value="2">Low</sl-menu-item>
@@ -60,25 +60,38 @@
 	<div>
 		<h2>CGLS Settings</h2>
 		<sl-input type="number" label="Iterations" step=1 min=1 value="5" id="inputCGLSIterations"></sl-input>
-		<sl-input type="number" label="Tolerance" step=1 min=1 value="1" id="inputCGLSTolerance"><span slot="suffix">e-6</span></sl-input>
+		<sl-input type="number" label="Tolerance" step=1 min=1 value="1" id="inputCGLSTolerance" advanced><span slot="suffix">e-6</span></sl-input>
 	</div>
-	<!-- <button></button> -->
+	<button></button>
 </div>
 
 <div class="group hidden" id="settingsSIRT">
 	<div>
 		<h2>SIRT Settings</h2>
-		<sl-input type="number" label="Iterations" step=1 min=1 value="5"></sl-input>
-		<div class="check-property">
-		<sl-checkbox></sl-checkbox>
-		<sl-input type="number" label="Upper Constraint" step=1 min=1 value="5"></sl-input>
-		</div>
-		<div class="check-property">
-		<sl-checkbox></sl-checkbox>
-		<sl-input type="number" label="Lower Constraint" step=1 min=1 value="5"></sl-input>
-		</div>
+		<sl-input type="number" id="inputSIRTIterations" label="Iterations" step=1 min=1 value="5"></sl-input>
 	</div>
 	<!-- <button></button> -->
+</div>
+
+<div class="group" id="settingsConstraint">
+	<div>
+		<sl-select label="Reconstruction Constraint" id="selectConOperator" class="" value="box">
+			<sl-menu-item value="box">Indicator Box<span><br>Upper & Lower Bounds</span></sl-menu-item>
+			<sl-menu-item value="tv">Total Variation</sl-menu-item>
+		</sl-select>
+		<div class="check-property">
+			<sl-checkbox id="checkboxConUpper"></sl-checkbox>
+			<sl-input type="number" id="inputConUpper" label="Upper Constraint" value="5"></sl-input>
+		</div>
+		<div class="check-property">
+			<sl-checkbox id="checkboxConLower"></sl-checkbox>
+			<sl-input type="number" id="inputConLower" label="Lower Constraint" value="0"></sl-input>
+		</div>
+		<sl-input id="inputConTVIterations" type="number" label="Iterations" step=1 min=1 advanced></sl-input>
+		<sl-checkbox id="checkboxConTVIsotropic" advanced>Isotropic</sl-checkbox>
+		<sl-input type="number" label="Tolerance" step=1 min=1 value="1" id="inputConTVTolerance" advanced><span slot="suffix">e-6</span></sl-input>
+	</div>
+	<button></button>
 </div>
 
 <div class="group" id="settingsTikhonov">

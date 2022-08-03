@@ -3,10 +3,10 @@
  * @author Iwan Mitchell
  */
 
-import { SlInput, SlSelect } from "@shoelace-style/shoelace";
+import { SlCheckbox, SlInput, SlSelect } from "@shoelace-style/shoelace";
 import { AlertType, showAlert } from "../../../base/static/js/base";
 import { prepareRequest, processResponse, ReconResponseRegistry, requestReconData, requestReconPreview, sendReconData } from "./api";
-import { CGLSParams, FBPParams, FDKParams, ReconQuality, ReconstructionParams, ReconstructionPreview, TikhonovMethod as TikhonovMethod, TikhonovRegulariser } from "./types";
+import { BoxConstraint, CGLSParams, Constraint, ConstraintMethod, FBPParams, FDKParams, ReconQuality, ReconstructionParams, ReconstructionPreview, SIRTParams, TikhonovMethod as TikhonovMethod, TikhonovRegulariser, TVConstraint } from "./types";
 import { BeamTypeElement } from "../../../beam/static/js/beam";
 import { validateMethod } from "./validation";
 
@@ -29,14 +29,29 @@ let FBPFilter: SlSelect;
 
 // CGLS
 let CGLSSettings: HTMLDivElement;
-let IterCGLSElement: SlInput;
-let ToleranceCGLSElement: SlInput;
+let CGLSIterElement: SlInput;
+let CGLSToleranceElement: SlInput;
+
+// SIRT
+let SIRTSettings: HTMLDivElement;
+let SIRTIterElement: SlInput;
 
 // Tikhonov
 let TikSettings: HTMLDivElement;
 let TikOpElement: SlSelect;
 let TikAlphaElement: SlInput;
 let TikBoundElement: SlSelect;
+
+// Constraint
+let ConSettings: HTMLDivElement;
+let ConOpElement: SlSelect;
+let ConCheckboxUpperElement: SlCheckbox;
+let ConCheckboxLowerElement: SlCheckbox;
+let ConUpperElement: SlInput;
+let ConLowerElement: SlInput;
+let ConTVIsotropicElement: SlCheckbox;
+let ConTVToleranceElement: SlInput;
+let ConTVIterElement: SlInput;
 
 let SliceImages: NodeListOf<HTMLVideoElement>;
 let SinogramImages: NodeListOf<HTMLVideoElement>;
@@ -50,6 +65,9 @@ let Overlays: HTMLDivElement[];
 // ====================================================== //
 // ======================= Globals ====================== //
 // ====================================================== //
+
+let ConUpperBound = "";
+let ConLowerBound = "";
 
 // ====================================================== //
 // ======================== Setup ======================= //
@@ -93,11 +111,26 @@ export function setupRecon(): boolean {
 	const cgls_input_iterations = document.getElementById("inputCGLSIterations");
 	const cgls_input_tolerance = document.getElementById("inputCGLSTolerance");
 
+	// SIRT
+	const sirt_settings = document.getElementById("settingsSIRT");
+	const sirt_input_iterations = document.getElementById("inputSIRTIterations");
+
 	// Tikhonov
 	const tik_settings = document.getElementById("settingsTikhonov");
 	const tik_select_operator = document.getElementById("selectTikOperator");
 	const tik_input_alpha = document.getElementById("inputTikAlpha");
 	const tik_select_boundary = document.getElementById("selectTikBoundary");
+
+	// Constraint
+	const con_settings = document.getElementById("settingsConstraint");
+	const con_select_operator = document.getElementById("selectConOperator");
+	const con_input_upper = document.getElementById("inputConUpper");
+	const con_checkbox_upper = document.getElementById("checkboxConUpper");
+	const con_input_lower = document.getElementById("inputConLower");
+	const con_checkbox_lower = document.getElementById("checkboxConLower");
+	const con_checkbox_tv_isotropic = document.getElementById("checkboxConTVIsotropic");
+	const con_input_tv_tolerance = document.getElementById("inputConTVTolerance");
+	const con_input_tv_iter = document.getElementById("inputConTVIterations");
 
 	if (select_alg == null ||
 		group_alg == null ||
@@ -110,10 +143,21 @@ export function setupRecon(): boolean {
 		cgls_settings == null ||
 		cgls_input_iterations == null ||
 		cgls_input_tolerance == null ||
+		sirt_settings == null ||
+		sirt_input_iterations == null ||
 		tik_settings == null ||
 		tik_select_operator == null ||
 		tik_input_alpha == null ||
-		tik_select_boundary == null) {
+		tik_select_boundary == null ||
+		con_settings == null ||
+		con_select_operator == null ||
+		con_input_upper == null ||
+		con_checkbox_upper == null ||
+		con_input_lower == null ||
+		con_checkbox_lower == null ||
+		con_checkbox_tv_isotropic == null ||
+		con_input_tv_tolerance == null ||
+		con_input_tv_iter == null) {
 
 		console.log(select_alg);
 		console.log(group_alg);
@@ -128,10 +172,23 @@ export function setupRecon(): boolean {
 		console.log(cgls_input_iterations);
 		console.log(cgls_input_tolerance);
 
+		console.log(sirt_settings);
+		console.log(sirt_input_iterations);
+
 		console.log(tik_settings);
 		console.log(tik_select_operator);
 		console.log(tik_input_alpha);
 		console.log(tik_select_boundary);
+
+		console.log(con_settings);
+		console.log(con_select_operator);
+		console.log(con_input_upper);
+		console.log(con_checkbox_upper);
+		console.log(con_input_lower);
+		console.log(con_checkbox_lower);
+		console.log(con_checkbox_tv_isotropic);
+		console.log(con_input_tv_tolerance);
+		console.log(con_input_tv_iter);
 
 		showAlert("Reconstruction setup failure", AlertType.ERROR);
 		return false;
@@ -152,14 +209,60 @@ export function setupRecon(): boolean {
 
 	// CGLS
 	CGLSSettings = cgls_settings as HTMLDivElement;
-	IterCGLSElement = cgls_input_iterations as SlInput;
-	ToleranceCGLSElement = cgls_input_tolerance as SlInput;
+	CGLSIterElement = cgls_input_iterations as SlInput;
+	CGLSToleranceElement = cgls_input_tolerance as SlInput;
+
+	// SIRT
+	SIRTSettings = sirt_settings as HTMLDivElement;
+	SIRTIterElement = sirt_input_iterations as SlInput;
 
 	// Tikhonov
 	TikSettings = tik_settings as HTMLDivElement;
 	TikAlphaElement = tik_input_alpha as SlInput;
 	TikBoundElement = tik_select_boundary as SlSelect;
 	TikOpElement = tik_select_operator as SlSelect;
+
+	// Constraints
+	ConSettings = con_settings as HTMLDivElement;
+	ConOpElement = con_select_operator as SlSelect;
+	ConCheckboxUpperElement = con_checkbox_upper as SlCheckbox;
+	ConCheckboxLowerElement = con_checkbox_lower as SlCheckbox;
+	ConTVIsotropicElement = con_checkbox_tv_isotropic as SlCheckbox;
+	ConTVToleranceElement = con_input_tv_tolerance as SlInput;
+	ConTVIterElement = con_input_tv_iter as SlInput;
+	ConUpperElement = con_input_upper as SlInput;
+	ConLowerElement = con_input_lower as SlInput;
+
+	ConOpElement.addEventListener("sl-change", () => {
+		switch ((ConOpElement.value as string) as ConstraintMethod) {
+		case "box":
+			ConCheckboxUpperElement.disabled = false;
+			ConCheckboxLowerElement.disabled = false;
+			ToggleConLower(ConCheckboxLowerElement.checked);
+			ToggleConUpper(ConCheckboxUpperElement.checked);
+			ConTVIsotropicElement.disabled = true;
+			ConTVToleranceElement.disabled = true;
+			ConTVIterElement.disabled = true;
+			break;
+		case "tv":
+			ConCheckboxUpperElement.disabled = false;
+			ConCheckboxLowerElement.disabled = false;
+			ToggleConLower(ConCheckboxLowerElement.checked);
+			ToggleConUpper(ConCheckboxUpperElement.checked);
+			ConTVIsotropicElement.disabled = false;
+			ConTVToleranceElement.disabled = false;
+			ConTVIterElement.disabled = false;
+			break;
+		}
+	});
+
+	ConCheckboxUpperElement.addEventListener("sl-change", () => {
+		ToggleConUpper(ConCheckboxUpperElement.checked);
+	});
+
+	ConCheckboxLowerElement.addEventListener("sl-change", () => {
+		ToggleConLower(ConCheckboxLowerElement.checked);
+	});
 
 	TikOpElement.addEventListener("sl-change", () => {
 		switch ((TikOpElement.value as string) as TikhonovMethod) {
@@ -206,7 +309,9 @@ export function setupRecon(): boolean {
 		FDKSettings.classList.add("hidden");
 		FBPSettings.classList.add("hidden");
 		CGLSSettings.classList.add("hidden");
+		SIRTSettings.classList.add("hidden");
 		TikSettings.classList.add("hidden");
+		ConSettings.classList.add("hidden");
 
 		// Unhide specific alg settings
 		switch (AlgElement.value) {
@@ -219,6 +324,11 @@ export function setupRecon(): boolean {
 		case "CGLS":
 			CGLSSettings.classList.remove("hidden");
 			TikSettings.classList.remove("hidden");
+			break;
+		case "SIRT":
+			SIRTSettings.classList.remove("hidden");
+			TikSettings.classList.remove("hidden");
+			ConSettings.classList.remove("hidden");
 			break;
 		default:
 			break;
@@ -367,6 +477,39 @@ function SetPreviewImages(preview: ReconstructionPreview): void {
 		image.src = "data:video/mp4;base64," + preview.recon.video;
 	}
 }
+
+function ToggleConUpper(state:boolean):void {
+	if (state) {
+		ConUpperElement.type = "number";
+		ConUpperElement.value = ConUpperBound;
+		ConUpperElement.disabled = false;
+	} else {
+		if (ConUpperElement.type !== "text") {
+			// Do not overwrite if current state is already disabled
+			ConUpperBound = ConUpperElement.value;
+		}
+		ConUpperElement.type = "text";
+		ConUpperElement.value = "+Infinity";
+		ConUpperElement.disabled = true;
+	}
+}
+
+function ToggleConLower(state:boolean):void {
+	if (state) {
+		ConLowerElement.type = "number";
+		ConLowerElement.value = ConLowerBound;
+		ConLowerElement.disabled = false;
+	} else {
+		if (ConLowerElement.type !== "text") {
+			// Do not overwrite if current state is already disabled
+			ConLowerBound = ConLowerElement.value;
+		}
+		ConLowerElement.type = "text";
+		ConLowerElement.value = "-Infinity";
+		ConLowerElement.disabled = true;
+	}
+}
+
 // ====================================================== //
 // ==================== Page Updates ==================== //
 // ====================================================== //
@@ -380,6 +523,54 @@ export function SyncRecon(): Promise<void> {
 	});
 }
 
+function UpdateTikValues(params:TikhonovRegulariser):void {
+	TikOpElement.value = params.method;
+	// Force update even if new value is equal to old
+	// This ensures disabled state of child items are correct.
+	TikOpElement.handleValueChange();
+
+	if (params.method !== "projection") {
+		// Projection tik method does not have an alpha parameter
+		TikAlphaElement.value = params.params.alpha + "";
+	}
+
+	if (params.method == "gradient") {
+		// Gradient tik method has a boundary condition
+		TikBoundElement.value = params.params.boundary;
+	}
+}
+
+function UpdateConValues(params:Constraint):void {
+	params = params as BoxConstraint;
+	ConOpElement.value = params.method;
+	// Force update even if new value is equal to old
+	// This ensures disabled state of child items are correct.
+	ConOpElement.handleValueChange();
+	console.log(params);
+	if (params.method == "tv") {
+		const conTV:TVConstraint = params as TVConstraint;
+		ConTVIsotropicElement.checked = conTV.params.isotropic;
+		ConTVIterElement.value = conTV.params.iterations+"";
+		ConTVToleranceElement.value = conTV.params.tolerance+"";
+	}
+	if (params.params.lower == null) {
+		ToggleConLower(false);
+		ConCheckboxLowerElement.checked = false;
+	} else {
+		ConLowerBound = params.params.lower as string;
+		ToggleConLower(true);
+		ConCheckboxLowerElement.checked = true;
+	}
+	if ((params as BoxConstraint).params.upper == null) {
+		ToggleConUpper(false);
+		ConCheckboxUpperElement.checked = false;
+	} else {
+		ConUpperBound = params.params.upper as string;
+		ToggleConUpper(true);
+		ConCheckboxUpperElement.checked = true;
+	}
+}
+
 /**
  * Request reconstruction property data from the server.
  */
@@ -391,14 +582,18 @@ export function UpdateRecon(): Promise<void> {
 		if (response.status != 200) {
 			return;
 		}
+		// Convert to text, since json will fail due to the inclusion of Infinity.
+		const result = response.text();
 
-		// Convert to json
-		const result = response.json();
+		result.then((resultText: string) => {
+			// Replace 'Infinity' with null, since json cannot represent negative infinity.
+			resultText = resultText.replaceAll("-Infinity", "null");
+			resultText = resultText.replaceAll("Infinity", "null");
 
-		result.then((result: unknown) => {
-			const properties = processResponse(result as ReconResponseRegistry["reconResponse"], "reconResponse") as ReconstructionParams;
-			console.log("---Received---");
-			console.log(result);
+			const resultJson = JSON.parse(resultText);
+
+			const properties = processResponse(resultJson as ReconResponseRegistry["reconResponse"], "reconResponse") as ReconstructionParams;
+			console.log(properties);
 
 			if (properties === undefined) {
 				return;
@@ -420,23 +615,15 @@ export function UpdateRecon(): Promise<void> {
 				break;
 			case "CGLS":
 				params = properties as CGLSParams;
-				console.log("--params--");
-				console.log(params);
-				IterCGLSElement.value = params.iterations + "";
-				ToleranceCGLSElement.value = params.tolerance + "";
-
-				TikOpElement.value = params.operator.method;
-				if (params.operator.method !== "projection") {
-					// Projection tik method does not have an alpha parameter
-					TikAlphaElement.value = params.operator.params.alpha + "";
-				}
-
-				if (params.operator.method == "gradient") {
-					// Gradient tik method has a boundary condition
-					TikBoundElement.value = params.operator.params.boundary;
-				}
+				CGLSIterElement.value = params.iterations + "";
+				CGLSToleranceElement.value = params.tolerance + "";
+				UpdateTikValues(params.operator);
 				break;
-			default:
+			case "SIRT":
+				params = properties as SIRTParams;
+				SIRTIterElement.value = params.iterations+"";
+				UpdateTikValues(params.operator);
+				UpdateConValues(params.constraint);
 				break;
 			}
 		});
@@ -481,6 +668,31 @@ function setRecon(): Promise<void> {
 		}
 	};
 
+	let constraint:Constraint;
+	switch (ConOpElement.value as ConstraintMethod) {
+	case "box":
+	default:
+		constraint = {
+			method: "box",
+			params: {
+				lower: ConCheckboxLowerElement.checked ? parseFloat(ConLowerElement.value) : null,
+				upper: ConCheckboxUpperElement.checked ? parseFloat(ConUpperElement.value) : null,
+			}
+		} as BoxConstraint;
+		break;
+	case "tv":
+		constraint = {
+			method: "tv",
+			params: {
+				lower: ConCheckboxLowerElement.checked ? parseFloat(ConLowerElement.value) : null,
+				upper: ConCheckboxUpperElement.checked ? parseFloat(ConUpperElement.value) : null,
+				isotropic: ConTVIsotropicElement.checked,
+				iterations: parseInt(ConTVIterElement.value),
+				tolerance: parseFloat(ConTVToleranceElement.value),
+			}
+		} as TVConstraint;
+	}
+
 	const FDKParams:FDKParams = {
 		method: "FDK",
 		quality: quality as ReconQuality,
@@ -496,9 +708,17 @@ function setRecon(): Promise<void> {
 	const CGLSParams:CGLSParams = {
 		method: "CGLS",
 		quality: quality as ReconQuality,
-		iterations: parseInt(IterCGLSElement.value),
-		tolerance: parseFloat(ToleranceCGLSElement.value),
+		iterations: parseInt(CGLSIterElement.value),
+		tolerance: parseFloat(CGLSToleranceElement.value),
 		operator: Tikhonov,
+	};
+
+	const SIRTParams:SIRTParams = {
+		method: "SIRT",
+		quality: quality as ReconQuality,
+		iterations: parseInt(SIRTIterElement.value),
+		operator: Tikhonov,
+		constraint: constraint,
 	};
 
 	let request = undefined;
@@ -512,6 +732,9 @@ function setRecon(): Promise<void> {
 		break;
 	case "CGLS":
 		request = prepareRequest(CGLSParams);
+		break;
+	case "SIRT":
+		request = prepareRequest(SIRTParams);
 		break;
 	}
 	console.log("---Sent---");
