@@ -105,11 +105,13 @@ export class SIRTParams implements IterativeReconstructionParams {
 	quality:ReconQuality
 	iterations:number
 	constraint: Constraint
+	operator: TikhonovRegulariser
 
-	constructor(quality:ReconQuality, iterations:number, constraint:Constraint) {
+	constructor(quality:ReconQuality, iterations:number, constraint:Constraint, operator:TikhonovRegulariser) {
 		this.quality = quality;
 		this.iterations = iterations;
 		this.constraint = constraint;
+		this.operator = operator;
 	}
 }
 
