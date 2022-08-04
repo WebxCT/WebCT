@@ -5,7 +5,7 @@
 
 export type ReconMethod = "FDK" | "FBP" | "CGLS" | "MLEM" | "SIRT" | "FISTA"
 export type TikhonovMethod = "projection" | "identity" | "gradient"
-export type ConstraintMethod = "box" | "tv"
+export type ConstraintMethod = "box" | "tv" | "fgp-tv" | "tgv"
 export type DiffMethod = "least-squares"
 
 export type ReconQuality = 0 | 1 | 2 | 3
@@ -52,6 +52,27 @@ export interface TVConstraint extends Constraint {
 		isotropic: boolean,
 		lower: number|null,
 		upper: number|null,
+	}
+}
+
+export interface FGPTVConstraint extends Constraint {
+	readonly method: "fgp-tv"
+	params: {
+		iterations: number,
+		alpha: number,
+		tolerance: number,
+		isotropic: boolean,
+		nonnegativity: boolean,
+	}
+}
+
+export interface TGVConstraint extends Constraint {
+	readonly method: "tgv"
+	params: {
+		iterations: number,
+		alpha: number,
+		gamma: number,
+		tolerance: number,
 	}
 }
 

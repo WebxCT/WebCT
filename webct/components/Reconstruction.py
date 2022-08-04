@@ -172,7 +172,7 @@ def reconstruct(projections: np.ndarray, capture: CaptureParameters, beam: BeamP
 		sirt = SIRT(ig.allocate(),
 			operator=blockOp,
 			data=data,
-			constraint=params.constraint.get(),
+			constraint=params.constraint.get(ig),
 			max_iteration=params.iterations)
 		sirt.run(verbose=True)
 
@@ -188,7 +188,7 @@ def reconstruct(projections: np.ndarray, capture: CaptureParameters, beam: BeamP
 
 		# Convex function
 		# (Since constraints are most popular, we cheat)
-		convFunction = params.constraint.get()
+		convFunction = params.constraint.get(ig)
 
 		# FISTA
 		# * there is a typing error on parameter g due to a default

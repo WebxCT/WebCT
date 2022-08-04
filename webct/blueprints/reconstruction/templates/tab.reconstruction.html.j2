@@ -106,6 +106,17 @@
 	<!-- <button></button> -->
 </div>
 
+<div class="group" id="settingsDiff">
+	<div>
+		<sl-select label="Differentiable Function" id="selectDiffOperator" value="least-squares">
+			<sl-menu-item value="least-squares">Least Squares</sl-menu-item>
+		</sl-select>
+		<sl-input type="number" step="0.1" value="1" id="inputDiffLSScaling" label="Scaling Constant" advanced></sl-input>
+		<sl-input type="number" step="0.1" value="1" id="inputDiffLSWeight" label="Weight" advanced></sl-input>
+	</div>
+	<button></button>
+</div>
+
 <div class="group" id="settingsConstraint">
 	<div>
 		<sl-select label="Reconstruction Constraint" id="selectConOperator" class="" value="box">
@@ -113,6 +124,14 @@
 				<span><br>Upper & Lower Bounds</span>
 			</sl-menu-item>
 			<sl-menu-item value="tv">Total Variation
+				{% include "./tags/slow.html.j2" %}
+			</sl-menu-item>
+			<sl-menu-item value="fgp-tv">FGP-TV
+				<span> Fast Gradient Projection Total Variation</span>
+				{% include "./tags/gpu.html.j2" %}
+			</sl-menu-item>
+			<sl-menu-item value="tgv">TGV
+				<span> Total Generalised Variation</span>
 				{% include "./tags/slow.html.j2" %}
 			</sl-menu-item>
 		</sl-select>
@@ -127,12 +146,20 @@
 			<sl-input type="number" id="inputConLower" label="Lower Constraint" value="0"></sl-input>
 		</div>
 
-		<sl-input id="inputConTVIterations" type="number" label="Iterations" step=1 min=1 value="10" disabled>
+		<sl-input id="inputConIterations" type="number" label="Iterations" step=1 min=1 value="10" disabled>
 		</sl-input>
-		<sl-input type="number" label="Alpha" step=0.01 min=0 value="0.1" id="inputConTVAlpha" advanced disabled>
+
+		<sl-checkbox id="checkboxConNonNeg" checked disabled>Non- negativity</sl-checkbox>
+
+		<sl-input type="number" label="Alpha" step=0.01 min=0 value="0.1" id="inputConAlpha" advanced disabled>
 		</sl-input>
-		<sl-checkbox id="checkboxConTVIsotropic" checked advanced disabled>Isotropic</sl-checkbox>
-		<sl-input type="number" label="Tolerance" step=1 min=1 value="1" id="inputConTVTolerance" advanced disabled>
+
+		<sl-input type="number" label="Gamma" step=0.01 min=0 value="1" id="inputConGamma" advanced disabled>
+		</sl-input>
+
+		<sl-checkbox id="checkboxConIsotropic" checked advanced disabled>Isotropic</sl-checkbox>
+
+		<sl-input type="number" label="Tolerance" step=1 min=1 value="1" id="inputConTolerance" advanced disabled>
 			<span slot="suffix">e-6</span></sl-input>
 	</div>
 	<button></button>
@@ -150,17 +177,6 @@
 			<sl-menu-item value="Neumann">Neumann</sl-menu-item>
 			<sl-menu-item value="Periodic">Periodic</sl-menu-item>
 		</sl-select>
-	</div>
-	<button></button>
-</div>
-
-<div class="group" id="settingsDiff">
-	<div>
-		<sl-select label="Differentiable Function" id="selectDiffOperator" value="least-squares">
-			<sl-menu-item value="least-squares">Least Squares</sl-menu-item>
-		</sl-select>
-		<sl-input type="number" step="0.1" value="1" id="inputDiffLSScaling" label="Scaling Constant" advanced></sl-input>
-		<sl-input type="number" step="0.1" value="1" id="inputDiffLSWeight" label="Weight" advanced></sl-input>
 	</div>
 	<button></button>
 </div>

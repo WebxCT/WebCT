@@ -7,10 +7,10 @@ Below is a table of all methods, and what components they work with.
 
 
 
-| Method | Identity | Gradient |     | TotalVariation (TV) | IndicatorBox |     | LeastSquares |
-| ------ | -------- | -------- | --- | ------------------- | ------------ | --- | ------------ |
-| FBP    |          |          |     |                     |              |     |              |
-| FDK    |          |          |     |                     |              |     |              |
-| CGLS   | ✔        | ✔        |     |                     |              |     |              |
-| SIRT   | ✔        |          |     | ✔?                  | ✔            |     |              |
-| FISTA  | -        | -        |     | -                   | -            |     | -            |
+| Method | Identity | Gradient |     | TotalVariation (TV) | IndicatorBox | FGP-TV | TGV |     | LeastSquares |
+| ------ | -------- | -------- | --- | ------------------- | ------------ | ------ | --- | --- | ------------ |
+| FBP    |          |          |     |                     |              |        |     |     |              |
+| FDK    |          |          |     |                     |              |        |     |     |              |
+| CGLS   | ✔        | ✔        |     |                     |              |        |     |     |              |
+| SIRT   | ✔        |          |     | ✔?                  | ✔            | ✔?     | ✔?  |     |              |
+| FISTA  |          |          |     | ✔                   | ✔            | ✔      | ✔   |     | ✔            |

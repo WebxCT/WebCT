@@ -6,7 +6,7 @@
 import { SlCheckbox, SlInput, SlSelect } from "@shoelace-style/shoelace";
 import { AlertType, showAlert } from "../../../base/static/js/base";
 import { prepareRequest, processResponse, ReconResponseRegistry, requestReconData, requestReconPreview, sendReconData } from "./api";
-import { BoxConstraint, CGLSParams, Constraint, ConstraintMethod, Differentiable, DiffMethod, FBPParams, FDKParams, FISTAParams, LeastSquaresDiff, ReconQuality, ReconstructionParams, ReconstructionPreview, SIRTParams, TikhonovMethod as TikhonovMethod, TikhonovRegulariser, TVConstraint } from "./types";
+import { BoxConstraint, CGLSParams, Constraint, ConstraintMethod, Differentiable, DiffMethod, FBPParams, FDKParams, FGPTVConstraint, FISTAParams, LeastSquaresDiff, ReconQuality, ReconstructionParams, ReconstructionPreview, SIRTParams, TGVConstraint, TikhonovMethod as TikhonovMethod, TikhonovRegulariser, TVConstraint } from "./types";
 import { BeamTypeElement } from "../../../beam/static/js/beam";
 import { validateMethod } from "./validation";
 
@@ -53,10 +53,14 @@ let ConCheckboxUpperElement: SlCheckbox;
 let ConCheckboxLowerElement: SlCheckbox;
 let ConUpperElement: SlInput;
 let ConLowerElement: SlInput;
-let ConTVIsotropicElement: SlCheckbox;
-let ConTVToleranceElement: SlInput;
-let ConTVIterElement: SlInput;
-let ConTVAlphaElement: SlInput;
+let ConUpperDiv: HTMLDivElement;
+let ConLowerDiv: HTMLDivElement;
+let ConIsotropicElement: SlCheckbox;
+let ConToleranceElement: SlInput;
+let ConIterElement: SlInput;
+let ConAlphaElement: SlInput;
+let ConNonNegElement: SlCheckbox;
+let ConGammaElement: SlInput;
 
 // Differentiable Function
 let DiffSettings: HTMLDivElement;
@@ -143,10 +147,12 @@ export function setupRecon(): boolean {
 	const con_checkbox_upper = document.getElementById("checkboxConUpper");
 	const con_input_lower = document.getElementById("inputConLower");
 	const con_checkbox_lower = document.getElementById("checkboxConLower");
-	const con_checkbox_tv_isotropic = document.getElementById("checkboxConTVIsotropic");
-	const con_input_tv_tolerance = document.getElementById("inputConTVTolerance");
-	const con_input_tv_iter = document.getElementById("inputConTVIterations");
-	const con_input_tv_alpha = document.getElementById("inputConTVAlpha");
+	const con_checkbox_isotropic = document.getElementById("checkboxConIsotropic");
+	const con_input_tolerance = document.getElementById("inputConTolerance");
+	const con_input_iter = document.getElementById("inputConIterations");
+	const con_input_alpha = document.getElementById("inputConAlpha");
+	const con_input_gamma = document.getElementById("inputConGamma");
+	const con_checkbox_nonneg = document.getElementById("checkboxConNonNeg");
 
 	// Differentiable Functions
 	const diff_settings = document.getElementById("settingsDiff");
@@ -179,10 +185,12 @@ export function setupRecon(): boolean {
 		con_checkbox_upper == null ||
 		con_input_lower == null ||
 		con_checkbox_lower == null ||
-		con_checkbox_tv_isotropic == null ||
-		con_input_tv_tolerance == null ||
-		con_input_tv_iter == null ||
-		con_input_tv_alpha == null ||
+		con_checkbox_isotropic == null ||
+		con_input_tolerance == null ||
+		con_input_iter == null ||
+		con_input_alpha == null ||
+		con_checkbox_nonneg == null ||
+		con_input_gamma == null ||
 		diff_settings == null ||
 		diff_select_operator == null ||
 		diff_input_ls_scaling == null ||
@@ -218,10 +226,13 @@ export function setupRecon(): boolean {
 		console.log(con_checkbox_upper);
 		console.log(con_input_lower);
 		console.log(con_checkbox_lower);
-		console.log(con_checkbox_tv_isotropic);
-		console.log(con_input_tv_tolerance);
-		console.log(con_input_tv_iter);
-		console.log(con_input_tv_alpha);
+		console.log(con_checkbox_isotropic);
+		console.log(con_input_tolerance);
+		console.log(con_input_iter);
+		console.log(con_input_alpha);
+		console.log(con_checkbox_nonneg);
+		console.log(con_input_gamma);
+
 
 		console.log(diff_settings);
 		console.log(diff_select_operator);
@@ -270,12 +281,16 @@ export function setupRecon(): boolean {
 	ConOpElement = con_select_operator as SlSelect;
 	ConCheckboxUpperElement = con_checkbox_upper as SlCheckbox;
 	ConCheckboxLowerElement = con_checkbox_lower as SlCheckbox;
-	ConTVIsotropicElement = con_checkbox_tv_isotropic as SlCheckbox;
-	ConTVToleranceElement = con_input_tv_tolerance as SlInput;
-	ConTVIterElement = con_input_tv_iter as SlInput;
+	ConIsotropicElement = con_checkbox_isotropic as SlCheckbox;
+	ConToleranceElement = con_input_tolerance as SlInput;
+	ConIterElement = con_input_iter as SlInput;
 	ConUpperElement = con_input_upper as SlInput;
 	ConLowerElement = con_input_lower as SlInput;
-	ConTVAlphaElement = con_input_tv_alpha as SlInput;
+	ConAlphaElement = con_input_alpha as SlInput;
+	ConNonNegElement = con_checkbox_nonneg as SlCheckbox;
+	ConGammaElement = con_input_gamma as SlInput;
+	ConUpperDiv = ConUpperElement.parentElement as HTMLDivElement;
+	ConLowerDiv = ConLowerElement.parentElement as HTMLDivElement;
 
 	// Differentiable Function
 	DiffSettings = diff_settings as HTMLDivElement;
@@ -286,35 +301,81 @@ export function setupRecon(): boolean {
 	ConOpElement.addEventListener("sl-change", () => {
 
 		// Disable and Hide all elements
-		ConTVAlphaElement.disabled = true;
-		ConTVAlphaElement.classList.add("hidden");
-		ConTVIsotropicElement.disabled = true;
-		ConTVIsotropicElement.classList.add("hidden");
-		ConTVToleranceElement.disabled = true;
-		ConTVToleranceElement.classList.add("hidden");
-		ConTVIterElement.disabled = true;
-		ConTVIterElement.classList.add("hidden");
+		ConLowerDiv.classList.add("hidden");
+		ConCheckboxLowerElement.disabled = true;
+		ConLowerElement.disabled = true;
+
+		ConUpperDiv.classList.add("hidden");
+		ConCheckboxUpperElement.disabled = true;
+		ConUpperElement.disabled = true;
+
+		ConAlphaElement.disabled = true;
+		ConAlphaElement.classList.add("hidden");
+
+		ConIsotropicElement.disabled = true;
+		ConIsotropicElement.classList.add("hidden");
+
+		ConToleranceElement.disabled = true;
+		ConToleranceElement.classList.add("hidden");
+
+		ConIterElement.disabled = true;
+		ConIterElement.classList.add("hidden");
+
+		ConNonNegElement.disabled = true;
+		ConNonNegElement.classList.add("hidden");
+
+		ConGammaElement.disabled = true;
+		ConGammaElement.classList.add("hidden");
 
 		switch ((ConOpElement.value as string) as ConstraintMethod) {
 		case "box":
-			// Box only uses upper and lower bounds, which are enabled by
-			// default.
+			ConLowerDiv.classList.remove("hidden");
+			ConUpperDiv.classList.remove("hidden");
+			ConCheckboxLowerElement.disabled = false;
+			ConCheckboxUpperElement.disabled = false;
+			ToggleConLower(ConCheckboxLowerElement.checked);
+			ToggleConUpper(ConCheckboxUpperElement.checked);
 			break;
 		case "tv":
-			// Enable & Show other elements
-			ConTVAlphaElement.disabled = false;
-			ConTVAlphaElement.classList.remove("hidden");
-			ConTVIsotropicElement.disabled = false;
-			ConTVIsotropicElement.classList.remove("hidden");
-			ConTVToleranceElement.disabled = false;
-			ConTVToleranceElement.classList.remove("hidden");
-			ConTVIterElement.disabled = false;
-			ConTVIterElement.classList.remove("hidden");
+			ConLowerDiv.classList.remove("hidden");
+			ConUpperDiv.classList.remove("hidden");
+			ConCheckboxLowerElement.disabled = false;
+			ConCheckboxUpperElement.disabled = false;
+			ToggleConLower(ConCheckboxLowerElement.checked);
+			ToggleConUpper(ConCheckboxUpperElement.checked);
+
+			ConAlphaElement.disabled = false;
+			ConAlphaElement.classList.remove("hidden");
+			ConIsotropicElement.disabled = false;
+			ConIsotropicElement.classList.remove("hidden");
+			ConToleranceElement.disabled = false;
+			ConToleranceElement.classList.remove("hidden");
+			ConIterElement.disabled = false;
+			ConIterElement.classList.remove("hidden");
+			break;
+		case "fgp-tv":
+			ConAlphaElement.disabled = false;
+			ConAlphaElement.classList.remove("hidden");
+			ConIsotropicElement.disabled = false;
+			ConIsotropicElement.classList.remove("hidden");
+			ConToleranceElement.disabled = false;
+			ConToleranceElement.classList.remove("hidden");
+			ConNonNegElement.disabled = false;
+			ConNonNegElement.classList.remove("hidden");
+			ConIterElement.disabled = false;
+			ConIterElement.classList.remove("hidden");
+			break;
+		case "tgv":
+			ConAlphaElement.disabled = false;
+			ConAlphaElement.classList.remove("hidden");
+			ConToleranceElement.disabled = false;
+			ConToleranceElement.classList.remove("hidden");
+			ConIterElement.disabled = false;
+			ConIterElement.classList.remove("hidden");
+			ConGammaElement.disabled = false;
+			ConGammaElement.classList.remove("hidden");
 			break;
 		}
-
-		ToggleConLower(ConCheckboxLowerElement.checked);
-		ToggleConUpper(ConCheckboxUpperElement.checked);
 	});
 
 	ConCheckboxUpperElement.addEventListener("sl-change", () => {
@@ -614,24 +675,12 @@ function UpdateTikValues(params: TikhonovRegulariser): void {
 	}
 }
 
-function UpdateConValues(params: Constraint): void {
-	params = params as BoxConstraint;
-	ConOpElement.value = params.method;
-	// Force update even if new value is equal to old
-	// This ensures disabled state of child items are correct.
-	ConOpElement.handleValueChange();
-	console.log(params);
-	if (params.method == "tv") {
-		const conTV: TVConstraint = params as TVConstraint;
-		ConTVIsotropicElement.checked = conTV.params.isotropic;
-		ConTVIterElement.value = conTV.params.iterations + "";
-		ConTVToleranceElement.value = conTV.params.tolerance + "";
-	}
+function UpdateConBoundCheckboxes(params: BoxConstraint | TVConstraint): void {
 	if (params.params.lower == null) {
 		ToggleConLower(false);
 		ConCheckboxLowerElement.checked = false;
 	} else {
-		ConLowerBound = params.params.lower as string;
+		ConLowerBound = params.params.lower + "";
 		ToggleConLower(true);
 		ConCheckboxLowerElement.checked = true;
 	}
@@ -639,10 +688,50 @@ function UpdateConValues(params: Constraint): void {
 		ToggleConUpper(false);
 		ConCheckboxUpperElement.checked = false;
 	} else {
-		ConUpperBound = params.params.upper as string;
+		ConUpperBound = params.params.upper + "";
 		ToggleConUpper(true);
 		ConCheckboxUpperElement.checked = true;
 	}
+}
+
+function UpdateConValues(params: Constraint): void {
+	params = params as BoxConstraint;
+	ConOpElement.value = params.method;
+	// Force update even if new value is equal to old
+	// This ensures disabled state of child items are correct.
+	ConOpElement.handleValueChange();
+
+	const conTV: TVConstraint = params as TVConstraint;
+	const conBox: BoxConstraint = params as BoxConstraint;
+	const conFGPTV: FGPTVConstraint = params as FGPTVConstraint;
+	const conTGV: TGVConstraint = params as TGVConstraint;
+
+	switch (params.method) {
+	case "box":
+		UpdateConBoundCheckboxes(conBox);
+		break;
+	case "tv":
+		ConIsotropicElement.checked = conTV.params.isotropic;
+		ConIterElement.value = conTV.params.iterations + "";
+		ConToleranceElement.value = conTV.params.tolerance + "";
+		ConAlphaElement.value = conTV.params.alpha + "";
+		UpdateConBoundCheckboxes(conTV);
+		break;
+	case "fgp-tv":
+		ConIsotropicElement.checked = conFGPTV.params.isotropic;
+		ConNonNegElement.checked = conFGPTV.params.nonnegativity;
+		ConIterElement.value = conFGPTV.params.iterations + "";
+		ConToleranceElement.value = conFGPTV.params.tolerance + "";
+		ConAlphaElement.value = conFGPTV.params.alpha + "";
+		break;
+	case "tgv":
+		ConIterElement.value = conTGV.params.iterations + "";
+		ConAlphaElement.value = conTGV.params.alpha + "";
+		ConToleranceElement.value = conTGV.params.tolerance + "";
+		ConGammaElement.value = conTGV.params.gamma + "";
+		break;
+	}
+	console.log(params);
 }
 
 function UpdateDiffValues(params: Differentiable): void {
@@ -773,12 +862,33 @@ function setRecon(): Promise<void> {
 	const tvConstraint: TVConstraint = {
 		method: "tv",
 		params: {
-			iterations: parseInt(ConTVIterElement.value),
-			alpha: parseFloat(ConTVAlphaElement.value),
+			iterations: parseInt(ConIterElement.value),
+			alpha: parseFloat(ConAlphaElement.value),
 			lower: ConCheckboxLowerElement.checked ? parseFloat(ConLowerElement.value) : null,
 			upper: ConCheckboxUpperElement.checked ? parseFloat(ConUpperElement.value) : null,
-			isotropic: ConTVIsotropicElement.checked,
-			tolerance: parseFloat(ConTVToleranceElement.value),
+			isotropic: ConIsotropicElement.checked,
+			tolerance: parseFloat(ConToleranceElement.value),
+		}
+	};
+
+	const fgptvConstraint: FGPTVConstraint = {
+		method: "fgp-tv",
+		params: {
+			iterations: parseInt(ConIterElement.value),
+			alpha: parseFloat(ConAlphaElement.value),
+			isotropic: ConIsotropicElement.checked,
+			tolerance: parseFloat(ConToleranceElement.value),
+			nonnegativity: ConNonNegElement.checked,
+		}
+	};
+
+	const tgvConstraint: TGVConstraint = {
+		method: "tgv",
+		params: {
+			iterations: parseInt(ConIterElement.value),
+			alpha: parseFloat(ConAlphaElement.value),
+			tolerance: parseFloat(ConToleranceElement.value),
+			gamma: parseFloat(ConGammaElement.value),
 		}
 	};
 
@@ -792,9 +902,15 @@ function setRecon(): Promise<void> {
 	case "tv":
 		constraint = tvConstraint;
 		break;
+	case "fgp-tv":
+		constraint = fgptvConstraint;
+		break;
+	case "tgv":
+		constraint = tgvConstraint;
+		break;
 	}
 
-	const lsDiff:LeastSquaresDiff = {
+	const lsDiff: LeastSquaresDiff = {
 		method: "least-squares",
 		params: {
 			scaling_constant: parseFloat(DiffLSScalingElement.value),
@@ -802,7 +918,7 @@ function setRecon(): Promise<void> {
 		}
 	};
 
-	let diff:Differentiable;
+	let diff: Differentiable;
 	switch (DiffOpElement.value as DiffMethod) {
 	case "least-squares":
 	default:

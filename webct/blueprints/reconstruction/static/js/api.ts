@@ -2,7 +2,7 @@
  * api.ts : API functions for communicating between the client and server.
  * @author Iwan Mitchell
  */
-import { BoxConstraint, CGLSParams, Constraint, Differentiable, FBPParams, FDKParams, FISTAParams, LeastSquaresDiff, ReconMethod, ReconQuality, ReconstructionParams, ReconstructionPreview, SIRTParams, TikhonovRegulariser, TVConstraint } from "./types";
+import { BoxConstraint, CGLSParams, Constraint, Differentiable, FBPParams, FDKParams, FGPTVConstraint, FISTAParams, LeastSquaresDiff, ReconMethod, ReconQuality, ReconstructionParams, ReconstructionPreview, SIRTParams, TGVConstraint, TikhonovRegulariser, TVConstraint } from "./types";
 
 // ====================================================== //
 // ====================== Endpoints ===================== //
@@ -129,7 +129,16 @@ function processTikhonov(data:ReconResponseRegistry["reconResponse"]):TikhonovRe
 
 function processConstraint(data:ReconResponseRegistry["reconResponse"]):Constraint {
 	const dataConstraint = data.constraint as Constraint;
-	if (dataConstraint.method == "tv") {
+	switch (dataConstraint.method) {
+	case "box":
+		return {
+			method: dataConstraint.method,
+			params: {
+				upper: dataConstraint.params.upper,
+				lower: dataConstraint.params.lower,
+			}
+		} as BoxConstraint;
+	case "tv":
 		return {
 			method: dataConstraint.method,
 			params: {
@@ -140,15 +149,28 @@ function processConstraint(data:ReconResponseRegistry["reconResponse"]):Constrai
 				upper: dataConstraint.params.upper,
 			}
 		} as TVConstraint;
-	} else if (dataConstraint.method == "box") {
+	case "fgp-tv":
 		return {
-			method: dataConstraint.method,
+			method: "fgp-tv",
 			params: {
-				upper: dataConstraint.params.upper,
-				lower: dataConstraint.params.lower,
+				alpha: dataConstraint.params.alpha,
+				isotropic: dataConstraint.params.isotropic,
+				iterations: dataConstraint.params.iterations,
+				nonnegativity: dataConstraint.params.nonnegativity,
+				tolerance: dataConstraint.params.tolerance,
 			}
-		} as BoxConstraint;
-	} else {
+		} as FGPTVConstraint;
+	case "tgv":
+		return {
+			method: "tgv",
+			params: {
+				alpha: dataConstraint.params.alpha,
+				gamma: dataConstraint.params.gamma,
+				iterations: dataConstraint.params.iterations,
+				tolerance: dataConstraint.params.tolerance
+			}
+		} as TGVConstraint;
+	default:
 		return {
 			method: "box",
 			params: {
