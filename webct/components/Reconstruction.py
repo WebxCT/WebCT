@@ -149,7 +149,6 @@ class SIRTParam(ReconParameters):
 	method: str = "SIRT"
 	iterations: int = 10
 	constraint: Constraint = BoxConstraint()
-	operator: IterativeOperator = ProjectionBlock()
 
 @dataclass(frozen=True)
 class PDHGParam(ReconParameters):
@@ -292,8 +291,10 @@ def reconstruct(projections: np.ndarray, capture: CaptureParameters, beam: BeamP
 		acData.reorder("astra")
 		params = cast(SIRTParam, params)
 
-		# Reconstruction operator
-		blockOp, data = dataWithOp(params.operator, ig, acData)
+		# After a long debugging session, it turns out that SIRT fails when
+		# using block operators, such as IdentityOperator and GradientOperator
+		# for Tikhonov regularisation.
+		blockOp, data = dataWithOp(ProjectionBlock(), ig, acData)
 
 		# Run CGLS Reconstruction
 		sirt = SIRT(ig.allocate(),
@@ -474,11 +475,6 @@ def ReconstructionFromJson(json: dict) -> ReconParameters:
 			tolerance = float(json["tolerance"])
 		return CGLSParam(quality=quality, iterations=iterations, operator=operator, tolerance=tolerance)
 	elif method == "SIRT":
-		# operator
-		operator:IterativeOperator = ProjectionBlock()
-		if "operator" in json:
-			operator = OperatorFromJson(json["operator"])
-
 		iterations:int = 10
 		if "iterations" in json:
 			iterations = int(json["iterations"])
@@ -487,6 +483,6 @@ def ReconstructionFromJson(json: dict) -> ReconParameters:
 		if "constraint" in json:
 			constraint = ConstraintFromJson(json["constraint"])
 
-		return SIRTParam(quality=quality, iterations=iterations, constraint=constraint, operator=operator)
+		return SIRTParam(quality=quality, iterations=iterations, constraint=constraint)
 	else:
 		raise TypeError(f"Recon paramaters for '{method}' is not supported.")

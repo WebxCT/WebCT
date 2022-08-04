@@ -264,6 +264,9 @@ export function setupRecon(): boolean {
 		ToggleConLower(ConCheckboxLowerElement.checked);
 	});
 
+	ToggleConUpper(ConCheckboxUpperElement.checked);
+	ToggleConLower(ConCheckboxLowerElement.checked);
+
 	TikOpElement.addEventListener("sl-change", () => {
 		switch ((TikOpElement.value as string) as TikhonovMethod) {
 		case "projection":
@@ -327,7 +330,6 @@ export function setupRecon(): boolean {
 			break;
 		case "SIRT":
 			SIRTSettings.classList.remove("hidden");
-			TikSettings.classList.remove("hidden");
 			ConSettings.classList.remove("hidden");
 			break;
 		default:
@@ -622,7 +624,6 @@ export function UpdateRecon(): Promise<void> {
 			case "SIRT":
 				params = properties as SIRTParams;
 				SIRTIterElement.value = params.iterations+"";
-				UpdateTikValues(params.operator);
 				UpdateConValues(params.constraint);
 				break;
 			}
@@ -717,7 +718,6 @@ function setRecon(): Promise<void> {
 		method: "SIRT",
 		quality: quality as ReconQuality,
 		iterations: parseInt(SIRTIterElement.value),
-		operator: Tikhonov,
 		constraint: constraint,
 	};
 
