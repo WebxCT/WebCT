@@ -52,6 +52,7 @@ let ConLowerElement: SlInput;
 let ConTVIsotropicElement: SlCheckbox;
 let ConTVToleranceElement: SlInput;
 let ConTVIterElement: SlInput;
+let ConTVAlphaElement: SlInput;
 
 let SliceImages: NodeListOf<HTMLVideoElement>;
 let SinogramImages: NodeListOf<HTMLVideoElement>;
@@ -131,6 +132,7 @@ export function setupRecon(): boolean {
 	const con_checkbox_tv_isotropic = document.getElementById("checkboxConTVIsotropic");
 	const con_input_tv_tolerance = document.getElementById("inputConTVTolerance");
 	const con_input_tv_iter = document.getElementById("inputConTVIterations");
+	const con_input_tv_alpha = document.getElementById("inputConTVAlpha");
 
 	if (select_alg == null ||
 		group_alg == null ||
@@ -157,7 +159,8 @@ export function setupRecon(): boolean {
 		con_checkbox_lower == null ||
 		con_checkbox_tv_isotropic == null ||
 		con_input_tv_tolerance == null ||
-		con_input_tv_iter == null) {
+		con_input_tv_iter == null ||
+		con_input_tv_alpha == null) {
 
 		console.log(select_alg);
 		console.log(group_alg);
@@ -189,6 +192,7 @@ export function setupRecon(): boolean {
 		console.log(con_checkbox_tv_isotropic);
 		console.log(con_input_tv_tolerance);
 		console.log(con_input_tv_iter);
+		console.log(con_input_tv_alpha);
 
 		showAlert("Reconstruction setup failure", AlertType.ERROR);
 		return false;
@@ -232,28 +236,40 @@ export function setupRecon(): boolean {
 	ConTVIterElement = con_input_tv_iter as SlInput;
 	ConUpperElement = con_input_upper as SlInput;
 	ConLowerElement = con_input_lower as SlInput;
+	ConTVAlphaElement = con_input_tv_alpha as SlInput;
 
 	ConOpElement.addEventListener("sl-change", () => {
+
+		// Disable and Hide all elements
+		ConTVAlphaElement.disabled = true;
+		ConTVAlphaElement.classList.add("hidden");
+		ConTVIsotropicElement.disabled = true;
+		ConTVIsotropicElement.classList.add("hidden");
+		ConTVToleranceElement.disabled = true;
+		ConTVToleranceElement.classList.add("hidden");
+		ConTVIterElement.disabled = true;
+		ConTVIterElement.classList.add("hidden");
+
 		switch ((ConOpElement.value as string) as ConstraintMethod) {
 		case "box":
-			ConCheckboxUpperElement.disabled = false;
-			ConCheckboxLowerElement.disabled = false;
-			ToggleConLower(ConCheckboxLowerElement.checked);
-			ToggleConUpper(ConCheckboxUpperElement.checked);
-			ConTVIsotropicElement.disabled = true;
-			ConTVToleranceElement.disabled = true;
-			ConTVIterElement.disabled = true;
+			// Box only uses upper and lower bounds, which are enabled by
+			// default.
 			break;
 		case "tv":
-			ConCheckboxUpperElement.disabled = false;
-			ConCheckboxLowerElement.disabled = false;
-			ToggleConLower(ConCheckboxLowerElement.checked);
-			ToggleConUpper(ConCheckboxUpperElement.checked);
+			// Enable & Show other elements
+			ConTVAlphaElement.disabled = false;
+			ConTVAlphaElement.classList.remove("hidden");
 			ConTVIsotropicElement.disabled = false;
+			ConTVIsotropicElement.classList.remove("hidden");
 			ConTVToleranceElement.disabled = false;
+			ConTVToleranceElement.classList.remove("hidden");
 			ConTVIterElement.disabled = false;
+			ConTVIterElement.classList.remove("hidden");
 			break;
 		}
+
+		ToggleConLower(ConCheckboxLowerElement.checked);
+		ToggleConUpper(ConCheckboxUpperElement.checked);
 	});
 
 	ConCheckboxUpperElement.addEventListener("sl-change", () => {
@@ -338,6 +354,14 @@ export function setupRecon(): boolean {
 	BeamTypeElement.addEventListener("sl-change", () => {
 		validateRecon();
 	});
+
+	// Run initial component updates
+	ToggleConLower(ConCheckboxLowerElement.checked);
+	ToggleConUpper(ConCheckboxUpperElement.checked);
+	ConOpElement.handleValueChange();
+	TikOpElement.handleValueChange();
+	AlgElement.handleValueChange();
+	QualityElement.handleValueChange();
 
 	validateRecon();
 	return true;
@@ -630,7 +654,7 @@ export function UpdateRecon(): Promise<void> {
 	});
 }
 
-function TikMethod():TikhonovMethod  {
+function TikMethod():TikhonovMethod {
 	const val = TikOpElement.value as string;
 	if (val.toLowerCase() === "identity") {
 		return "identity";
@@ -668,29 +692,36 @@ function setRecon(): Promise<void> {
 		}
 	};
 
+	const boxConstraint:BoxConstraint = {
+		method: "box",
+		params: {
+			lower: ConCheckboxLowerElement.checked ? parseFloat(ConLowerElement.value) : null,
+			upper: ConCheckboxUpperElement.checked ? parseFloat(ConUpperElement.value) : null,
+		}
+	};
+
+	const tvConstraint:TVConstraint = {
+		method: "tv",
+		params: {
+			iterations: parseInt(ConTVIterElement.value),
+			alpha: parseFloat(ConTVAlphaElement.value),
+			lower: ConCheckboxLowerElement.checked ? parseFloat(ConLowerElement.value) : null,
+			upper: ConCheckboxUpperElement.checked ? parseFloat(ConUpperElement.value) : null,
+			isotropic: ConTVIsotropicElement.checked,
+			tolerance: parseFloat(ConTVToleranceElement.value),
+		}
+	};
+
+	// Select constraint
 	let constraint:Constraint;
 	switch (ConOpElement.value as ConstraintMethod) {
 	case "box":
 	default:
-		constraint = {
-			method: "box",
-			params: {
-				lower: ConCheckboxLowerElement.checked ? parseFloat(ConLowerElement.value) : null,
-				upper: ConCheckboxUpperElement.checked ? parseFloat(ConUpperElement.value) : null,
-			}
-		} as BoxConstraint;
+		constraint = boxConstraint;
 		break;
 	case "tv":
-		constraint = {
-			method: "tv",
-			params: {
-				lower: ConCheckboxLowerElement.checked ? parseFloat(ConLowerElement.value) : null,
-				upper: ConCheckboxUpperElement.checked ? parseFloat(ConUpperElement.value) : null,
-				isotropic: ConTVIsotropicElement.checked,
-				iterations: parseInt(ConTVIterElement.value),
-				tolerance: parseFloat(ConTVToleranceElement.value),
-			}
-		} as TVConstraint;
+		constraint = tvConstraint;
+		break;
 	}
 
 	const FDKParams:FDKParams = {

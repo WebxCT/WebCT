@@ -117,6 +117,48 @@ export async function sendReconData(data: ReconRequestRegistry["reconRequest"]):
 // ===================== Conversion ===================== //
 // ====================================================== //
 
+function processTikhonov(data:ReconResponseRegistry["reconResponse"]):TikhonovRegulariser {
+	return {
+		method: (data.operator as TikhonovRegulariser).method,
+		params: {
+			alpha: (data.operator as TikhonovRegulariser).params.alpha,
+			boundary: (data.operator as TikhonovRegulariser).params.boundary,
+		},
+	} as TikhonovRegulariser;
+}
+
+function processConstraint(data:ReconResponseRegistry["reconResponse"]):Constraint {
+	const dataConstraint = data.constraint as Constraint;
+	if (dataConstraint.method == "tv") {
+		return {
+			method: dataConstraint.method,
+			params: {
+				isotropic: dataConstraint.params.isotropic,
+				iterations: dataConstraint.params.iterations,
+				tolerance: dataConstraint.params.tolerance,
+				lower: dataConstraint.params.lower,
+				upper: dataConstraint.params.upper,
+			}
+		} as TVConstraint;
+	} else if (dataConstraint.method == "box") {
+		return {
+			method: dataConstraint.method,
+			params: {
+				upper: dataConstraint.params.upper,
+				lower: dataConstraint.params.lower,
+			}
+		} as BoxConstraint;
+	} else {
+		return {
+			method: "box",
+			params: {
+				upper: null,
+				lower: null,
+			}
+		} as BoxConstraint;
+	}
+}
+
 /**
  * Convert API response data into local typescript objects.
  * @param data - unconverted objects created from a getRecon request.
@@ -124,8 +166,7 @@ export async function sendReconData(data: ReconRequestRegistry["reconRequest"]):
  */
 export function processResponse(data: ReconResponseRegistry[keyof ReconResponseRegistry], type: keyof ReconResponseRegistry): ReconstructionParams | ReconstructionPreview | undefined {
 	// Todo: Convert and check params for each reconstruction method
-	let constraint:Constraint;
-	let dataConstraint:Constraint;
+
 	switch (type) {
 	case "reconResponse":
 		data = data as ReconResponseRegistry["reconResponse"];
@@ -148,57 +189,15 @@ export function processResponse(data: ReconResponseRegistry[keyof ReconResponseR
 				method: data.method,
 				iterations: data.iterations,
 				tolerance: data.tolerance,
-				operator: {
-					method: (data.operator as TikhonovRegulariser).method,
-					params: {
-						alpha: (data.operator as TikhonovRegulariser).params.alpha,
-						boundary: (data.operator as TikhonovRegulariser).params.boundary,
-					},
-				} as TikhonovRegulariser,
-				// data.,
+				operator: processTikhonov(data),
 			} as CGLSParams;
 		case "SIRT":
-			dataConstraint = data.constraint as Constraint;
-			if (dataConstraint.method == "tv") {
-				constraint = {
-					method: dataConstraint.method,
-					params: {
-						isotropic: dataConstraint.params.isotropic,
-						iterations: dataConstraint.params.iterations,
-						tolerance: dataConstraint.params.tolerance,
-						lower: dataConstraint.params.lower,
-						upper: dataConstraint.params.upper,
-					}
-				} as TVConstraint;
-			} else if (dataConstraint.method == "box") {
-				constraint = {
-					method: dataConstraint.method,
-					params: {
-						upper: dataConstraint.params.upper,
-						lower: dataConstraint.params.lower,
-					}
-				} as BoxConstraint;
-			} else {
-				constraint = {
-					method: "box",
-					params: {
-						upper: null,
-						lower: null,
-					}
-				} as BoxConstraint;
-			}
 			return {
 				quality: data.quality,
 				method: data.method,
 				iterations: data.iterations,
-				operator: {
-					method: (data.operator as TikhonovRegulariser).method,
-					params: {
-						alpha: (data.operator as TikhonovRegulariser).params.alpha,
-						boundary: (data.operator as TikhonovRegulariser).params.boundary,
-					},
-				} as TikhonovRegulariser,
-				constraint: constraint
+				operator: processTikhonov(data),
+				constraint: processConstraint(data),
 			} as SIRTParams;
 		}
 		break;

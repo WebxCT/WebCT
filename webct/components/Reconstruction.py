@@ -1,126 +1,26 @@
 from dataclasses import dataclass
-from typing import Dict, Literal, Optional, Tuple, Type, Union, cast
+from typing import Optional, cast
 
 import numpy as np
-from cil.framework import AcquisitionData, AcquisitionGeometry, ImageData, ImageGeometry, BlockDataContainer
-from cil.optimisation.functions import (BlockFunction, IndicatorBox, TotalVariation, Function)
-from cil.optimisation.operators import (Operator, IdentityOperator, BlockOperator, GradientOperator)
+from cil.framework import (
+	AcquisitionData, AcquisitionGeometry,
+	ImageData)
 from cil.optimisation.algorithms import CGLS, SIRT
-from cil.plugins.astra.operators import ProjectionOperator
-from cil.recon import FBP, FDK
 from cil.processors import AbsorptionTransmissionConverter
-
+from cil.recon import FBP, FDK
 from matplotlib import use
 from webct.components.Beam import PROJECTION, BeamParameters
 from webct.components.Capture import CaptureParameters
 from webct.components.Detector import DetectorParameters
+from webct.components.recon import (
+	BoxConstraint,
+	Constraint, ConstraintFromJson,
+	IterativeOperator,
+	OperatorFromJson, ProjectionBlock,
+	dataWithOp)
 from webct.components.sim.Quality import Quality
 
 use("Agg")
-
-@dataclass(frozen=True)
-class Constraint():
-	method:str
-
-	def get(self) -> Function:
-		...
-
-@dataclass(frozen=True)
-class ConstraintParams():
-	...
-
-@dataclass(frozen=True)
-class BoxConstraintParams(ConstraintParams):
-	upper: float = np.inf
-	lower: float = -np.inf
-
-@dataclass(frozen=True)
-class BoxConstraint(Constraint):
-	method:str = "box"
-	params:BoxConstraintParams = BoxConstraintParams()
-
-	def get(self) -> Function:
-		return IndicatorBox(self.params.lower, self.params.upper)
-
-@dataclass(frozen=True)
-class TVConstraintParams(ConstraintParams):
-	iterations: int = 100
-	tolerance: float = 1
-	upper: float = np.inf
-	lower: float = -np.inf
-	isotropic: bool = True
-
-@dataclass(frozen=True)
-class TVConstraint(Constraint):
-	method:str = "tv"
-	params:TVConstraintParams = TVConstraintParams()
-
-	def get(self) -> Function:
-		return TotalVariation(self.params.iterations,
-			self.params.tolerance / 1000000,
-			upper=self.params.upper,
-			lower=self.params.lower,
-			isotropic=self.params.isotropic)
-
-class IterativeBlockParams():
-	...
-
-@dataclass(frozen=True)
-class IterativeOperator:
-	method:str
-	params:IterativeBlockParams
-
-	def get(self, ig:ImageGeometry, acData:AcquisitionData) -> Tuple[BlockOperator, Operator]:
-		...
-
-@dataclass(frozen=True)
-class ProjectionBlockParams(IterativeBlockParams):
-	...
-
-@dataclass(frozen=True)
-class ProjectionBlock(IterativeOperator):
-	method:str = "projection"
-	params:ProjectionBlockParams = ProjectionBlockParams()
-
-	def get(self, ig:ImageGeometry, acData:AcquisitionData) -> Tuple[Operator, None]:
-		opProj = ProjectionOperator(ig,acData.geometry)
-		# Wrapping a projectionoperator in a block operator causes an invalid reconstruction output
-		# opblock_proj = BlockOperator(opProj)
-
-		return opProj, None
-
-@dataclass(frozen=True)
-class IdentityBlockParams(IterativeBlockParams):
-	alpha:float=0.1
-
-@dataclass(frozen=True)
-class IdentityBlock(IterativeOperator):
-	method:str = "identity"
-	params:IdentityBlockParams = IdentityBlockParams()
-
-	def get(self, ig:ImageGeometry, acData:AcquisitionData) -> Tuple[BlockOperator, Operator]:
-		opProj = ProjectionOperator(ig,acData.geometry)
-		opIdent = IdentityOperator(ig)
-
-		opblock_ident = BlockOperator(opProj, self.params.alpha * opIdent)
-		return opblock_ident, opIdent
-
-@dataclass(frozen=True)
-class GradientBlockParams(IterativeBlockParams):
-	alpha:float = 0.1
-	boundary:Union[Literal["Neumann"], Literal["Periodic"]] = "Neumann"
-
-@dataclass(frozen=True)
-class GradientBlock(IterativeOperator):
-	method:str = "gradient"
-	params:GradientBlockParams = GradientBlockParams()
-
-	def get(self, ig:ImageGeometry, acData:AcquisitionData) -> Tuple[BlockOperator, Operator]:
-		opProj = ProjectionOperator(ig, acData.geometry)
-		opGrad = GradientOperator(ig, bnd_cond=self.params.boundary)
-
-		opblock_grad = BlockOperator(opProj, self.params.alpha * opGrad)
-		return opblock_grad, opGrad
 
 @dataclass(frozen=True)
 class ReconParameters:
@@ -152,40 +52,23 @@ class SIRTParam(ReconParameters):
 	operator: IterativeOperator = ProjectionBlock()
 
 @dataclass(frozen=True)
-class PDHGParam(ReconParameters):
-	f: BlockFunction
-	g: IndicatorBox
-	operator: Operator
-	sigma: float
-	tau: float
-	max_iterations: int
-	update_objective_interval: int
+class FISTA(ReconParameters):
+	method: str = "FISTA"
+	iterations: int = 10
+	# F: DifferentiableFunction
 
-Constraints:Dict[str, Dict[str, Union[Type[Constraint], Type[ConstraintParams]]]] = {
-	"box": {
-		"type": BoxConstraint,
-		"params":BoxConstraintParams
-	},
-	"tv": {
-		"type": TVConstraint,
-		"params": TVConstraintParams
-	}
-}
 
-IterativeOperators:Dict[str, Dict[str, Union[Type[IterativeOperator], Type[IterativeBlockParams]]]] = {
-	"projection": {
-		"type": ProjectionBlock,
-		"params":ProjectionBlockParams
-	},
-	"identity": {
-		"type": IdentityBlock,
-		"params":IdentityBlockParams
-	},
-	"gradient": {
-		"type": GradientBlock,
-		"params":GradientBlockParams
-	}
-}
+
+
+# @dataclass(frozen=True)
+# class PDHGParam(ReconParameters):
+# 	f: BlockFunction
+# 	g: IndicatorBox
+# 	operator: Operator
+# 	sigma: float
+# 	tau: float
+# 	max_iterations: int
+# 	update_objective_interval: int
 
 ReconMethods = {
 	"FDK": {
@@ -210,21 +93,7 @@ ReconMethods = {
 	# }
 }
 
-def dataWithOp(operator:IterativeOperator, ig:ImageGeometry, acData:AcquisitionData) -> Tuple[Union[BlockOperator,ProjectionOperator], Union[AcquisitionData, BlockDataContainer]]:
-		# Note: A projection operator will return (Operator, None)
-		blockOp, Lop = operator.get(ig, acData)
 
-		# Need to allocate data into a BlockDataContainer when using
-		# block operations. The projection block operator is just a
-		# wrapped ProjectionOperator, and does not work on
-		# BlockDataContainer.
-		data = acData
-		if operator.method != "projection":
-			if Lop.range is not None:
-				data = BlockDataContainer(acData, Lop.range.allocate(0))
-			else:
-				raise ValueError(f"Unexpected None range of block projection operator '{operator.method}'")
-		return blockOp, data
 
 def reconstruct(projections: np.ndarray, capture: CaptureParameters, beam: BeamParameters, detector: DetectorParameters, params: ReconParameters) -> np.ndarray:
 	# Get reconstruction method
@@ -345,94 +214,6 @@ def asSinogram(projections: np.ndarray, capture: CaptureParameters, beam: BeamPa
 
 	return acData.array
 
-def OperatorFromJson(json: dict) -> IterativeOperator:
-	if "method" not in json:
-		raise KeyError("Operator key lacks a method key.")
-	if "params" not in json:
-		raise KeyError("Operator key lacks a param key.")
-
-	if json["method"] not in IterativeOperators:
-		raise NotImplementedError(f"Iterative operator '{json['method']}' is not supported.")
-
-	opType:Type[IterativeOperator] = cast(Type[IterativeOperator], IterativeOperators[json["method"]]["type"])
-	opParams = json["params"]
-
-	if opType == ProjectionBlock:
-		return ProjectionBlock()
-
-	elif opType == IdentityBlock:
-		alpha = 0.1
-		if "alpha" in opParams:
-			alpha = float(opParams["alpha"])
-		operatorParams = IdentityBlockParams(alpha)
-		return IdentityBlock(params=operatorParams)
-
-	elif opType == GradientBlock:
-		alpha = 0.1
-		if "alpha" in opParams:
-			alpha = float(opParams["alpha"])
-		boundary = "Neumann"
-
-		if "boundary" in opParams:
-			if opParams["boundary"].lower() == "periodic":
-				boundary = "Periodic"
-
-		operatorParams = GradientBlockParams(alpha, boundary)
-		return GradientBlock(params=operatorParams)
-
-	else:
-		raise NotImplementedError(f"Iterative operator {opType} is not implemented.")
-
-def ConstraintFromJson(json:dict) -> Constraint:
-	if "method" not in json:
-		raise KeyError("Constraint key lacks a method key.")
-	if "params" not in json:
-		raise KeyError("Constraint key lacks a param key.")
-
-	if json["method"] not in Constraints:
-		raise NotImplementedError(f"Constraint '{json['method']}' is not supported.")
-
-	conType:Type[Constraint] = cast(Type[Constraint], Constraints[json["method"]]["type"])
-	conParams = json["params"]
-
-	if conType == BoxConstraint:
-		upper = np.inf
-		lower = -np.inf
-		# Check to see if bound values exist and are not none. Json does not
-		# support negative infinities, and they are therefore represented as
-		# null.
-		if "upper" in conParams:
-			if conParams["upper"] is not None:
-				upper = float(conParams["upper"])
-		if "lower" in conParams:
-			if conParams["lower"] is not None:
-				lower = float(conParams["lower"])
-		return BoxConstraint(params=BoxConstraintParams(upper, lower))
-
-	elif conType == TVConstraint:
-		iterations = 100
-		tolerance = 1
-		upper = np.inf
-		lower = -np.inf
-		isotropic = True
-
-		if "iterations" in conParams:
-			iterations = int(conParams["iterations"])
-		if "tolerance" in conParams:
-			tolerance = float(conParams["tolerance"])
-		if "upper" in conParams:
-			if conParams["upper"] is not None:
-				upper = float(conParams["upper"])
-		if "lower" in conParams:
-			if conParams["lower"] is not None:
-				lower = float(conParams["lower"])
-		if "isotropic" in conParams:
-			isotropic = bool(conParams["isotropic"])
-
-		tvparams = TVConstraintParams(iterations, tolerance, upper, lower, isotropic)
-		return TVConstraint(params=tvparams)
-	else:
-		raise NotImplementedError(f"Constraint method '{json['method']}' is not implemented.")
 
 def ReconstructionFromJson(json: dict) -> ReconParameters:
 	"""Select and create reconstruction parameters from a json dict."""

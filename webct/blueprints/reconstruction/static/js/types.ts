@@ -49,6 +49,7 @@ export interface TVConstraint extends Constraint {
 	readonly method: "tv",
 	params: {
 		iterations: number,
+		alpha: number,
 		tolerance: number,
 		isotropic: boolean,
 		lower: number|null,
