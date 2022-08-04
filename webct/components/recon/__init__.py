@@ -21,3 +21,11 @@ from .IterativeOperators import (
 	OperatorFromJson,
 	dataWithOp,
 )
+from .Differentiable import (
+	Diff,
+	DiffParams,
+	DiffLeastSquares,
+	DiffLeastSquaresParams,
+	Diffs,
+	DiffFromJson,
+)

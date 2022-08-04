@@ -39,8 +39,8 @@
 				{% include "./tags/cpu.html.j2" %}
 			</sl-menu-item>
 
-			<sl-menu-item value="MLEM" disabled>MLEM
-				<span>Maximum Likelihood Estimation Method</span>
+			<sl-menu-item value="FISTA">FISTA
+				<span> Fast Iterative Shrinkage-Thresholding Algorithm</span>
 				{% include "./tags/cpu.html.j2" %}
 			</sl-menu-item>
 		</sl-select>
@@ -83,7 +83,9 @@
 	<div>
 		<h2>CGLS Settings</h2>
 		<sl-input type="number" label="Iterations" step=1 min=1 value="5" id="inputCGLSIterations"></sl-input>
-		<sl-input type="number" label="Tolerance" step=1 min=1 value="1" id="inputCGLSTolerance" advanced><span slot="suffix">e-6</span></sl-input>
+		<sl-input type="number" label="Tolerance" step=1 min=1 value="1" id="inputCGLSTolerance" advanced>
+			<span slot="suffix">e-6</span>
+		</sl-input>
 	</div>
 	<button></button>
 </div>
@@ -92,6 +94,14 @@
 	<div>
 		<h2>SIRT Settings</h2>
 		<sl-input type="number" id="inputSIRTIterations" label="Iterations" step=1 min=1 value="5"></sl-input>
+	</div>
+	<!-- <button></button> -->
+</div>
+
+<div class="group hidden" id="settingsFISTA">
+	<div>
+		<h2>FISTA Settings</h2>
+		<sl-input type="number" id="inputFISTAIterations" label="Iterations" step=1 min=1 value="5"></sl-input>
 	</div>
 	<!-- <button></button> -->
 </div>
@@ -117,10 +127,13 @@
 			<sl-input type="number" id="inputConLower" label="Lower Constraint" value="0"></sl-input>
 		</div>
 
-		<sl-input id="inputConTVIterations" type="number" label="Iterations" step=1 min=1 value="10" disabled></sl-input>
-		<sl-input type="number" label="Alpha" step=0.01 min=0 value="0.1" id="inputConTVAlpha" advanced disabled></sl-input>
+		<sl-input id="inputConTVIterations" type="number" label="Iterations" step=1 min=1 value="10" disabled>
+		</sl-input>
+		<sl-input type="number" label="Alpha" step=0.01 min=0 value="0.1" id="inputConTVAlpha" advanced disabled>
+		</sl-input>
 		<sl-checkbox id="checkboxConTVIsotropic" checked advanced disabled>Isotropic</sl-checkbox>
-		<sl-input type="number" label="Tolerance" step=1 min=1 value="1" id="inputConTVTolerance" advanced disabled><span slot="suffix">e-6</span></sl-input>
+		<sl-input type="number" label="Tolerance" step=1 min=1 value="1" id="inputConTVTolerance" advanced disabled>
+			<span slot="suffix">e-6</span></sl-input>
 	</div>
 	<button></button>
 </div>
@@ -137,6 +150,17 @@
 			<sl-menu-item value="Neumann">Neumann</sl-menu-item>
 			<sl-menu-item value="Periodic">Periodic</sl-menu-item>
 		</sl-select>
+	</div>
+	<button></button>
+</div>
+
+<div class="group" id="settingsDiff">
+	<div>
+		<sl-select label="Differentiable Function" id="selectDiffOperator" value="least-squares">
+			<sl-menu-item value="least-squares">Least Squares</sl-menu-item>
+		</sl-select>
+		<sl-input type="number" step="0.1" value="1" id="inputDiffLSScaling" label="Scaling Constant" advanced></sl-input>
+		<sl-input type="number" step="0.1" value="1" id="inputDiffLSWeight" label="Weight" advanced></sl-input>
 	</div>
 	<button></button>
 </div>

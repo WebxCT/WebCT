@@ -2,7 +2,7 @@
  * api.ts : API functions for communicating between the client and server.
  * @author Iwan Mitchell
  */
-import { BoxConstraint, CGLSParams, Constraint, FBPParams, FDKParams, ReconMethod, ReconQuality, ReconstructionParams, ReconstructionPreview, SIRTParams, TikhonovRegulariser, TVConstraint } from "./types";
+import { BoxConstraint, CGLSParams, Constraint, Differentiable, FBPParams, FDKParams, FISTAParams, LeastSquaresDiff, ReconMethod, ReconQuality, ReconstructionParams, ReconstructionPreview, SIRTParams, TikhonovRegulariser, TVConstraint } from "./types";
 
 // ====================================================== //
 // ====================== Endpoints ===================== //
@@ -36,7 +36,7 @@ export interface ReconResponseRegistry {
 	reconResponse: {
 		quality: ReconQuality;
 		method: ReconMethod;
-		[key: string]: string | number | boolean | TikhonovRegulariser | Constraint;
+		[key: string]: string | number | boolean | TikhonovRegulariser | Constraint | Differentiable;
 	};
 
 	reconPreviewResponse: {
@@ -159,6 +159,28 @@ function processConstraint(data:ReconResponseRegistry["reconResponse"]):Constrai
 	}
 }
 
+function processDiff(data:ReconResponseRegistry["reconResponse"]):Differentiable {
+	const dataDiff = data.diff as Differentiable;
+	switch (dataDiff.method) {
+	case "least-squares":
+		return {
+			method: "least-squares",
+			params: {
+				scaling_constant: dataDiff.params.scaling_constant,
+				weight: dataDiff.params.weight,
+			}
+		} as LeastSquaresDiff;
+	default:
+		return {
+			method: "least-squares",
+			params: {
+				scaling_constant: 1,
+				weight: 1,
+			}
+		};
+	}
+}
+
 /**
  * Convert API response data into local typescript objects.
  * @param data - unconverted objects created from a getRecon request.
@@ -199,6 +221,14 @@ export function processResponse(data: ReconResponseRegistry[keyof ReconResponseR
 				operator: processTikhonov(data),
 				constraint: processConstraint(data),
 			} as SIRTParams;
+		case "FISTA":
+			return {
+				quality: data.quality,
+				method: data.method,
+				iterations: data.iterations,
+				constraint: processConstraint(data),
+				diff: processDiff(data),
+			} as FISTAParams;
 		}
 		break;
 	case "reconPreviewResponse":

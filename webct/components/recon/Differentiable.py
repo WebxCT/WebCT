@@ -24,16 +24,19 @@ class DiffLeastSquaresParams(DiffParams):
 
 @dataclass(frozen=True)
 class DiffLeastSquares(Diff):
-	method: str = "projection"
+	method: str = "least-squares"
 	params: DiffLeastSquaresParams = DiffLeastSquaresParams()
 
 	def get(self, ig:ImageGeometry, data:AcquisitionData) -> Function:
-		opProj = ProjectionOperator(ig, data)
-		return LeastSquares(opProj, data, c=self.params.scaling_constant, weight=self.params.weight)
+		opProj = ProjectionOperator(ig, data.geometry)
+
+		# For now, float weights are unsupported by LeastSquares
+		# return LeastSquares(opProj, data, c=self.params.scaling_constant, weight=self.params.weight)
+		return LeastSquares(opProj, data, c=self.params.scaling_constant)
 
 
 Diffs:Dict[str, Dict[str, Union[Type[Diff], Type[DiffParams]]]] = {
-	"leastsquares": {
+	"least-squares": {
 		"type": DiffLeastSquares,
 		"params": DiffLeastSquaresParams
 	}
@@ -45,7 +48,7 @@ def DiffFromJson(json:dict) -> Diff:
 	if "params" not in json:
 		raise KeyError("Diff key lacks a param key.")
 
-	if json["method"] not in Diff:
+	if json["method"] not in Diffs:
 		raise NotImplementedError(f"Diff '{json['method']}' is not supported.")
 
 	diffType:Type[Diff] = cast(Type[Diff], Diffs[json["method"]]["type"])

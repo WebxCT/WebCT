@@ -6,7 +6,7 @@
 import { SlCheckbox, SlInput, SlSelect } from "@shoelace-style/shoelace";
 import { AlertType, showAlert } from "../../../base/static/js/base";
 import { prepareRequest, processResponse, ReconResponseRegistry, requestReconData, requestReconPreview, sendReconData } from "./api";
-import { BoxConstraint, CGLSParams, Constraint, ConstraintMethod, FBPParams, FDKParams, ReconQuality, ReconstructionParams, ReconstructionPreview, SIRTParams, TikhonovMethod as TikhonovMethod, TikhonovRegulariser, TVConstraint } from "./types";
+import { BoxConstraint, CGLSParams, Constraint, ConstraintMethod, Differentiable, DiffMethod, FBPParams, FDKParams, FISTAParams, LeastSquaresDiff, ReconQuality, ReconstructionParams, ReconstructionPreview, SIRTParams, TikhonovMethod as TikhonovMethod, TikhonovRegulariser, TVConstraint } from "./types";
 import { BeamTypeElement } from "../../../beam/static/js/beam";
 import { validateMethod } from "./validation";
 
@@ -36,6 +36,10 @@ let CGLSToleranceElement: SlInput;
 let SIRTSettings: HTMLDivElement;
 let SIRTIterElement: SlInput;
 
+// FISTA
+let FISTASettings: HTMLDivElement;
+let FISTAIterElement: SlInput;
+
 // Tikhonov
 let TikSettings: HTMLDivElement;
 let TikOpElement: SlSelect;
@@ -53,6 +57,12 @@ let ConTVIsotropicElement: SlCheckbox;
 let ConTVToleranceElement: SlInput;
 let ConTVIterElement: SlInput;
 let ConTVAlphaElement: SlInput;
+
+// Differentiable Function
+let DiffSettings: HTMLDivElement;
+let DiffOpElement: SlSelect;
+let DiffLSScalingElement: SlInput;
+let DiffLSWeightElement: SlInput;
 
 let SliceImages: NodeListOf<HTMLVideoElement>;
 let SinogramImages: NodeListOf<HTMLVideoElement>;
@@ -116,6 +126,10 @@ export function setupRecon(): boolean {
 	const sirt_settings = document.getElementById("settingsSIRT");
 	const sirt_input_iterations = document.getElementById("inputSIRTIterations");
 
+	// FISTA
+	const fista_settings = document.getElementById("settingsFISTA");
+	const fista_input_iterations = document.getElementById("inputFISTAIterations");
+
 	// Tikhonov
 	const tik_settings = document.getElementById("settingsTikhonov");
 	const tik_select_operator = document.getElementById("selectTikOperator");
@@ -134,6 +148,12 @@ export function setupRecon(): boolean {
 	const con_input_tv_iter = document.getElementById("inputConTVIterations");
 	const con_input_tv_alpha = document.getElementById("inputConTVAlpha");
 
+	// Differentiable Functions
+	const diff_settings = document.getElementById("settingsDiff");
+	const diff_select_operator = document.getElementById("selectDiffOperator");
+	const diff_input_ls_scaling = document.getElementById("inputDiffLSScaling");
+	const diff_input_ls_weight = document.getElementById("inputDiffLSWeight");
+
 	if (select_alg == null ||
 		group_alg == null ||
 		quality == null ||
@@ -147,6 +167,8 @@ export function setupRecon(): boolean {
 		cgls_input_tolerance == null ||
 		sirt_settings == null ||
 		sirt_input_iterations == null ||
+		fista_settings == null ||
+		fista_input_iterations == null ||
 		tik_settings == null ||
 		tik_select_operator == null ||
 		tik_input_alpha == null ||
@@ -160,7 +182,11 @@ export function setupRecon(): boolean {
 		con_checkbox_tv_isotropic == null ||
 		con_input_tv_tolerance == null ||
 		con_input_tv_iter == null ||
-		con_input_tv_alpha == null) {
+		con_input_tv_alpha == null ||
+		diff_settings == null ||
+		diff_select_operator == null ||
+		diff_input_ls_scaling == null ||
+		diff_input_ls_weight == null) {
 
 		console.log(select_alg);
 		console.log(group_alg);
@@ -178,6 +204,9 @@ export function setupRecon(): boolean {
 		console.log(sirt_settings);
 		console.log(sirt_input_iterations);
 
+		console.log(fista_settings);
+		console.log(fista_input_iterations);
+
 		console.log(tik_settings);
 		console.log(tik_select_operator);
 		console.log(tik_input_alpha);
@@ -193,6 +222,12 @@ export function setupRecon(): boolean {
 		console.log(con_input_tv_tolerance);
 		console.log(con_input_tv_iter);
 		console.log(con_input_tv_alpha);
+
+		console.log(diff_settings);
+		console.log(diff_select_operator);
+		console.log(diff_input_ls_scaling);
+		console.log(diff_input_ls_weight);
+
 
 		showAlert("Reconstruction setup failure", AlertType.ERROR);
 		return false;
@@ -220,6 +255,10 @@ export function setupRecon(): boolean {
 	SIRTSettings = sirt_settings as HTMLDivElement;
 	SIRTIterElement = sirt_input_iterations as SlInput;
 
+	// FISTA
+	FISTASettings = fista_settings as HTMLDivElement;
+	FISTAIterElement = fista_input_iterations as SlInput;
+
 	// Tikhonov
 	TikSettings = tik_settings as HTMLDivElement;
 	TikAlphaElement = tik_input_alpha as SlInput;
@@ -237,6 +276,12 @@ export function setupRecon(): boolean {
 	ConUpperElement = con_input_upper as SlInput;
 	ConLowerElement = con_input_lower as SlInput;
 	ConTVAlphaElement = con_input_tv_alpha as SlInput;
+
+	// Differentiable Function
+	DiffSettings = diff_settings as HTMLDivElement;
+	DiffOpElement = diff_select_operator as SlSelect;
+	DiffLSScalingElement = diff_input_ls_scaling as SlInput;
+	DiffLSWeightElement = diff_input_ls_weight as SlInput;
 
 	ConOpElement.addEventListener("sl-change", () => {
 
@@ -326,8 +371,10 @@ export function setupRecon(): boolean {
 		FBPSettings.classList.add("hidden");
 		CGLSSettings.classList.add("hidden");
 		SIRTSettings.classList.add("hidden");
+		FISTASettings.classList.add("hidden");
 		TikSettings.classList.add("hidden");
 		ConSettings.classList.add("hidden");
+		DiffSettings.classList.add("hidden");
 
 		// Unhide specific alg settings
 		switch (AlgElement.value) {
@@ -346,7 +393,10 @@ export function setupRecon(): boolean {
 			TikSettings.classList.remove("hidden");
 			ConSettings.classList.remove("hidden");
 			break;
-		default:
+		case "FISTA":
+			FISTASettings.classList.remove("hidden");
+			ConSettings.classList.remove("hidden");
+			DiffSettings.classList.remove("hidden");
 			break;
 		}
 	});
@@ -502,7 +552,7 @@ function SetPreviewImages(preview: ReconstructionPreview): void {
 	}
 }
 
-function ToggleConUpper(state:boolean):void {
+function ToggleConUpper(state: boolean): void {
 	if (state) {
 		ConUpperElement.type = "number";
 		ConUpperElement.value = ConUpperBound;
@@ -518,7 +568,7 @@ function ToggleConUpper(state:boolean):void {
 	}
 }
 
-function ToggleConLower(state:boolean):void {
+function ToggleConLower(state: boolean): void {
 	if (state) {
 		ConLowerElement.type = "number";
 		ConLowerElement.value = ConLowerBound;
@@ -547,7 +597,7 @@ export function SyncRecon(): Promise<void> {
 	});
 }
 
-function UpdateTikValues(params:TikhonovRegulariser):void {
+function UpdateTikValues(params: TikhonovRegulariser): void {
 	TikOpElement.value = params.method;
 	// Force update even if new value is equal to old
 	// This ensures disabled state of child items are correct.
@@ -564,7 +614,7 @@ function UpdateTikValues(params:TikhonovRegulariser):void {
 	}
 }
 
-function UpdateConValues(params:Constraint):void {
+function UpdateConValues(params: Constraint): void {
 	params = params as BoxConstraint;
 	ConOpElement.value = params.method;
 	// Force update even if new value is equal to old
@@ -572,10 +622,10 @@ function UpdateConValues(params:Constraint):void {
 	ConOpElement.handleValueChange();
 	console.log(params);
 	if (params.method == "tv") {
-		const conTV:TVConstraint = params as TVConstraint;
+		const conTV: TVConstraint = params as TVConstraint;
 		ConTVIsotropicElement.checked = conTV.params.isotropic;
-		ConTVIterElement.value = conTV.params.iterations+"";
-		ConTVToleranceElement.value = conTV.params.tolerance+"";
+		ConTVIterElement.value = conTV.params.iterations + "";
+		ConTVToleranceElement.value = conTV.params.tolerance + "";
 	}
 	if (params.params.lower == null) {
 		ToggleConLower(false);
@@ -592,6 +642,19 @@ function UpdateConValues(params:Constraint):void {
 		ConUpperBound = params.params.upper as string;
 		ToggleConUpper(true);
 		ConCheckboxUpperElement.checked = true;
+	}
+}
+
+function UpdateDiffValues(params: Differentiable): void {
+	params = params as Differentiable;
+	DiffOpElement.value = params.method;
+	// Force update even if new value is equal to old
+	// This ensures disabled state of child items are correct.
+	DiffOpElement.handleValueChange();
+	if (params.method == "least-squares") {
+		const diffLS = params as LeastSquaresDiff;
+		DiffLSScalingElement.value = diffLS.params.scaling_constant + "";
+		DiffLSWeightElement.value = diffLS.params.weight + "";
 	}
 }
 
@@ -615,6 +678,7 @@ export function UpdateRecon(): Promise<void> {
 			resultText = resultText.replaceAll("Infinity", "null");
 
 			const resultJson = JSON.parse(resultText);
+			console.log(resultJson);
 
 			const properties = processResponse(resultJson as ReconResponseRegistry["reconResponse"], "reconResponse") as ReconstructionParams;
 			console.log(properties);
@@ -645,16 +709,22 @@ export function UpdateRecon(): Promise<void> {
 				break;
 			case "SIRT":
 				params = properties as SIRTParams;
-				SIRTIterElement.value = params.iterations+"";
+				SIRTIterElement.value = params.iterations + "";
 				UpdateTikValues(params.operator);
 				UpdateConValues(params.constraint);
+				break;
+			case "FISTA":
+				params = properties as FISTAParams;
+				FISTAIterElement.value = params.iterations + "";
+				UpdateConValues(params.constraint);
+				UpdateDiffValues(params.diff);
 				break;
 			}
 		});
 	});
 }
 
-function TikMethod():TikhonovMethod {
+function TikMethod(): TikhonovMethod {
 	const val = TikOpElement.value as string;
 	if (val.toLowerCase() === "identity") {
 		return "identity";
@@ -684,7 +754,7 @@ function setRecon(): Promise<void> {
 	const method = AlgElement.value + "";
 	const quality = parseInt(QualityElement.value as string);
 
-	const Tikhonov:TikhonovRegulariser = {
+	const Tikhonov: TikhonovRegulariser = {
 		method: TikMethod(),
 		params: {
 			alpha: parseFloat(TikAlphaElement.value),
@@ -692,7 +762,7 @@ function setRecon(): Promise<void> {
 		}
 	};
 
-	const boxConstraint:BoxConstraint = {
+	const boxConstraint: BoxConstraint = {
 		method: "box",
 		params: {
 			lower: ConCheckboxLowerElement.checked ? parseFloat(ConLowerElement.value) : null,
@@ -700,7 +770,7 @@ function setRecon(): Promise<void> {
 		}
 	};
 
-	const tvConstraint:TVConstraint = {
+	const tvConstraint: TVConstraint = {
 		method: "tv",
 		params: {
 			iterations: parseInt(ConTVIterElement.value),
@@ -713,7 +783,7 @@ function setRecon(): Promise<void> {
 	};
 
 	// Select constraint
-	let constraint:Constraint;
+	let constraint: Constraint;
 	switch (ConOpElement.value as ConstraintMethod) {
 	case "box":
 	default:
@@ -724,19 +794,35 @@ function setRecon(): Promise<void> {
 		break;
 	}
 
-	const FDKParams:FDKParams = {
+	const lsDiff:LeastSquaresDiff = {
+		method: "least-squares",
+		params: {
+			scaling_constant: parseFloat(DiffLSScalingElement.value),
+			weight: parseFloat(DiffLSWeightElement.value),
+		}
+	};
+
+	let diff:Differentiable;
+	switch (DiffOpElement.value as DiffMethod) {
+	case "least-squares":
+	default:
+		diff = lsDiff;
+		break;
+	}
+
+	const FDKParams: FDKParams = {
 		method: "FDK",
 		quality: quality as ReconQuality,
 		filter: FDKFilter.value as string,
 	};
 
-	const FBPParams:FBPParams = {
+	const FBPParams: FBPParams = {
 		method: "FBP",
 		quality: quality as ReconQuality,
 		filter: FBPFilter.value as string,
 	};
 
-	const CGLSParams:CGLSParams = {
+	const CGLSParams: CGLSParams = {
 		method: "CGLS",
 		quality: quality as ReconQuality,
 		iterations: parseInt(CGLSIterElement.value),
@@ -744,12 +830,20 @@ function setRecon(): Promise<void> {
 		operator: Tikhonov,
 	};
 
-	const SIRTParams:SIRTParams = {
+	const SIRTParams: SIRTParams = {
 		method: "SIRT",
 		quality: quality as ReconQuality,
 		iterations: parseInt(SIRTIterElement.value),
 		operator: Tikhonov,
 		constraint: constraint,
+	};
+
+	const FISTAParams: FISTAParams = {
+		method: "FISTA",
+		quality: quality as ReconQuality,
+		iterations: parseInt(FISTAIterElement.value),
+		constraint: constraint,
+		diff: diff,
 	};
 
 	let request = undefined;
@@ -767,7 +861,10 @@ function setRecon(): Promise<void> {
 	case "SIRT":
 		request = prepareRequest(SIRTParams);
 		break;
+	case "FISTA":
+		request = prepareRequest(FISTAParams);
 	}
+
 	console.log("---Sent---");
 	console.log(request);
 	return sendReconData(request).then((response: Response) => {

@@ -5,7 +5,7 @@ import numpy as np
 from cil.framework import (
 	AcquisitionData, AcquisitionGeometry,
 	ImageData)
-from cil.optimisation.algorithms import CGLS, SIRT
+from cil.optimisation.algorithms import CGLS, SIRT, FISTA
 from cil.processors import AbsorptionTransmissionConverter
 from cil.recon import FBP, FDK
 from matplotlib import use
@@ -18,6 +18,7 @@ from webct.components.recon import (
 	IterativeOperator,
 	OperatorFromJson, ProjectionBlock,
 	dataWithOp)
+from webct.components.recon.Differentiable import Diff, DiffFromJson, DiffLeastSquares
 from webct.components.sim.Quality import Quality
 
 use("Agg")
@@ -52,12 +53,11 @@ class SIRTParam(ReconParameters):
 	operator: IterativeOperator = ProjectionBlock()
 
 @dataclass(frozen=True)
-class FISTA(ReconParameters):
+class FISTAParam(ReconParameters):
 	method: str = "FISTA"
 	iterations: int = 10
-	# F: DifferentiableFunction
-
-
+	diff: Diff = DiffLeastSquares()
+	constraint: Constraint = BoxConstraint()
 
 
 # @dataclass(frozen=True)
@@ -86,7 +86,11 @@ ReconMethods = {
 	"SIRT": {
 		"type": SIRTParam,
 		"projections": (PROJECTION.PARALLEL)
-	}
+	},
+	"FISTA": {
+		"type": FISTAParam,
+		"projections": (PROJECTION.PARALLEL)
+	},
 	# "PDHG": {
 	# 	"type":PDHGParam,
 	# 	"projections": (PROJECTION.PARALLEL, PROJECTION.POINT)
@@ -175,6 +179,29 @@ def reconstruct(projections: np.ndarray, capture: CaptureParameters, beam: BeamP
 		# Get the last solution
 		rec = sirt.solution
 
+	elif method_name == "FISTA":
+		acData.reorder("astra")
+		params = cast(FISTAParam, params)
+
+		# Differentiable function
+		diffFunction = params.diff.get(ig, acData)
+
+		# Convex function
+		# (Since constraints are most popular, we cheat)
+		convFunction = params.constraint.get()
+
+		# FISTA
+		# * there is a typing error on parameter g due to a default
+		# * ZeroFunction being used, and not casted to Function
+		fista = FISTA(ig.allocate(),
+			f=diffFunction,
+			g=convFunction,
+			max_iteration=params.iterations)
+
+		fista.run(verbose=True)
+
+		rec = fista.solution
+
 	# elif method_name == "PDHG":
 		...
 		# grad = GradientOperator(ig)
@@ -234,13 +261,14 @@ def ReconstructionFromJson(json: dict) -> ReconParameters:
 		if "filter" in json:
 			filter = str(json["filter"])
 		return FDKParam(quality=quality, filter=filter)
+
 	elif method == "FBP":
 		filter = "ram-lak"
 		if "filter" in json:
 			filter = str(json["filter"])
 		return FBPParam(quality=quality, filter=filter)
+
 	elif method == "CGLS":
-		# Operator
 		operator:IterativeOperator = ProjectionBlock()
 		if "operator" in json:
 			operator = OperatorFromJson(json["operator"])
@@ -254,8 +282,8 @@ def ReconstructionFromJson(json: dict) -> ReconParameters:
 		if "tolerance" in json:
 			tolerance = float(json["tolerance"])
 		return CGLSParam(quality=quality, iterations=iterations, operator=operator, tolerance=tolerance)
+
 	elif method == "SIRT":
-		# operator
 		operator:IterativeOperator = ProjectionBlock()
 		if "operator" in json:
 			operator = OperatorFromJson(json["operator"])
@@ -269,5 +297,19 @@ def ReconstructionFromJson(json: dict) -> ReconParameters:
 			constraint = ConstraintFromJson(json["constraint"])
 
 		return SIRTParam(quality=quality, iterations=iterations, constraint=constraint, operator=operator)
+	elif method == "FISTA":
+		constraint:Constraint = BoxConstraint()
+		if "constraint" in json:
+			constraint = ConstraintFromJson(json["constraint"])
+
+		iterations = 10
+		if "iterations" in json:
+			iterations = int(json["iterations"])
+
+		diff = DiffLeastSquares()
+		if "diff" in json:
+			diff = DiffFromJson(json["diff"])
+
+		return FISTAParam(quality=quality, iterations=iterations, constraint=constraint, diff=diff)
 	else:
 		raise TypeError(f"Recon paramaters for '{method}' is not supported.")

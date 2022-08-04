@@ -3,10 +3,10 @@
  * @author Iwan Mitchell
  */
 
-/**
- * Supported reconstruction algorithms.
- */
-export type ReconMethod = "FDK" | "FBP" | "CGLS" | "MLEM" | "SIRT"
+export type ReconMethod = "FDK" | "FBP" | "CGLS" | "MLEM" | "SIRT" | "FISTA"
+export type TikhonovMethod = "projection" | "identity" | "gradient"
+export type ConstraintMethod = "box" | "tv"
+export type DiffMethod = "least-squares"
 
 export type ReconQuality = 0 | 1 | 2 | 3
 
@@ -20,7 +20,6 @@ export interface FilteredReconstructionParams extends ReconstructionParams {
 }
 
 
-export type TikhonovMethod = "projection" | "identity" | "gradient"
 export interface TikhonovRegulariser {
 	method: TikhonovMethod
 	params: {
@@ -29,7 +28,6 @@ export interface TikhonovRegulariser {
 	}
 }
 
-export type ConstraintMethod = "box" | "tv"
 export interface Constraint {
 	method: ConstraintMethod
 	params: {
@@ -54,6 +52,21 @@ export interface TVConstraint extends Constraint {
 		isotropic: boolean,
 		lower: number|null,
 		upper: number|null,
+	}
+}
+
+export interface Differentiable {
+	method: DiffMethod,
+	params: {
+		[key: string]: string | number | boolean
+	}
+}
+
+export interface LeastSquaresDiff {
+	readonly method: "least-squares"
+	params: {
+		scaling_constant: number,
+		weight: number
 	}
 }
 
@@ -116,6 +129,20 @@ export class SIRTParams implements IterativeReconstructionParams {
 	}
 }
 
+export class FISTAParams implements IterativeReconstructionParams {
+	readonly method = "FISTA" as const
+	quality:ReconQuality
+	iterations: number
+	constraint: Constraint
+	diff:Differentiable
+
+	constructor(quality:ReconQuality, iterations:number, constriant:Constraint, diff:Differentiable) {
+		this.quality = quality;
+		this.iterations = iterations;
+		this.constraint = constriant;
+		this.diff = diff;
+	}
+}
 
 export interface ReconstructionPreview {
 	recon: {

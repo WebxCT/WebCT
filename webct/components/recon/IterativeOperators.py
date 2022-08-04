@@ -26,7 +26,7 @@ class ProjectionBlock(IterativeOperator):
 	params:ProjectionBlockParams = ProjectionBlockParams()
 
 	def get(self, ig:ImageGeometry, acData:AcquisitionData) -> Tuple[Operator, None]:
-		opProj = ProjectionOperator(ig,acData.geometry)
+		opProj = ProjectionOperator(ig, acData.geometry)
 		# Wrapping a ProjectionOperator in a block operator causes an invalid reconstruction output
 		# opblock_proj = BlockOperator(opProj)
 
