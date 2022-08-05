@@ -116,9 +116,9 @@
 	<button></button>
 </div>
 
-<div class="group" id="settingsConstraint">
+<div class="group" id="settingsProximal">
 	<div>
-		<sl-select label="Reconstruction Constraint" id="selectConOperator" class="" value="box">
+		<sl-select label="Reconstruction Proximal" id="selectConOperator" class="" value="box">
 			<sl-menu-item value="box">Indicator Box
 				<span><br>Upper & Lower Bounds</span>
 			</sl-menu-item>
@@ -137,12 +137,12 @@
 
 		<div class="check-property" advanced>
 			<sl-checkbox id="checkboxConUpper"></sl-checkbox>
-			<sl-input type="number" id="inputConUpper" label="Upper Constraint" value="5"></sl-input>
+			<sl-input type="number" id="inputConUpper" label="Upper Proximal" value="5"></sl-input>
 		</div>
 
 		<div class="check-property">
 			<sl-checkbox id="checkboxConLower"></sl-checkbox>
-			<sl-input type="number" id="inputConLower" label="Lower Constraint" value="0"></sl-input>
+			<sl-input type="number" id="inputConLower" label="Lower Proximal" value="0"></sl-input>
 		</div>
 
 		<sl-input id="inputConIterations" type="number" label="Iterations" step=1 min=1 value="10" disabled>

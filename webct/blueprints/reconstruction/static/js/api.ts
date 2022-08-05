@@ -2,7 +2,7 @@
  * api.ts : API functions for communicating between the client and server.
  * @author Iwan Mitchell
  */
-import { BoxConstraint, CGLSParams, Constraint, Differentiable, FBPParams, FDKParams, FGPTVConstraint, FISTAParams, LeastSquaresDiff, ReconMethod, ReconQuality, ReconstructionParams, ReconstructionPreview, SIRTParams, TGVConstraint, TikhonovRegulariser, TVConstraint } from "./types";
+import { BoxProximal, CGLSParams, Proximal, Differentiable, FBPParams, FDKParams, FGPTVProximal, FISTAParams, LeastSquaresDiff, ReconMethod, ReconQuality, ReconstructionParams, ReconstructionPreview, SIRTParams, TGVProximal, TikhonovRegulariser, TVProximal } from "./types";
 
 // ====================================================== //
 // ====================== Endpoints ===================== //
@@ -36,7 +36,7 @@ export interface ReconResponseRegistry {
 	reconResponse: {
 		quality: ReconQuality;
 		method: ReconMethod;
-		[key: string]: string | number | boolean | TikhonovRegulariser | Constraint | Differentiable;
+		[key: string]: string | number | boolean | TikhonovRegulariser | Proximal | Differentiable;
 	};
 
 	reconPreviewResponse: {
@@ -127,49 +127,49 @@ function processTikhonov(data:ReconResponseRegistry["reconResponse"]):TikhonovRe
 	} as TikhonovRegulariser;
 }
 
-function processConstraint(data:ReconResponseRegistry["reconResponse"]):Constraint {
-	const dataConstraint = data.constraint as Constraint;
-	switch (dataConstraint.method) {
+function processProximal(data:ReconResponseRegistry["reconResponse"]):Proximal {
+	const dataProximal = data.constraint as Proximal;
+	switch (dataProximal.method) {
 	case "box":
 		return {
-			method: dataConstraint.method,
+			method: dataProximal.method,
 			params: {
-				upper: dataConstraint.params.upper,
-				lower: dataConstraint.params.lower,
+				upper: dataProximal.params.upper,
+				lower: dataProximal.params.lower,
 			}
-		} as BoxConstraint;
+		} as BoxProximal;
 	case "tv":
 		return {
-			method: dataConstraint.method,
+			method: dataProximal.method,
 			params: {
-				isotropic: dataConstraint.params.isotropic,
-				iterations: dataConstraint.params.iterations,
-				tolerance: dataConstraint.params.tolerance,
-				lower: dataConstraint.params.lower,
-				upper: dataConstraint.params.upper,
+				isotropic: dataProximal.params.isotropic,
+				iterations: dataProximal.params.iterations,
+				tolerance: dataProximal.params.tolerance,
+				lower: dataProximal.params.lower,
+				upper: dataProximal.params.upper,
 			}
-		} as TVConstraint;
+		} as TVProximal;
 	case "fgp-tv":
 		return {
 			method: "fgp-tv",
 			params: {
-				alpha: dataConstraint.params.alpha,
-				isotropic: dataConstraint.params.isotropic,
-				iterations: dataConstraint.params.iterations,
-				nonnegativity: dataConstraint.params.nonnegativity,
-				tolerance: dataConstraint.params.tolerance,
+				alpha: dataProximal.params.alpha,
+				isotropic: dataProximal.params.isotropic,
+				iterations: dataProximal.params.iterations,
+				nonnegativity: dataProximal.params.nonnegativity,
+				tolerance: dataProximal.params.tolerance,
 			}
-		} as FGPTVConstraint;
+		} as FGPTVProximal;
 	case "tgv":
 		return {
 			method: "tgv",
 			params: {
-				alpha: dataConstraint.params.alpha,
-				gamma: dataConstraint.params.gamma,
-				iterations: dataConstraint.params.iterations,
-				tolerance: dataConstraint.params.tolerance
+				alpha: dataProximal.params.alpha,
+				gamma: dataProximal.params.gamma,
+				iterations: dataProximal.params.iterations,
+				tolerance: dataProximal.params.tolerance
 			}
-		} as TGVConstraint;
+		} as TGVProximal;
 	default:
 		return {
 			method: "box",
@@ -177,7 +177,7 @@ function processConstraint(data:ReconResponseRegistry["reconResponse"]):Constrai
 				upper: null,
 				lower: null,
 			}
-		} as BoxConstraint;
+		} as BoxProximal;
 	}
 }
 
@@ -239,14 +239,14 @@ export function processResponse(data: ReconResponseRegistry[keyof ReconResponseR
 				method: data.method,
 				iterations: data.iterations,
 				operator: processTikhonov(data),
-				constraint: processConstraint(data),
+				constraint: processProximal(data),
 			} as SIRTParams;
 		case "FISTA":
 			return {
 				quality: data.quality,
 				method: data.method,
 				iterations: data.iterations,
-				constraint: processConstraint(data),
+				constraint: processProximal(data),
 				diff: processDiff(data),
 			} as FISTAParams;
 		}

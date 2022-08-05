@@ -6,27 +6,27 @@ from cil.plugins.ccpi_regularisation.functions import (FGP_TV, TGV, TNV)
 import numpy as np
 
 @dataclass(frozen=True)
-class Constraint():
+class Proximal():
 	method:str
 
 	def get(self, ig:ImageGeometry) -> Function:
 		...
 
 @dataclass(frozen=True)
-class ConstraintParams():
+class ProximalParams():
 	...
 
 # ------------------------
 
 @dataclass(frozen=True)
-class BoxConstraintParams(ConstraintParams):
+class BoxProximalParams(ProximalParams):
 	upper: float = np.inf
 	lower: float = -np.inf
 
 @dataclass(frozen=True)
-class BoxConstraint(Constraint):
+class BoxProximal(Proximal):
 	method:str = "box"
-	params:BoxConstraintParams = BoxConstraintParams()
+	params:BoxProximalParams = BoxProximalParams()
 
 	def get(self, ig:ImageGeometry) -> Function:
 		return IndicatorBox(self.params.lower, self.params.upper)
@@ -34,7 +34,7 @@ class BoxConstraint(Constraint):
 # ------------------------
 
 @dataclass(frozen=True)
-class TVConstraintParams(ConstraintParams):
+class TVProximalParams(ProximalParams):
 	iterations: int = 100
 	alpha: float = 0.1
 	tolerance: float = 1
@@ -43,9 +43,9 @@ class TVConstraintParams(ConstraintParams):
 	isotropic: bool = True
 
 @dataclass(frozen=True)
-class TVConstraint(Constraint):
+class TVProximal(Proximal):
 	method:str = "tv"
-	params:TVConstraintParams = TVConstraintParams()
+	params:TVProximalParams = TVProximalParams()
 
 	def get(self, ig:ImageGeometry) -> Function:
 		return self.params.alpha * TotalVariation(self.params.iterations,
@@ -57,7 +57,7 @@ class TVConstraint(Constraint):
 # ------------------------
 
 @dataclass(frozen=True)
-class FGPTVConstraintParams(ConstraintParams):
+class FGPTVProximalParams(ProximalParams):
 	iterations: int = 100
 	alpha: float = 1
 	tolerance: float = 1
@@ -65,9 +65,9 @@ class FGPTVConstraintParams(ConstraintParams):
 	nonnegativity: bool = True
 
 @dataclass(frozen=True)
-class FGPTVConstraint(Constraint):
+class FGPTVProximal(Proximal):
 	method:str = "fgp-tv"
-	params:FGPTVConstraintParams = FGPTVConstraintParams()
+	params:FGPTVProximalParams = FGPTVProximalParams()
 
 	def get(self, ig:ImageGeometry) -> Function:
 		# The FGP_TV regularisation does not incorporate information on the
@@ -82,16 +82,16 @@ class FGPTVConstraint(Constraint):
 # ------------------------
 
 @dataclass(frozen=True)
-class TGVConstraintParams(ConstraintParams):
+class TGVProximalParams(ProximalParams):
 	iterations: int = 100
 	alpha: float = 0.1
 	tolerance: float = 1
 	gamma: float = 1
 
 @dataclass(frozen=True)
-class TGVConstraint(Constraint):
+class TGVProximal(Proximal):
 	method:str = "tgv"
-	params:TGVConstraintParams = TGVConstraintParams()
+	params:TGVProximalParams = TGVProximalParams()
 
 	def get(self, ig:ImageGeometry) -> Function:
 		return TGV(alpha=self.params.alpha,
@@ -102,38 +102,38 @@ class TGVConstraint(Constraint):
 
 # ------------------------
 
-Constraints:Dict[str, Dict[str, Union[Type[Constraint], Type[ConstraintParams]]]] = {
+Proximals:Dict[str, Dict[str, Union[Type[Proximal], Type[ProximalParams]]]] = {
 	"box": {
-		"type": BoxConstraint,
-		"params":BoxConstraintParams
+		"type": BoxProximal,
+		"params":BoxProximalParams
 	},
 	"tv": {
-		"type": TVConstraint,
-		"params": TVConstraintParams
+		"type": TVProximal,
+		"params": TVProximalParams
 	},
 	"fgp-tv": {
-		"type": FGPTVConstraint,
-		"params": FGPTVConstraintParams
+		"type": FGPTVProximal,
+		"params": FGPTVProximalParams
 	},
 	"tgv": {
-		"type": TGVConstraint,
-		"params": TGVConstraintParams
+		"type": TGVProximal,
+		"params": TGVProximalParams
 	},
 }
 
-def ConstraintFromJson(json:dict) -> Constraint:
+def ProximalFromJson(json:dict) -> Proximal:
 	if "method" not in json:
-		raise KeyError("Constraint key lacks a method key.")
+		raise KeyError("Proximal key lacks a method key.")
 	if "params" not in json:
-		raise KeyError("Constraint key lacks a param key.")
+		raise KeyError("Proximal key lacks a param key.")
 
-	if json["method"] not in Constraints:
-		raise NotImplementedError(f"Constraint '{json['method']}' is not supported.")
+	if json["method"] not in Proximals:
+		raise NotImplementedError(f"Proximal '{json['method']}' is not supported.")
 
-	conType:Type[Constraint] = cast(Type[Constraint], Constraints[json["method"]]["type"])
+	conType:Type[Proximal] = cast(Type[Proximal], Proximals[json["method"]]["type"])
 	conParams = json["params"]
 
-	if conType == BoxConstraint:
+	if conType == BoxProximal:
 		upper = np.inf
 		lower = -np.inf
 		# Check to see if bound values exist and are not none. Json does not
@@ -145,9 +145,9 @@ def ConstraintFromJson(json:dict) -> Constraint:
 		if "lower" in conParams:
 			if conParams["lower"] is not None:
 				lower = float(conParams["lower"])
-		return BoxConstraint(params=BoxConstraintParams(upper, lower))
+		return BoxProximal(params=BoxProximalParams(upper, lower))
 
-	elif conType == TVConstraint:
+	elif conType == TVProximal:
 		alpha = 0.1
 		iterations = 100
 		tolerance = 1
@@ -170,7 +170,7 @@ def ConstraintFromJson(json:dict) -> Constraint:
 		if "isotropic" in conParams:
 			isotropic = bool(conParams["isotropic"])
 
-		tvparams = TVConstraintParams(
+		tvparams = TVProximalParams(
 			iterations=iterations,
 			alpha=alpha,
 			tolerance=tolerance,
@@ -178,9 +178,9 @@ def ConstraintFromJson(json:dict) -> Constraint:
 			lower=lower,
 			isotropic=isotropic)
 
-		return TVConstraint(params=tvparams)
+		return TVProximal(params=tvparams)
 
-	elif conType == FGPTVConstraint:
+	elif conType == FGPTVProximal:
 		iterations = 100
 		alpha = 1
 		tolerance = 1
@@ -198,16 +198,16 @@ def ConstraintFromJson(json:dict) -> Constraint:
 		if "nonnegativity" in conParams:
 			nonnegativity = bool(conParams["nonnegativity"])
 
-		fgptvparams = FGPTVConstraintParams(
+		fgptvparams = FGPTVProximalParams(
 			iterations=iterations,
 			alpha=alpha,
 			tolerance=tolerance,
 			isotropic=isotropic,
 			nonnegativity=nonnegativity)
 
-		return FGPTVConstraint(params=fgptvparams)
+		return FGPTVProximal(params=fgptvparams)
 
-	elif conType == TGVConstraint:
+	elif conType == TGVProximal:
 		iterations = 100
 		alpha = 1
 		gamma = 1
@@ -222,13 +222,13 @@ def ConstraintFromJson(json:dict) -> Constraint:
 		if "tolerance" in conParams:
 			tolerance = float(conParams["tolerance"])
 
-		tgvparams = TGVConstraintParams(
+		tgvparams = TGVProximalParams(
 			iterations=iterations,
 			alpha=alpha,
 			gamma=gamma,
 			tolerance=tolerance)
 
-		return TGVConstraint(params=tgvparams)
+		return TGVProximal(params=tgvparams)
 
 	else:
-		raise NotImplementedError(f"Constraint method '{conType}' is not implemented.")
+		raise NotImplementedError(f"Proximal method '{conType}' is not implemented.")

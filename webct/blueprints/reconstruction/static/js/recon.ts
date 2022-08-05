@@ -6,7 +6,7 @@
 import { SlCheckbox, SlInput, SlSelect } from "@shoelace-style/shoelace";
 import { AlertType, showAlert } from "../../../base/static/js/base";
 import { prepareRequest, processResponse, ReconResponseRegistry, requestReconData, requestReconPreview, sendReconData } from "./api";
-import { BoxConstraint, CGLSParams, Constraint, ConstraintMethod, Differentiable, DiffMethod, FBPParams, FDKParams, FGPTVConstraint, FISTAParams, LeastSquaresDiff, ReconQuality, ReconstructionParams, ReconstructionPreview, SIRTParams, TGVConstraint, TikhonovMethod as TikhonovMethod, TikhonovRegulariser, TVConstraint } from "./types";
+import { BoxProximal, CGLSParams, Proximal, ProximalMethod, Differentiable, DiffMethod, FBPParams, FDKParams, FGPTVProximal, FISTAParams, LeastSquaresDiff, ReconQuality, ReconstructionParams, ReconstructionPreview, SIRTParams, TGVProximal, TikhonovMethod as TikhonovMethod, TikhonovRegulariser, TVProximal } from "./types";
 import { BeamTypeElement } from "../../../beam/static/js/beam";
 import { validateMethod } from "./validation";
 
@@ -46,7 +46,7 @@ let TikOpElement: SlSelect;
 let TikAlphaElement: SlInput;
 let TikBoundElement: SlSelect;
 
-// Constraint
+// Proximal
 let ConSettings: HTMLDivElement;
 let ConOpElement: SlSelect;
 let ConCheckboxUpperElement: SlCheckbox;
@@ -139,8 +139,8 @@ export function setupRecon(): boolean {
 	const tik_input_alpha = document.getElementById("inputTikAlpha");
 	const tik_select_boundary = document.getElementById("selectTikBoundary");
 
-	// Constraint
-	const con_settings = document.getElementById("settingsConstraint");
+	// Proximal
+	const con_settings = document.getElementById("settingsProximal");
 	const con_select_operator = document.getElementById("selectConOperator");
 	const con_input_upper = document.getElementById("inputConUpper");
 	const con_checkbox_upper = document.getElementById("checkboxConUpper");
@@ -272,7 +272,7 @@ export function setupRecon(): boolean {
 	TikBoundElement = tik_select_boundary as SlSelect;
 	TikOpElement = tik_select_operator as SlSelect;
 
-	// Constraints
+	// Proximals
 	ConSettings = con_settings as HTMLDivElement;
 	ConOpElement = con_select_operator as SlSelect;
 	ConCheckboxUpperElement = con_checkbox_upper as SlCheckbox;
@@ -322,7 +322,7 @@ export function setupRecon(): boolean {
 		ConGammaElement.disabled = true;
 		ConGammaElement.classList.add("hidden");
 
-		switch ((ConOpElement.value as string) as ConstraintMethod) {
+		switch ((ConOpElement.value as string) as ProximalMethod) {
 		case "box":
 			ConLowerDiv.classList.remove("hidden");
 			ConUpperDiv.classList.remove("hidden");
@@ -670,7 +670,7 @@ function UpdateTikValues(params: TikhonovRegulariser): void {
 	}
 }
 
-function UpdateConBoundCheckboxes(params: BoxConstraint | TVConstraint): void {
+function UpdateConBoundCheckboxes(params: BoxProximal | TVProximal): void {
 	if (params.params.lower == null) {
 		ToggleConLower(false);
 		ConCheckboxLowerElement.checked = false;
@@ -679,7 +679,7 @@ function UpdateConBoundCheckboxes(params: BoxConstraint | TVConstraint): void {
 		ToggleConLower(true);
 		ConCheckboxLowerElement.checked = true;
 	}
-	if ((params as BoxConstraint).params.upper == null) {
+	if ((params as BoxProximal).params.upper == null) {
 		ToggleConUpper(false);
 		ConCheckboxUpperElement.checked = false;
 	} else {
@@ -689,17 +689,17 @@ function UpdateConBoundCheckboxes(params: BoxConstraint | TVConstraint): void {
 	}
 }
 
-function UpdateConValues(params: Constraint): void {
-	params = params as BoxConstraint;
+function UpdateConValues(params: Proximal): void {
+	params = params as BoxProximal;
 	ConOpElement.value = params.method;
 	// Force update even if new value is equal to old
 	// This ensures disabled state of child items are correct.
 	ConOpElement.handleValueChange();
 
-	const conTV: TVConstraint = params as TVConstraint;
-	const conBox: BoxConstraint = params as BoxConstraint;
-	const conFGPTV: FGPTVConstraint = params as FGPTVConstraint;
-	const conTGV: TGVConstraint = params as TGVConstraint;
+	const conTV: TVProximal = params as TVProximal;
+	const conBox: BoxProximal = params as BoxProximal;
+	const conFGPTV: FGPTVProximal = params as FGPTVProximal;
+	const conTGV: TGVProximal = params as TGVProximal;
 
 	switch (params.method) {
 	case "box":
@@ -845,7 +845,7 @@ function setRecon(): Promise<void> {
 		}
 	};
 
-	const boxConstraint: BoxConstraint = {
+	const boxProximal: BoxProximal = {
 		method: "box",
 		params: {
 			lower: ConCheckboxLowerElement.checked ? parseFloat(ConLowerElement.value) : null,
@@ -853,7 +853,7 @@ function setRecon(): Promise<void> {
 		}
 	};
 
-	const tvConstraint: TVConstraint = {
+	const tvProximal: TVProximal = {
 		method: "tv",
 		params: {
 			iterations: parseInt(ConIterElement.value),
@@ -865,7 +865,7 @@ function setRecon(): Promise<void> {
 		}
 	};
 
-	const fgptvConstraint: FGPTVConstraint = {
+	const fgptvProximal: FGPTVProximal = {
 		method: "fgp-tv",
 		params: {
 			iterations: parseInt(ConIterElement.value),
@@ -876,7 +876,7 @@ function setRecon(): Promise<void> {
 		}
 	};
 
-	const tgvConstraint: TGVConstraint = {
+	const tgvProximal: TGVProximal = {
 		method: "tgv",
 		params: {
 			iterations: parseInt(ConIterElement.value),
@@ -887,20 +887,20 @@ function setRecon(): Promise<void> {
 	};
 
 	// Select constraint
-	let constraint: Constraint;
-	switch (ConOpElement.value as ConstraintMethod) {
+	let constraint: Proximal;
+	switch (ConOpElement.value as ProximalMethod) {
 	case "box":
 	default:
-		constraint = boxConstraint;
+		constraint = boxProximal;
 		break;
 	case "tv":
-		constraint = tvConstraint;
+		constraint = tvProximal;
 		break;
 	case "fgp-tv":
-		constraint = fgptvConstraint;
+		constraint = fgptvProximal;
 		break;
 	case "tgv":
-		constraint = tgvConstraint;
+		constraint = tgvProximal;
 		break;
 	}
 

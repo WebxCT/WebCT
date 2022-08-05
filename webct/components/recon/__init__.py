@@ -1,12 +1,12 @@
-from .Constraints import (
-	Constraint,
-	ConstraintParams,
-	BoxConstraint,
-	BoxConstraintParams,
-	TVConstraint,
-	TVConstraintParams,
-	Constraints,
-	ConstraintFromJson,
+from .Proximals import (
+	Proximal,
+	ProximalParams,
+	BoxProximal,
+	BoxProximalParams,
+	TVProximal,
+	TVProximalParams,
+	Proximals,
+	ProximalFromJson,
 )
 from .IterativeOperators import (
 	IterativeOperator,

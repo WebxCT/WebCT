@@ -13,8 +13,8 @@ from webct.components.Beam import PROJECTION, BeamParameters
 from webct.components.Capture import CaptureParameters
 from webct.components.Detector import DetectorParameters
 from webct.components.recon import (
-	BoxConstraint,
-	Constraint, ConstraintFromJson,
+	BoxProximal,
+	Proximal, ProximalFromJson,
 	IterativeOperator,
 	OperatorFromJson, ProjectionBlock,
 	dataWithOp)
@@ -49,7 +49,7 @@ class CGLSParam(ReconParameters):
 class SIRTParam(ReconParameters):
 	method: str = "SIRT"
 	iterations: int = 10
-	constraint: Constraint = BoxConstraint()
+	constraint: Proximal = BoxProximal()
 	operator: IterativeOperator = ProjectionBlock()
 
 @dataclass(frozen=True)
@@ -57,7 +57,7 @@ class FISTAParam(ReconParameters):
 	method: str = "FISTA"
 	iterations: int = 10
 	diff: Diff = DiffLeastSquares()
-	constraint: Constraint = BoxConstraint()
+	constraint: Proximal = BoxProximal()
 
 
 # @dataclass(frozen=True)
@@ -292,15 +292,15 @@ def ReconstructionFromJson(json: dict) -> ReconParameters:
 		if "iterations" in json:
 			iterations = int(json["iterations"])
 
-		constraint = BoxConstraint()
+		constraint = BoxProximal()
 		if "constraint" in json:
-			constraint = ConstraintFromJson(json["constraint"])
+			constraint = ProximalFromJson(json["constraint"])
 
 		return SIRTParam(quality=quality, iterations=iterations, constraint=constraint, operator=operator)
 	elif method == "FISTA":
-		constraint:Constraint = BoxConstraint()
+		constraint:Proximal = BoxProximal()
 		if "constraint" in json:
-			constraint = ConstraintFromJson(json["constraint"])
+			constraint = ProximalFromJson(json["constraint"])
 
 		iterations = 10
 		if "iterations" in json:
