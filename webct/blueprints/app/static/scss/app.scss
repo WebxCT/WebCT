@@ -354,3 +354,15 @@ sl-progress-bar[variant="long"]::part(indicator) {
 .downloadPreview pre {
 	margin: 0;
 }
+
+sl-tag[size="x-small"]::part(base) {
+	font-size: 0.75rem;
+	padding: 0.2rem;
+	margin-left: 0.3rem;
+}
+
+.hidden {
+	// Force hide elements with .hidden even if display modes are overridden
+	// from higher specificity sources
+	display: none !important;
+}

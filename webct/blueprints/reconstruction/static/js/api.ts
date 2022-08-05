@@ -2,7 +2,7 @@
  * api.ts : API functions for communicating between the client and server.
  * @author Iwan Mitchell
  */
-import { CGLSParams, CGLSVariant, FBPParams, FDKParams, ReconMethod, ReconQuality, ReconstructionParams, ReconstructionPreview } from "./types";
+import { BoxProximal, CGLSParams, Proximal, Differentiable, FBPParams, FDKParams, FGPTVProximal, FISTAParams, LeastSquaresDiff, ReconMethod, ReconQuality, ReconstructionParams, ReconstructionPreview, SIRTParams, TGVProximal, TikhonovRegulariser, TVProximal } from "./types";
 
 // ====================================================== //
 // ====================== Endpoints ===================== //
@@ -36,7 +36,7 @@ export interface ReconResponseRegistry {
 	reconResponse: {
 		quality: ReconQuality;
 		method: ReconMethod;
-		[key: string]: string | number | boolean;
+		[key: string]: string | number | boolean | TikhonovRegulariser | Proximal | Differentiable;
 	};
 
 	reconPreviewResponse: {
@@ -117,6 +117,90 @@ export async function sendReconData(data: ReconRequestRegistry["reconRequest"]):
 // ===================== Conversion ===================== //
 // ====================================================== //
 
+function processTikhonov(data:ReconResponseRegistry["reconResponse"]):TikhonovRegulariser {
+	return {
+		method: (data.operator as TikhonovRegulariser).method,
+		params: {
+			alpha: (data.operator as TikhonovRegulariser).params.alpha,
+			boundary: (data.operator as TikhonovRegulariser).params.boundary,
+		},
+	} as TikhonovRegulariser;
+}
+
+function processProximal(data:ReconResponseRegistry["reconResponse"]):Proximal {
+	const dataProximal = data.constraint as Proximal;
+	switch (dataProximal.method) {
+	case "box":
+		return {
+			method: dataProximal.method,
+			params: {
+				upper: dataProximal.params.upper,
+				lower: dataProximal.params.lower,
+			}
+		} as BoxProximal;
+	case "tv":
+		return {
+			method: dataProximal.method,
+			params: {
+				isotropic: dataProximal.params.isotropic,
+				iterations: dataProximal.params.iterations,
+				tolerance: dataProximal.params.tolerance,
+				lower: dataProximal.params.lower,
+				upper: dataProximal.params.upper,
+			}
+		} as TVProximal;
+	case "fgp-tv":
+		return {
+			method: "fgp-tv",
+			params: {
+				alpha: dataProximal.params.alpha,
+				isotropic: dataProximal.params.isotropic,
+				iterations: dataProximal.params.iterations,
+				nonnegativity: dataProximal.params.nonnegativity,
+				tolerance: dataProximal.params.tolerance,
+			}
+		} as FGPTVProximal;
+	case "tgv":
+		return {
+			method: "tgv",
+			params: {
+				alpha: dataProximal.params.alpha,
+				gamma: dataProximal.params.gamma,
+				iterations: dataProximal.params.iterations,
+				tolerance: dataProximal.params.tolerance
+			}
+		} as TGVProximal;
+	default:
+		return {
+			method: "box",
+			params: {
+				upper: null,
+				lower: null,
+			}
+		} as BoxProximal;
+	}
+}
+
+function processDiff(data:ReconResponseRegistry["reconResponse"]):Differentiable {
+	const dataDiff = data.diff as Differentiable;
+	switch (dataDiff.method) {
+	case "least-squares":
+		return {
+			method: "least-squares",
+			params: {
+				scaling_constant: dataDiff.params.scaling_constant,
+			}
+		} as LeastSquaresDiff;
+	default:
+		return {
+			method: "least-squares",
+			params: {
+				scaling_constant: 1,
+			}
+		};
+	}
+}
+
 /**
  * Convert API response data into local typescript objects.
  * @param data - unconverted objects created from a getRecon request.
@@ -124,6 +208,7 @@ export async function sendReconData(data: ReconRequestRegistry["reconRequest"]):
  */
 export function processResponse(data: ReconResponseRegistry[keyof ReconResponseRegistry], type: keyof ReconResponseRegistry): ReconstructionParams | ReconstructionPreview | undefined {
 	// Todo: Convert and check params for each reconstruction method
+
 	switch (type) {
 	case "reconResponse":
 		data = data as ReconResponseRegistry["reconResponse"];
@@ -144,11 +229,26 @@ export function processResponse(data: ReconResponseRegistry[keyof ReconResponseR
 			return {
 				quality: data.quality,
 				method: data.method,
-				variant: data.variant as CGLSVariant,
-				iterations:100,
+				iterations: data.iterations,
+				tolerance: data.tolerance,
+				operator: processTikhonov(data),
 			} as CGLSParams;
-		default:
-			break;
+		case "SIRT":
+			return {
+				quality: data.quality,
+				method: data.method,
+				iterations: data.iterations,
+				operator: processTikhonov(data),
+				constraint: processProximal(data),
+			} as SIRTParams;
+		case "FISTA":
+			return {
+				quality: data.quality,
+				method: data.method,
+				iterations: data.iterations,
+				constraint: processProximal(data),
+				diff: processDiff(data),
+			} as FISTAParams;
 		}
 		break;
 	case "reconPreviewResponse":

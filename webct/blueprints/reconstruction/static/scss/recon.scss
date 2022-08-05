@@ -21,6 +21,17 @@
 	width: 100%;
 }
 
+div.group > div > div.check-property {
+	display: grid;
+	grid-template-columns: 10% 90%;
+}
+
+div.check-property > sl-checkbox {
+	align-self: end;
+	justify-self: center;
+	margin-bottom: 50%;
+}
+
 div.stacker {
 	// 1x1 grid with a named area
 	grid-template-areas: "t1";

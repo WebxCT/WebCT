@@ -13,18 +13,41 @@
 	<div>
 		<sl-select label="Reconstruction Algorithm" value="FDK" id="selectReconstruction">
 			<sl-menu-label>Non-Iterative</sl-menu-label>
-			{# Span elements do not show up when selected.#}
-			<sl-menu-item value="FDK">FDK<span> Feldkamp, David & Kress</span></sl-menu-item>
-			<sl-menu-item value="FBP">FBP<span> Filtered Back Projection</span></sl-menu-item>
+
+			{# Span elements do not show up when selected,#}
+			{# they make for good descriptive text. #}
+			<sl-menu-item value="FDK">FDK
+				<span> Feldkamp, David & Kress</span>
+				{% include "./tags/gpu.html.j2" %}
+			</sl-menu-item>
+
+			<sl-menu-item value="FBP">FBP
+				<span> Filtered Back Projection</span>
+				{% include "./tags/gpu.html.j2" %}
+			</sl-menu-item>
+
 			<sl-divider></sl-divider>
 			<sl-menu-label>Iterative Methods</sl-menu-label>
-			<sl-menu-item value="MLEM" disabled>MLEM<span> Maximum Likelihood Estimation Method</span></sl-menu-item>
-			<sl-menu-item value="SIRT" disabled>SIRT<span> Simultaneous Iterative Reconstructive Technique</span></sl-menu-item>
-			<sl-menu-item value="CGLS" disabled>CGLS<span> Conjugate Gradient Least Squares</span></sl-menu-item>
+
+			<sl-menu-item value="CGLS">CGLS
+				<span> Conjugate Gradient Least Squares</span>
+				{% include "./tags/cpu.html.j2" %}
+			</sl-menu-item>
+
+			<sl-menu-item value="SIRT">SIRT
+				<span> Simultaneous Iterative Reconstructive Technique</span>
+				{% include "./tags/cpu.html.j2" %}
+			</sl-menu-item>
+
+			<sl-menu-item value="FISTA">FISTA
+				<span> Fast Iterative Shrinkage-Thresholding Algorithm</span>
+				{% include "./tags/cpu.html.j2" %}
+			</sl-menu-item>
 		</sl-select>
+
 		<sl-select label="Reconstruction Quality" value="medium" id="selectReconQuality" advanced>
 			<sl-menu-item value="0">High
-				<sl-tag slot="suffix" variant="danger" pill size="small">GPU Intensive</sl-pill>
+				<sl-tag slot="suffix" variant="danger" pill size="small">Memory Intensive</sl-tag>
 			</sl-menu-item>
 			<sl-menu-item value="1">Medium</sl-menu-item>
 			<sl-menu-item value="2">Low</sl-menu-item>
@@ -59,12 +82,100 @@
 <div class="group hidden" id="settingsCGLS">
 	<div>
 		<h2>CGLS Settings</h2>
-		<sl-select label="CGLS Variant" id="selectVariantCGLS" class="hidden" value="">
-			<sl-menu-item value="">No Varient</sl-menu-item>
-			<sl-menu-item value="Conv">Convolution</sl-menu-item>
-			<sl-menu-item value="Tik"> Tikhonov Regularization</sl-menu-item>
-			<sl-menu-item value="TV">TV Regularisation<span> Total Variation</span></sl-menu-item>
-		</sl-select>
+		<sl-input type="number" label="Iterations" step=1 min=1 value="5" id="inputCGLSIterations"></sl-input>
+		<sl-input type="number" label="Tolerance" step=1 min=1 value="1" id="inputCGLSTolerance" advanced>
+			<span slot="suffix">e-6</span>
+		</sl-input>
+	</div>
+	<button></button>
+</div>
+
+<div class="group hidden" id="settingsSIRT">
+	<div>
+		<h2>SIRT Settings</h2>
+		<sl-input type="number" id="inputSIRTIterations" label="Iterations" step=1 min=1 value="5"></sl-input>
 	</div>
 	<!-- <button></button> -->
+</div>
+
+<div class="group hidden" id="settingsFISTA">
+	<div>
+		<h2>FISTA Settings</h2>
+		<sl-input type="number" id="inputFISTAIterations" label="Iterations" step=1 min=1 value="5"></sl-input>
+	</div>
+	<!-- <button></button> -->
+</div>
+
+<div class="group" id="settingsDiff">
+	<div>
+		<sl-select label="Differentiable Function" id="selectDiffOperator" value="least-squares">
+			<sl-menu-item value="least-squares">Least Squares</sl-menu-item>
+		</sl-select>
+		<sl-input type="number" step="0.1" value="1" id="inputDiffLSScaling" label="Scaling Constant" advanced></sl-input>
+	</div>
+	<button></button>
+</div>
+
+<div class="group" id="settingsProximal">
+	<div>
+		<sl-select label="Reconstruction Proximal" id="selectConOperator" class="" value="box">
+			<sl-menu-item value="box">Indicator Box
+				<span><br>Upper & Lower Bounds</span>
+			</sl-menu-item>
+			<sl-menu-item value="tv">Total Variation
+				{% include "./tags/cpu.html.j2" %}
+			</sl-menu-item>
+			<sl-menu-item value="fgp-tv">FGP-TV
+				<span> Fast Gradient Projection Total Variation</span>
+				{% include "./tags/gpu.html.j2" %}
+			</sl-menu-item>
+			<sl-menu-item value="tgv">TGV
+				<span> Total Generalised Variation</span>
+				{% include "./tags/cpu.html.j2" %}
+			</sl-menu-item>
+		</sl-select>
+
+		<div class="check-property" advanced>
+			<sl-checkbox id="checkboxConUpper"></sl-checkbox>
+			<sl-input type="number" id="inputConUpper" label="Upper Proximal" value="5"></sl-input>
+		</div>
+
+		<div class="check-property">
+			<sl-checkbox id="checkboxConLower"></sl-checkbox>
+			<sl-input type="number" id="inputConLower" label="Lower Proximal" value="0"></sl-input>
+		</div>
+
+		<sl-input id="inputConIterations" type="number" label="Iterations" step=1 min=1 value="10" disabled>
+		</sl-input>
+
+		<sl-checkbox id="checkboxConNonNeg" checked disabled>Non-negativity</sl-checkbox>
+
+		<sl-input type="number" label="Alpha" step=0.01 min=0 value="0.1" id="inputConAlpha" advanced disabled>
+		</sl-input>
+
+		<sl-input type="number" label="Gamma" step=0.01 min=0 value="1" id="inputConGamma" advanced disabled>
+		</sl-input>
+
+		<sl-checkbox id="checkboxConIsotropic" checked advanced disabled>Isotropic</sl-checkbox>
+
+		<sl-input type="number" label="Tolerance" step=1 min=1 value="1" id="inputConTolerance" advanced disabled>
+			<span slot="suffix">e-6</span></sl-input>
+	</div>
+	<button></button>
+</div>
+
+<div class="group" id="settingsTikhonov">
+	<div>
+		<sl-select label="Tikhonov Regularization Operator" id="selectTikOperator" class="" value="projection">
+			<sl-menu-item value="projection">Projection Operator<span><br>No Regularisation</span></sl-menu-item>
+			<sl-menu-item value="identity">Identity Operator</sl-menu-item>
+			<sl-menu-item value="gradient">Gradient Operator</sl-menu-item>
+		</sl-select>
+		<sl-input type="number" label="Alpha" value="0.1" disabled id="inputTikAlpha"></sl-input>
+		<sl-select label="Boundary Condition" advanced disabled value="Neumann" id="selectTikBoundary">
+			<sl-menu-item value="Neumann">Neumann</sl-menu-item>
+			<sl-menu-item value="Periodic">Periodic</sl-menu-item>
+		</sl-select>
+	</div>
+	<button></button>
 </div>
