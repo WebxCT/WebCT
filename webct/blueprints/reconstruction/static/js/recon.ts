@@ -66,7 +66,6 @@ let ConGammaElement: SlInput;
 let DiffSettings: HTMLDivElement;
 let DiffOpElement: SlSelect;
 let DiffLSScalingElement: SlInput;
-let DiffLSWeightElement: SlInput;
 
 let SliceImages: NodeListOf<HTMLVideoElement>;
 let SinogramImages: NodeListOf<HTMLVideoElement>;
@@ -158,7 +157,6 @@ export function setupRecon(): boolean {
 	const diff_settings = document.getElementById("settingsDiff");
 	const diff_select_operator = document.getElementById("selectDiffOperator");
 	const diff_input_ls_scaling = document.getElementById("inputDiffLSScaling");
-	const diff_input_ls_weight = document.getElementById("inputDiffLSWeight");
 
 	if (select_alg == null ||
 		group_alg == null ||
@@ -193,8 +191,7 @@ export function setupRecon(): boolean {
 		con_input_gamma == null ||
 		diff_settings == null ||
 		diff_select_operator == null ||
-		diff_input_ls_scaling == null ||
-		diff_input_ls_weight == null) {
+		diff_input_ls_scaling == null) {
 
 		console.log(select_alg);
 		console.log(group_alg);
@@ -237,7 +234,6 @@ export function setupRecon(): boolean {
 		console.log(diff_settings);
 		console.log(diff_select_operator);
 		console.log(diff_input_ls_scaling);
-		console.log(diff_input_ls_weight);
 
 
 		showAlert("Reconstruction setup failure", AlertType.ERROR);
@@ -296,7 +292,6 @@ export function setupRecon(): boolean {
 	DiffSettings = diff_settings as HTMLDivElement;
 	DiffOpElement = diff_select_operator as SlSelect;
 	DiffLSScalingElement = diff_input_ls_scaling as SlInput;
-	DiffLSWeightElement = diff_input_ls_weight as SlInput;
 
 	ConOpElement.addEventListener("sl-change", () => {
 
@@ -743,7 +738,6 @@ function UpdateDiffValues(params: Differentiable): void {
 	if (params.method == "least-squares") {
 		const diffLS = params as LeastSquaresDiff;
 		DiffLSScalingElement.value = diffLS.params.scaling_constant + "";
-		DiffLSWeightElement.value = diffLS.params.weight + "";
 	}
 }
 
@@ -914,7 +908,6 @@ function setRecon(): Promise<void> {
 		method: "least-squares",
 		params: {
 			scaling_constant: parseFloat(DiffLSScalingElement.value),
-			weight: parseFloat(DiffLSWeightElement.value),
 		}
 	};
 

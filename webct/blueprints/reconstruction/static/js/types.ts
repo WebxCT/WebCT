@@ -87,7 +87,6 @@ export interface LeastSquaresDiff {
 	readonly method: "least-squares"
 	params: {
 		scaling_constant: number,
-		weight: number
 	}
 }
 

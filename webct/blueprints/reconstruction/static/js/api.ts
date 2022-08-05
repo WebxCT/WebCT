@@ -189,7 +189,6 @@ function processDiff(data:ReconResponseRegistry["reconResponse"]):Differentiable
 			method: "least-squares",
 			params: {
 				scaling_constant: dataDiff.params.scaling_constant,
-				weight: dataDiff.params.weight,
 			}
 		} as LeastSquaresDiff;
 	default:
@@ -197,7 +196,6 @@ function processDiff(data:ReconResponseRegistry["reconResponse"]):Differentiable
 			method: "least-squares",
 			params: {
 				scaling_constant: 1,
-				weight: 1,
 			}
 		};
 	}

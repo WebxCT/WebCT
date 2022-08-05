@@ -20,7 +20,6 @@ class Diff():
 @dataclass(frozen=True)
 class DiffLeastSquaresParams(DiffParams):
 	scaling_constant: float = 1
-	weight: float = 1
 
 @dataclass(frozen=True)
 class DiffLeastSquares(Diff):
@@ -29,9 +28,8 @@ class DiffLeastSquares(Diff):
 
 	def get(self, ig:ImageGeometry, data:AcquisitionData) -> Function:
 		opProj = ProjectionOperator(ig, data.geometry)
-
-		# For now, float weights are unsupported by LeastSquares
-		# return LeastSquares(opProj, data, c=self.params.scaling_constant, weight=self.params.weight)
+		# Weight parameter only works with DataContainers
+		# https://github.com/TomographicImaging/CIL/issues/1334
 		return LeastSquares(opProj, data, c=self.params.scaling_constant)
 
 
@@ -58,10 +56,7 @@ def DiffFromJson(json:dict) -> Diff:
 		scaling_constant = 1
 		if "scaling_constant" in diffParams:
 			scaling_constant = diffParams["scaling_constant"]
-		weight = 1
-		if "weight" in diffParams:
-			weight = diffParams["weight"]
-		diffLSParams = DiffLeastSquaresParams(scaling_constant, weight)
+		diffLSParams = DiffLeastSquaresParams(scaling_constant)
 		return DiffLeastSquares(params=diffLSParams)
 
 	# elif conType == TVDiff:
