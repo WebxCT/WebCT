@@ -5,29 +5,39 @@
 
 // Chart.js does not explicitly use all modules, so they must be registered,
 // otherwise vague unhelpful runtime errors will occur...
-import { SlButton, SlInput, SlSelect } from "@shoelace-style/shoelace";
+import { SlButton, SlCheckbox, SlInput, SlSelect } from "@shoelace-style/shoelace";
 import { AlertType, showAlert } from "../../../base/static/js/base";
 import { AlgElement } from "../../../reconstruction/static/js/recon";
 import { ReconMethod } from "../../../reconstruction/static/js/types";
-import { BeamResponseRegistry, prepareRequest, processResponse, requestBeamData, sendBeamData } from "./api";
+import { BeamResponseRegistry, processResponse, requestBeamData, sendBeamData } from "./api";
 import { BeamConfigError, BeamRequestError, showError } from "./errors";
-import { SpectraDisplay, ViewFormat } from "./types";
+import { BeamGenerator, Filter, LabBeam, MedBeam, SourceType, SpectraDisplay, SynchBeam, ViewFormat } from "./types";
 import { SupportedAnodes, validateAngle, validateFilter, validateVoltage } from "./validation";
 
 // ====================================================== //
 // ================== Document Elements ================= //
 // ====================================================== //
-let TubeVoltageElement: SlInput;
-let TubeAngleElement: SlInput;
-let TubeMaterialElement: SlSelect;
+let TubeSettings: HTMLDivElement;
+
+let BeamSourceSelectElement: SlSelect;
+let BeamEnergyElement: SlInput;
+let BeamExposureElement:SlInput;
+let BeamVoltageElement:SlInput;
+let BeamIntensityElement:SlInput;
+let BeamMASElement:SlInput;
+let BeamAngleElement:SlInput;
+let BeamHarmonicsElement:SlCheckbox;
+let BeamSpotSize:SlInput;
+
+let BeamMaterialElement:SlInput;
 
 let FilterMaterialElement: SlSelect;
 let FilterSizeElement: SlInput;
 
 let BeamGeneratorElement: SlSelect;
 
-// Beam projection type (cone, parallel) is used in the reconstruction stage to
-// test for algorithm selection validity.
+// Beam projection type (cone, parallel) is used in recon.ts to test for
+// algorithm selection validity.
 export let BeamTypeElement: SlSelect;
 
 let SpectraCanvas: HTMLCanvasElement;
@@ -54,9 +64,20 @@ let Spectra: SpectraDisplay;
 export function setupBeam(): boolean {
 	console.log("setupBeam");
 
-	const tube_voltage_element = document.getElementById("inputTubeVoltage");
-	const tube_angle_element = document.getElementById("inputTubeAngle");
-	const tube_material_element = document.getElementById("selectTubeMaterial");
+	const tube_settings_element = document.getElementById("settingsTube");
+
+	const source_select_element = document.getElementById("selectBeamSource");
+	const energy_element = document.getElementById("inputBeamEnergy");
+	const exposure_element = document.getElementById("inputBeamExposure");
+	const voltage_element = document.getElementById("inputBeamVoltage");
+	const intensity_element = document.getElementById("inputBeamIntensity");
+	const mas_element = document.getElementById("inputBeamMAS");
+	const angle_element = document.getElementById("inputBeamAngle");
+
+	const harmonics_element = document.getElementById("checkboxBeamHarmonics");
+
+	const beam_material_element = document.getElementById("selectTubeMaterial");
+
 	const filter_material_element = document.getElementById("selectFilterMaterial");
 	const filter_size_element = document.getElementById("inputFilterSize");
 	const beam_generator_element = document.getElementById("selectBeamGen");
@@ -67,9 +88,16 @@ export function setupBeam(): boolean {
 	const spectra_norm01_button = document.getElementById("buttonSpectra01");
 	const spectra_norm_percent_button = document.getElementById("buttonSpectraPercent");
 
-	if (tube_voltage_element == null ||
-		tube_angle_element == null ||
-		tube_material_element == null ||
+	if (tube_settings_element == null ||
+		source_select_element == null ||
+		energy_element == null ||
+		exposure_element == null ||
+		voltage_element == null ||
+		intensity_element == null ||
+		mas_element == null ||
+		angle_element == null ||
+		harmonics_element == null ||
+		beam_material_element == null ||
 		filter_material_element == null ||
 		filter_size_element == null ||
 		beam_generator_element == null ||
@@ -79,9 +107,16 @@ export function setupBeam(): boolean {
 		spectra_norm01_button == null ||
 		spectra_norm_percent_button == null
 	) {
-		console.log(tube_voltage_element);
-		console.log(tube_angle_element);
-		console.log(tube_material_element);
+		console.log(tube_settings_element);
+		console.log(source_select_element);
+		console.log(energy_element);
+		console.log(exposure_element);
+		console.log(voltage_element);
+		console.log(intensity_element);
+		console.log(mas_element);
+		console.log(angle_element);
+		console.log(harmonics_element);
+		console.log(beam_material_element);
 		console.log(beam_generator_element);
 		console.log(beam_type_element);
 		console.log(filter_material_element);
@@ -94,26 +129,47 @@ export function setupBeam(): boolean {
 		return false;
 	}
 
-	TubeVoltageElement = tube_voltage_element as SlInput;
-	TubeVoltageElement.addEventListener("sl-change", () => {
-		validateVoltage(TubeVoltageElement, TubeMaterialElement.value as SupportedAnodes);
-	});
-	TubeVoltageElement.addEventListener("sl-input", () => {
-		validateVoltage(TubeVoltageElement, TubeMaterialElement.value as SupportedAnodes);
-	});
+	TubeSettings = tube_settings_element as HTMLDivElement;
 
-	TubeAngleElement = tube_angle_element as SlInput;
-	TubeAngleElement.addEventListener("sl-change", () => {
-		validateAngle(TubeAngleElement);
-	});
-	TubeAngleElement.addEventListener("sl-input", () => {
-		validateAngle(TubeAngleElement);
-	});
+	BeamEnergyElement = energy_element as SlInput;
+	BeamExposureElement = exposure_element as SlInput;
+	BeamVoltageElement = voltage_element as SlInput;
+	BeamIntensityElement = intensity_element as SlInput;
+	BeamMASElement = mas_element as SlInput;
+	BeamAngleElement = angle_element as SlInput;
+	BeamMaterialElement = beam_material_element as SlInput;
+	BeamHarmonicsElement = harmonics_element as SlCheckbox;
 
-	TubeMaterialElement = tube_material_element as SlSelect;
-	TubeMaterialElement.addEventListener("sl-select", () => {
-		validateVoltage(TubeVoltageElement, TubeMaterialElement.value as SupportedAnodes);
+	BeamSourceSelectElement = source_select_element as SlSelect;
+	BeamSourceSelectElement.addEventListener("sl-change", () => {
+		TubeSettings.classList.add("hidden");
+		BeamEnergyElement.classList.add("hidden");
+		BeamExposureElement.classList.add("hidden");
+		BeamVoltageElement.classList.add("hidden");
+		BeamIntensityElement.classList.add("hidden");
+		BeamMASElement.classList.add("hidden");
+		BeamHarmonicsElement.classList.add("hidden");
+
+		switch (BeamSourceSelectElement.value as SourceType) {
+		case "lab":
+			BeamVoltageElement.classList.remove("hidden");
+			BeamExposureElement.classList.remove("hidden");
+			BeamIntensityElement.classList.remove("hidden");
+			TubeSettings.classList.remove("hidden");
+			break;
+		case "med":
+			BeamVoltageElement.classList.remove("hidden");
+			BeamMASElement.classList.remove("hidden");
+			break;
+		case "synch":
+			BeamEnergyElement.classList.remove("hidden");
+			BeamExposureElement.classList.remove("hidden");
+			BeamIntensityElement.classList.remove("hidden");
+			BeamHarmonicsElement.classList.remove("hidden");
+			break;
+		}
 	});
+	BeamSourceSelectElement.handleValueChange();
 
 	BeamGeneratorElement = beam_generator_element as SlSelect;
 	BeamTypeElement = beam_type_element as SlSelect;
@@ -180,9 +236,7 @@ export function setupBeam(): boolean {
  * Validate beam parameters and mark as valid/invalid.
  */
 export function validateBeam(): boolean {
-	return validateVoltage(TubeVoltageElement, TubeMaterialElement.value as SupportedAnodes)
-		&& validateAngle(TubeAngleElement)
-		&& validateFilter(FilterSizeElement);
+	return true;
 }
 
 // ====================================================== //
@@ -225,13 +279,31 @@ export function UpdateBeam(): Promise<void> {
 
 			const [properties, spectraFiltered, spectraUnfiltered,] = processResponse(result as BeamResponseRegistry["beamResponse"]);
 
-			// update local values
-			// no implicit cast from number to string, really js?
-			TubeVoltageElement.value = properties.tubeVoltage + "";
-			TubeAngleElement.value = properties.emissionAngle + "";
-			TubeMaterialElement.value = properties.sourceMaterial + "";
-			BeamGeneratorElement.value = properties.beamGenerator + "";
-			BeamTypeElement.value = properties.beamProjection + "";
+			let params;
+			BeamSourceSelectElement.value = properties.method;
+			switch (properties.method) {
+			case "lab":
+				params = properties as LabBeam;
+				BeamGeneratorElement.value = params.generator;
+				BeamAngleElement.value = params.anodeAngle+"";
+				BeamVoltageElement.value = params.voltage+"";
+				BeamExposureElement.value = params.exposure+"";
+				BeamIntensityElement.value = params.intensity+"";
+				BeamMaterialElement.value = params.material+"";
+				BeamSpotSize.value = params.spotSize+"";
+				break;
+			case "med":
+				params = properties as MedBeam;
+				BeamVoltageElement.value = params.voltage+"";
+				BeamMASElement.value = params.mas+"";
+				break;
+			case "synch":
+				params = properties as SynchBeam;
+				BeamEnergyElement.value = params.energy+"";
+				BeamExposureElement.value = params.exposure+"";
+				BeamIntensityElement.value = params.intensity+"";
+				break;
+			}
 
 			FilterMaterialElement.value = properties.filters[0].material + "";
 			FilterSizeElement.value = properties.filters[0].thickness + "";
@@ -259,19 +331,21 @@ function setBeam(): Promise<void> {
 		throw BeamConfigError;
 	}
 
-	const beam = prepareRequest({
-		tubeVoltage: parseFloat(TubeVoltageElement.value),
-		emissionAngle: parseFloat(TubeAngleElement.value),
-		sourceMaterial: parseInt(TubeMaterialElement.value as string),
-		filters: [
-			{
-				material: parseInt(FilterMaterialElement.value as string),
-				thickness: parseFloat(FilterSizeElement.value)
-			}
-		],
-		beamGenerator: BeamGeneratorElement.value as string,
-		beamProjection: BeamTypeElement.value as string,
-	});
+	const beam:LabBeam = new LabBeam(
+		parseFloat(BeamVoltageElement.value as string),
+		parseFloat(BeamExposureElement.value as string),
+		parseFloat(BeamIntensityElement.value as string),
+		parseFloat(BeamSpotSize.value as string),
+		parseInt(BeamMaterialElement.value as string),
+		BeamGeneratorElement.value as BeamGenerator,
+		parseFloat(BeamAngleElement.value as string),
+		[
+		{
+			material: parseInt(FilterMaterialElement.value as string),
+			thickness: parseFloat(FilterSizeElement.value),
+		} as Filter
+		]
+	);
 
 	return sendBeamData(beam).then((response: Response) => {
 		if (response.status == 200) {

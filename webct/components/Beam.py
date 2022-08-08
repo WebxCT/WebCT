@@ -1,10 +1,15 @@
 """Beam generator for WebCT"""
 
 from dataclasses import dataclass
-from typing import List, Tuple
+from functools import cache
+from typing import List, Literal, Tuple, Union, cast
 from webct import Element
 from enum import Enum
 from enum import unique
+import math
+import spekpy as sp
+import xpecgen.xpecgen as xp
+import numpy as np
 
 # Type aliases
 KeV = float
@@ -30,7 +35,6 @@ class BEAM_GENERATOR(str, Enum):
 	SPEKPY = "spekpy"
 	XPECGEN = "xpecgen"
 
-
 @dataclass(frozen=True)
 class Filter:
 	filterElement: Element
@@ -45,88 +49,37 @@ def parseFilters(pfilters: List[dict]) -> Tuple[Filter, ...]:
 		filters.append(Filter(filterElement, filterThickness))
 	return tuple(filters)
 
+@dataclass(frozen=True)
+class Beamparameters:
+	method: str
+	filters: List[Filter]
+	projection: PROJECTION
 
 @dataclass(frozen=True)
-class BeamParameters:
-	electron_energy: KeV
-	emission_angle: Degrees
-	source_material: Element
-	filters: Tuple[Filter, ...]
-	projection: PROJECTION
+class LabBeam(Beamparameters):
+	method = "lab"
+	projection = PROJECTION.POINT
+	voltage: float
+	exposure: float
+	intensity: float
+	spotSize: float
+	anodeAngle: float
 	generator: BEAM_GENERATOR
 
-	def to_json(self) -> dict:
-		return self.__dict__
+@dataclass(frozen=True)
+class SynchBeam(Beamparameters):
+	method = "synch"
+	projection = PROJECTION.PARALLEL
+	energy: float
+	exposure: float
+	intensity: float
+	harmonics: bool
 
-	@staticmethod
-	def from_json(json: dict):
-
-		if (
-			"electron_energy" not in json
-			or "emission_angle" not in json
-			or "source_material" not in json
-			or "generator" not in json
-			or "filters" not in json
-			or "projection" not in json
-		):
-			raise ValueError("Missing keys.")
-
-		float(json["electron_energy"])
-		float(json["emission_angle"])
-		int(json["source_material"])
-		str(json["generator"])
-		dict(json["filters"])
-		str(json["projection"])
-
-		# Source Element
-		source_material = int(json["source_material"])
-		source_material = Element(source_material)
-
-		if source_material is None:
-			raise ValueError(f"Unknown material type {source_material}")
-		if source_material != Element.W and source_material != Element.Rh and source_material != Element.Mo:
-			raise ValueError(f"Unsupported Element type {source_material} only W, Rh, and Mo are supported.")
-
-		# Tube Voltage
-		electron_energy = float(json["electron_energy"])
-		if (source_material == Element.W):
-			if electron_energy > 300:
-				raise ValueError("Electron energy is too high for W (300keV max)")
-			elif electron_energy < 30:
-				raise ValueError("Electron energy is too low for W (30keV min)")
-		elif (source_material == Element.Rh or source_material == Element.Mo):
-			if electron_energy > 50:
-				raise ValueError("Electron energy is too high. (50keV max)")
-			elif electron_energy < 20:
-				raise ValueError("Electron energy is too low. (20keV min)")
-		else:
-			raise ValueError(f"Unsupported Element type {source_material} only W, Rh, and Mo are supported.")
-
-		# Emission Angle
-		emission_angle = float(json["emission_angle"])
-		if emission_angle > 360:
-			raise ValueError("Emission angle must be less than 360 degrees.")
-		elif emission_angle == 0 or emission_angle < 0:
-			raise ValueError("Emission cannot be 0 or less.")
-
-		# Generator
-		generator = BEAM_GENERATOR(json["generator"])
-
-		# Filters
-		filters = parseFilters(json["filters"])
-
-		# projection
-		projection = PROJECTION(json["projection"])
-
-		return BeamParameters(
-			electron_energy=electron_energy,
-			emission_angle=emission_angle,
-			source_material=source_material,
-			projection=projection,
-			filters=filters,
-			generator=generator
-		)
-
+class MedBeam(Beamparameters):
+	method = "med"
+	projection = PROJECTION.POINT
+	voltage: float
+	mas: float
 
 @dataclass(frozen=True)
 class Spectra:
@@ -136,18 +89,119 @@ class Spectra:
 	flu: float  # Fluence of spectrum [Photons cm^-2 mAs^-1]
 	emean: float  # Mean energy of spectrum [keV]
 
-	# hvl_1_al:float		# First half value layer of Al [mmAl]
-	# hvl_2_al:float		# Second half value layer of Al [mmAl]
-	# hc_al:float			# Homogeneity coefficient of Al
-	# eeff_al:float		# Effective energy of Al [keV]
-
-	# hvl_1_cu:float		# First half value layer of Cu [mmCu]
-	# hvl_2_cu:float		# Second half value layer of Cu [mmCu]
-	# hc_cu:float			# Homogeneity coefficient of Cu
-	# eeff_cu:float		# Effective energy of Cu [keV]
-
-
 @dataclass(frozen=True)
 class Beam:
-	params: BeamParameters
+	params: Beamparameters
 	spectra: Spectra
+
+@dataclass(frozen=True)
+class LSF:
+	kernel: np.ndarray
+
+	def to_json(self) -> dict:
+		return self.__dict__
+
+	@staticmethod
+	def from_json(json: dict):
+		return LSF(np.zeros(0))
+
+	# @staticmethod
+	# def _lsf(x:np.ndarray, b2 = 54.9359, c2 = -3.58452, e2 = 6.32561e+09, f2 = 1.0):
+	# 	temp_1 = (2.0 / (math.sqrt(math.pi) * e2 * f2)) * np.exp(-np.square(x) / (e2 * e2))
+	# 	temp_2 = 1.0 / (b2 * c2) * np.power(1 + np.square(x) / (b2 * b2), -1)
+	# 	temp_3 = np.power(2.0 / f2 + math.pi / c2, -1)
+	# 	value = (temp_1 + temp_2) * temp_3
+
+	# 	return value
+
+	# def get(self) -> np.ndarray:
+	# 	t = np.arange(-20., 21., 1.)
+
+	# 	lsf_kernel = self._lsf(t * 41) / self._lsf(np.zeros(1))
+	# 	lsf_kernel /= lsf_kernel.sum()
+	# 	return lsf_kernel
+
+@cache
+def generateSpectra(beam: Beamparameters) -> Tuple[Spectra, Spectra]:
+
+	if beam.method == "synch":
+		params = cast(SynchBeam, beam)
+		# harmonics are two higher order;
+		total_range = int(params.energy * 3 + 10)
+
+		energies = np.arange(0, total_range)
+		photons = np.zeros(total_range)
+
+		photons[params.energy] = 1000
+		if params.harmonics:
+			# Add higher-order harmonics
+			photons[params.energy*2] = 30
+			photons[params.energy*3] = 10
+
+	elif beam.method == "lab":
+		params = cast(LabBeam, beam)
+		...
+
+	if beam.generator == BEAM_GENERATOR.SPEKPY:
+		spec = sp.Spek(
+			kvp=beam.electron_energy,
+			th=beam.emission_angle,
+			targ=Element(beam.source_material).name,
+		)
+		results = spec.get_std_results()
+
+		for filter in beam.filters:
+			spec = spec.filter(filter.filterElement.name, filter.filterThickness)
+
+		return (
+			Spectra(
+				energies=tuple(spec.get_k()),
+				photons=tuple(spec.get_spk()),
+				kerma=spec.get_kerma(),
+				flu=spec.get_flu(),
+				emean=spec.get_emean(),
+			),
+			Spectra(
+				# Not really sure if these are useful?
+				energies=tuple(results.k),
+				photons=tuple(results.spk),
+				kerma=results.kerma,
+				flu=results.flu,
+				emean=results.emean,
+			),
+		)
+	elif beam.generator == BEAM_GENERATOR.XPECGEN:
+		xpspec = xp.calculate_spectrum(
+			beam.electron_energy,
+			beam.emission_angle,
+			3,
+			int(beam.electron_energy * 2),
+			z=beam.source_material.value,
+		)
+		unfiltered = Spectra(
+			energies=tuple(xpspec.x),
+			photons=tuple(xpspec.y),
+			kerma=-1,
+			flu=-1,
+			emean=-1,
+		)
+		for filter in beam.filters:
+			xpspec.attenuate(
+				filter.filterThickness * 10, xp.get_mu(filter.filterElement.value)
+			)
+		filtered = Spectra(
+			energies=tuple(xpspec.x),
+			photons=tuple(xpspec.y),
+			kerma=-1,
+			flu=-1,
+			emean=-1,
+		)
+		return (unfiltered, filtered)
+	else:
+		raise NotImplementedError("Other beam spectra generators are not implemented.")
+
+
+class spectraGenerator:
+
+	@staticmethod
+	def generate()

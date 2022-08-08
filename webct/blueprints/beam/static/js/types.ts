@@ -9,6 +9,10 @@ import { ChartOptions } from "chart.js";
 import { Chart, registerables } from "chart.js";
 Chart.register(...registerables);
 
+export type SourceType = "lab" | "synch" | "med"
+
+export type BeamGenerator = "spekpy" | "xpecgen"
+
 /**
  * Energy spectra emitted by a X-Ray beam.
  */
@@ -49,35 +53,67 @@ export interface Filter {
 	thickness: number;
 }
 
-/**
- * X-Ray Beam Properties. Includes Tube properties and filters.
- */
+
 export interface BeamProperties {
-	/**
-	 * Voltage of the X-Ray Tube [KeV]
-	 */
-	tubeVoltage: number;
-	/**
-	 * Emission angle of the X-Ray Tube [Degrees]
-	 */
-	emissionAngle: number,
-	/**
-	 * X-Ray Tube Anode Material
-	 */
-	sourceMaterial: Element;
+	method: SourceType;
 	/**
 	 * Filters applied to the resultant beam after generation
 	 */
 	filters: Array<Filter>;
-	/**
-	 * Spectra generation method
-	 */
-	beamGenerator:string
-	/**
-	 * Parallel or point beam
-	 */
-	beamProjection:string
 }
+
+export class LabBeam implements BeamProperties {
+	method = "lab" as const
+	voltage: number
+	exposure: number
+	intensity: number
+	spotSize: number
+	material:number;
+	anodeAngle: number
+	generator: BeamGenerator
+	filters: Array<Filter>
+
+	constructor(voltage: number, exposure:number, intensity:number, spotSize:number, material:number,generator:BeamGenerator, anodeAngle:number, filters:Array<Filter>) {
+		this.voltage = voltage;
+		this.exposure = exposure;
+		this.intensity = intensity;
+		this.spotSize = spotSize;
+		this.material = material;
+		this.anodeAngle = anodeAngle;
+		this.generator = generator;
+		this.filters = filters;
+	}
+}
+
+export class SynchBeam implements BeamProperties {
+	method = "synch" as const
+	energy: number
+	exposure: number
+	intensity: number
+	harmonics:boolean
+	filters: Array<Filter>
+
+	constructor(energy:number, exposure:number, intensity:number, harmonics:boolean, filters:Array<Filter>) {
+		this.energy = energy;
+		this.exposure = exposure,
+		this.intensity = intensity;
+		this.harmonics = harmonics;
+		this.filters = filters;
+	}
+}
+
+export class MedBeam implements BeamProperties {
+	method = "med" as const
+	voltage: number
+	mas: number
+	filters: Array<Filter>
+	constructor(voltage: number, mas:number, filters:Array<Filter>) {
+		this.voltage = voltage;
+		this.mas = mas;
+		this.filters = filters;
+	}
+}
+
 
 export type ViewFormat = "None" | "0-1 Normalisation" | "Percentage"
 const spectraUnits = new Map<ViewFormat, string>([
@@ -137,6 +173,23 @@ export class SpectraDisplay {
 		const filter = this.normaliseSpectra(this.filteredSpectra.photons, this.viewFormat);
 		const unfilter = this.normaliseSpectra(this.unfilteredSpectra.photons, this.viewFormat);
 
+		let title:string;
+		let prop;
+		switch (this.beam.method) {
+		case "lab":
+			prop = this.beam as LabBeam;
+			title = ElementNames[prop.material] + " beam @ " + prop.voltage + "kV";
+			break;
+		case "med":
+			prop = this.beam as MedBeam;
+			title = prop.voltage + "kV beam @ " + prop.mas + "mAs";
+			break;
+		case "synch":
+			prop = this.beam as SynchBeam;
+			title = prop.energy + "keV beam @ " + prop.intensity + "mA";
+			break;
+		}
+
 		const chartOptions: ChartOptions = {
 			responsive: true,
 			maintainAspectRatio: false,
@@ -173,7 +226,7 @@ export class SpectraDisplay {
 			plugins: {
 				title: {
 					display: true,
-					text: ElementNames[this.beam.sourceMaterial] + " beam @ " + this.beam.tubeVoltage + "kV"
+					text: title
 				}
 			}
 		};

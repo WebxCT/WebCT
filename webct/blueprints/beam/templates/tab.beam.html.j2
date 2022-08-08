@@ -7,22 +7,44 @@
 
 <div class="group">
 	<div>
-		<sl-input type="number" label="Tube Voltage" step="0.01" value="80.0" id="inputTubeVoltage">
+		<sl-select label="Source Type" value="lab" id="selectBeamSource">
+			<sl-menu-item value="synch">Synchrotron</sl-menu-item>
+			<sl-menu-item value="lab">Lab CT</sl-menu-item>
+			<sl-menu-item value="med">Medical Device</sl-menu-item>
+			<!-- <sl-menu-item disabled>MC</sl-menu-item> -->
+		</sl-select>
+
+		<sl-input type="number" label="Spectra Energy" step="1" value="80" id="inputBeamEnergy">
 			{% include "./units/energy.html.j2" %}
 		</sl-input>
-		<sl-input label="Anode Angle" type="number" step="0.1" value="12" id="inputTubeAngle" advanced >
-			{% include "./units/degree.html.j2" %}
+
+		<sl-input type="number" label="Tube Voltage" step="0.01" value="80.0" id="inputBeamVoltage">
+			{% include "./units/voltage.html.j2" %}
 		</sl-input>
-		{# <sl-input label="Photon Count" type="number" value="1000" advanced ></sl-input>
-		<sl-select label="Noise Type" clearable placeholder="No Noise">
-			<sl-menu-item value="poission">Poission</sl-menu-item>
+
+		<sl-input type="number" label="Exposure" step="0.01" value="1" id="inputBeamExposure">
+			{% include "./units/exposure.html.j2" %}
+		</sl-input>
+
+		<sl-input type="number" label="Intensity" step="0.01" value="1" id="inputBeamIntensity">
+			{% include "./units/intensity.html.j2" %}
+		</sl-input>
+
+		<sl-input type="number" label="Milliampere-seconds" step="0.01" value="1" id="inputBeamMAS">
+			{% include "./units/mas.html.j2" %}
+		</sl-input>
+
+		<sl-checkbox id="checkboxBeamHarmonics" disabled advanced>Beam Harmonics</sl-checkbox>
+
+		<sl-select label="Beam Generator" value="spekpy" id="selectBeamGen" advanced>
+			<sl-menu-item value="spekpy">SpekPy</sl-menu-item>
+			<sl-menu-item value="xpecgen">xpecgen</sl-menu-item>
 		</sl-select>
-		<sl-input label="Noise Amount" type="number" value="1.0" step="0.1" advanced></sl-input> #}
 	</div>
 	<button></button>
 </div>
 
-<div class="group">
+<div class="group" id="settingsTube">
 	<div>
 		<sl-select label="Anode Material" value="74" id="selectTubeMaterial">
 			{# <sl-menu-item value="29">Cu (Copper)</sl-menu-item> #}
@@ -30,11 +52,16 @@
 			<sl-menu-item value="42">Mo (Molydbenum)</sl-menu-item>
 			<sl-menu-item value="45">Rh (Rhodium)</sl-menu-item>
 		</sl-select>
-		{# <sl-input type="number" label="Source Size" value="2.0" id="inputTubeSize" advanced>
-			{% include "./units/size.html.j2" %}
-		</sl-input> #}
+		<sl-tooltip content="Planned feature" placement="bottom">
+			<sl-input type="number" label="Focal Spot Size" step="0.01" value="0.0" id="inputBeamSpotSize" disabled >
+				{% include "./units/size.html.j2" %}
+			</sl-input>
+		</sl-tooltip>
+		<sl-input label="Anode Angle" type="number" step="0.1" value="12" id="inputBeamAngle" advanced >
+			{% include "./units/degree.html.j2" %}
+		</sl-input>
 	</div>
-	{# <button></button> #}
+	<button></button>
 </div>
 
 <div class="group">
@@ -53,18 +80,4 @@
 		</sl-input>
 	</div>
 	{# <button></button> #}
-</div>
-
-<div class="group">
-	<div>
-		<sl-select label="Source Type" value="point" id="selectBeamType">
-			<sl-menu-item value="point">Point</sl-menu-item>
-			<sl-menu-item value="parallel">Parallel</sl-menu-item>
-		</sl-select>
-		<sl-select label="Beam Generator" value="spekpy" id="selectBeamGen" advanced>
-			<sl-menu-item value="spekpy">SpekPy</sl-menu-item>
-			<sl-menu-item value="xpecgen">xpecgen</sl-menu-item>
-		</sl-select>
-	</div>
-	<button></button>
 </div>
