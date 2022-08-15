@@ -7,7 +7,6 @@ import { SlCheckbox, SlInput, SlSelect } from "@shoelace-style/shoelace";
 import { AlertType, showAlert } from "../../../base/static/js/base";
 import { prepareRequest, processResponse, ReconResponseRegistry, requestReconData, requestReconPreview, sendReconData } from "./api";
 import { BoxProximal, CGLSParams, Proximal, ProximalMethod, Differentiable, DiffMethod, FBPParams, FDKParams, FGPTVProximal, FISTAParams, LeastSquaresDiff, ReconQuality, ReconstructionParams, ReconstructionPreview, SIRTParams, TGVProximal, TikhonovMethod as TikhonovMethod, TikhonovRegulariser, TVProximal } from "./types";
-import { BeamTypeElement } from "../../../beam/static/js/beam";
 import { validateMethod } from "./validation";
 
 // ====================================================== //
@@ -457,10 +456,6 @@ export function setupRecon(): boolean {
 		}
 	});
 
-	BeamTypeElement.addEventListener("sl-change", () => {
-		validateRecon();
-	});
-
 	// Run initial component updates
 	ToggleConLower(ConCheckboxLowerElement.checked);
 	ToggleConUpper(ConCheckboxUpperElement.checked);
@@ -474,7 +469,8 @@ export function setupRecon(): boolean {
 }
 
 export function validateRecon(): boolean {
-	return validateMethod(AlgElement);
+	return true;
+	// return validateMethod(AlgElement);
 }
 
 // ====================================================== //

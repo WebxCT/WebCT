@@ -62,16 +62,32 @@ export interface BeamProperties {
 	filters: Array<Filter>;
 }
 
-export class LabBeam implements BeamProperties {
-	method = "lab" as const
-	voltage: number
-	exposure: number
-	intensity: number
-	spotSize: number
+interface TubeBeam {
+	voltage: number;
+	spotSize: number;
 	material:number;
-	anodeAngle: number
-	generator: BeamGenerator
+	anodeAngle: number;
+	generator: BeamGenerator;
+}
+
+export class LabBeam implements BeamProperties, TubeBeam {
+	method = "lab" as const
+
+	voltage: number
+
+	exposure: number
+
+	intensity: number
+
 	filters: Array<Filter>
+
+	spotSize: number;
+
+	material:number;
+
+	anodeAngle: number;
+
+	generator: BeamGenerator;
 
 	constructor(voltage: number, exposure:number, intensity:number, spotSize:number, material:number,generator:BeamGenerator, anodeAngle:number, filters:Array<Filter>) {
 		this.voltage = voltage;
@@ -102,14 +118,23 @@ export class SynchBeam implements BeamProperties {
 	}
 }
 
-export class MedBeam implements BeamProperties {
+export class MedBeam implements BeamProperties, TubeBeam {
 	method = "med" as const
 	voltage: number
 	mas: number
 	filters: Array<Filter>
-	constructor(voltage: number, mas:number, filters:Array<Filter>) {
+	spotSize: number;
+	material:number;
+	anodeAngle: number;
+	generator: BeamGenerator;
+
+	constructor(voltage: number, mas:number, spotSize:number, material:number,generator:BeamGenerator, anodeAngle:number, filters:Array<Filter>) {
 		this.voltage = voltage;
 		this.mas = mas;
+		this.spotSize = spotSize;
+		this.material = material;
+		this.generator = generator;
+		this.anodeAngle = anodeAngle;
 		this.filters = filters;
 	}
 }

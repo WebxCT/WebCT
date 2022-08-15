@@ -12,7 +12,7 @@ from matplotlib.figure import Figure
 from PIL import Image
 
 from webct import Element
-from webct.components.Beam import (BEAM_GENERATOR, PROJECTION, BeamParameters, Filter, Spectra, generateSpectra)
+from webct.components.Beam import (BEAM_GENERATOR, PROJECTION, BeamParameters, Filter, LabBeam, Spectra, generateSpectra)
 from webct.components.Capture import CaptureParameters
 from webct.components.Detector import DetectorParameters
 from webct.components.Reconstruction import (FBPParam, ReconParameters, reconstruct)
@@ -64,13 +64,15 @@ class SimSession:
 		self._sid = sid
 
 		# Instantiate default values
-		self.beam = BeamParameters(
-			80,
-			12.0,
-			Element.W,
-			(Filter(Element.Al, 12.0),),
-			PROJECTION.PARALLEL,
-			BEAM_GENERATOR.SPEKPY,
+		self.beam = LabBeam(method="lab", projection=PROJECTION.POINT,
+			filters=(Filter(Element.Cu,2),),
+			voltage=70,
+			exposure=1,
+			intensity=120,
+			spotSize=0,
+			anodeAngle=12,
+			generator=BEAM_GENERATOR.SPEKPY,
+			material=Element.W
 		)
 		self.detector = DetectorParameters(250, 250, 0.5, None, None)
 		self.samples = (

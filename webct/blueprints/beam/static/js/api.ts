@@ -46,7 +46,7 @@ export interface BeamResponseRegistry {
 			generator?:BeamGenerator
 			harmonics?:boolean;
 			mas?:number;
-			filters: Array<{ filterElement: number, filterThickness: number; }>;
+			filters: Array<{ material: number, thickness: number; }>;
 		},
 		filteredSpectra: {
 			energies: Array<number>;
@@ -125,8 +125,8 @@ export function processResponse(data: BeamResponseRegistry["beamResponse"]): [Be
 	for (let index = 0; index < data.params.filters.length; index++) {
 		const filter = data.params.filters[index];
 		filters.push({
-			material: filter.filterElement,
-			thickness: filter.filterThickness,
+			material: filter.material,
+			thickness: filter.thickness,
 		});
 	}
 	let beamProperties:BeamProperties;
@@ -149,6 +149,10 @@ export function processResponse(data: BeamResponseRegistry["beamResponse"]): [Be
 		beamProperties = new MedBeam(
 			data.params.voltage as number,
 			data.params.mas as number,
+			data.params.spotSize as number,
+			data.params.material as number,
+			data.params.generator as BeamGenerator,
+			data.params.anodeAngle as number,
 			filters
 		);
 		break;

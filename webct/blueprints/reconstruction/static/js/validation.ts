@@ -5,7 +5,6 @@
 
 import { SlInput, SlSelect } from "@shoelace-style/shoelace";
 import { markValid, validateInput, Validator } from "../../../base/static/js/validation";
-import { BeamTypeElement } from "../../../beam/static/js/beam";
 import { ReconMethod } from "./types";
 
 /**
@@ -21,7 +20,8 @@ const ProjectionValidator: Validator = {
 export function validateMethod(MethodElement: SlSelect): boolean {
 
 	// Method validity is based on beam paramaters.
-	const projection = BeamTypeElement.value + "";
+	// const projection = BeamTypeElement.value + "";
+	const projection = "point";
 
 	let valid = true;
 	let message = "";
@@ -29,7 +29,7 @@ export function validateMethod(MethodElement: SlSelect): boolean {
 	switch (MethodElement.value as ReconMethod) {
 	case "FBP":
 		// FBP only works with parallel projections
-		valid = projection == "parallel";
+		valid = false;
 		if (!valid) {
 			message = "FBP Reconstruction only supports parallel beam types.";
 		}
