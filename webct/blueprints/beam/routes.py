@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from flask import jsonify, request, session
 from flask.wrappers import Response
 from webct.blueprints.beam import bp
-from webct.components.Beam import BeamParameters, Spectra
+from webct.components.Beam import BeamFromJson, BeamParameters, Spectra
 from webct.components.sim.SimSession import Sim
 
 
@@ -18,7 +18,8 @@ def setBeam() -> Response:
 
 	# try:
 	simdata = Sim(session)
-	simdata.beam = BeamParameters.from_json(data)
+	print(data)
+	simdata.beam = BeamFromJson(data)
 	return Response(None, 200)
 
 
@@ -37,4 +38,5 @@ def getBeam() -> Response:
 	response = BeamResponse(
 		simdata.beam, simdata.spectra, simdata._unfiltered_beam_spectra
 	)
+	print(response)
 	return jsonify(response)

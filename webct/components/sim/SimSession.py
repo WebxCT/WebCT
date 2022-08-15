@@ -1,22 +1,18 @@
 from enum import Enum
-from functools import cache
 from random import Random
 from threading import Semaphore
 from typing import List, Optional, Tuple
 
 import numpy as np
-import spekpy as sp
-import xpecgen.xpecgen as xp
 from cil.framework import AcquisitionGeometry
 from cil.utilities.display import show_geometry
-from cil.processors import AbsorptionTransmissionConverter
 from flask import session
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.figure import Figure
 from PIL import Image
 
 from webct import Element
-from webct.components.Beam import (BEAM_GENERATOR, PROJECTION, BeamParameters, Filter, Spectra)
+from webct.components.Beam import (BEAM_GENERATOR, PROJECTION, BeamParameters, Filter, LabBeam, Spectra, generateSpectra)
 from webct.components.Capture import CaptureParameters
 from webct.components.Detector import DetectorParameters
 from webct.components.Reconstruction import (FBPParam, ReconParameters, reconstruct)
@@ -50,7 +46,7 @@ class SimSession:
 	_capture_param: CaptureParameters
 	_counter: int = 1
 
-	# Save a flag if paramaters have changed since last projection creation
+	# Save a flag if parameters have changed since last projection creation
 	_dirty: List[bool] = [False, False, False]
 	_projections: dict[Quality, np.ndarray]
 	_projection: dict[Quality, np.ndarray]
@@ -68,13 +64,15 @@ class SimSession:
 		self._sid = sid
 
 		# Instantiate default values
-		self.beam = BeamParameters(
-			80,
-			12.0,
-			Element.W,
-			(Filter(Element.Al, 12.0),),
-			PROJECTION.PARALLEL,
-			BEAM_GENERATOR.SPEKPY,
+		self.beam = LabBeam(method="lab", projection=PROJECTION.POINT,
+			filters=(Filter(Element.Cu,2),),
+			voltage=70,
+			exposure=1,
+			intensity=120,
+			spotSize=0,
+			anodeAngle=12,
+			generator=BEAM_GENERATOR.SPEKPY,
+			material=Element.W
 		)
 		self.detector = DetectorParameters(250, 250, 0.5, None, None)
 		self.samples = (
@@ -367,64 +365,3 @@ def Sim(sesh) -> SimSession:
 			print("sid is not in stored_sessions, creating a new one")
 			stored_sessions[sid] = SimSession(sid)
 			return stored_sessions[sid]
-
-
-@cache
-def generateSpectra(beam: BeamParameters) -> Tuple[Spectra, Spectra]:
-	if beam.generator == BEAM_GENERATOR.SPEKPY:
-		spec = sp.Spek(
-			kvp=beam.electron_energy,
-			th=beam.emission_angle,
-			targ=Element(beam.source_material).name,
-		)
-		results = spec.get_std_results()
-
-		for filter in beam.filters:
-			spec = spec.filter(filter.filterElement.name, filter.filterThickness)
-
-		return (
-			Spectra(
-				energies=tuple(spec.get_k()),
-				photons=tuple(spec.get_spk()),
-				kerma=spec.get_kerma(),
-				flu=spec.get_flu(),
-				emean=spec.get_emean(),
-			),
-			Spectra(
-				# Not really sure if these are useful?
-				energies=tuple(results.k),
-				photons=tuple(results.spk),
-				kerma=results.kerma,
-				flu=results.flu,
-				emean=results.emean,
-			),
-		)
-	elif beam.generator == BEAM_GENERATOR.XPECGEN:
-		xpspec = xp.calculate_spectrum(
-			beam.electron_energy,
-			beam.emission_angle,
-			3,
-			int(beam.electron_energy * 2),
-			z=beam.source_material.value,
-		)
-		unfiltered = Spectra(
-			energies=tuple(xpspec.x),
-			photons=tuple(xpspec.y),
-			kerma=-1,
-			flu=-1,
-			emean=-1,
-		)
-		for filter in beam.filters:
-			xpspec.attenuate(
-				filter.filterThickness * 10, xp.get_mu(filter.filterElement.value)
-			)
-		filtered = Spectra(
-			energies=tuple(xpspec.x),
-			photons=tuple(xpspec.y),
-			kerma=-1,
-			flu=-1,
-			emean=-1,
-		)
-		return (unfiltered, filtered)
-	else:
-		raise NotImplementedError("Other beam spectra generators are not implemented.")

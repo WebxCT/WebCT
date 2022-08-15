@@ -3,7 +3,7 @@
  * @author Iwan Mitchell
  */
 import { Element } from "../../../base/static/js/types";
-import { SpectraData, BeamProperties } from "./types";
+import { SpectraData, BeamProperties, SourceType, BeamGenerator, LabBeam, Filter, MedBeam, SynchBeam } from "./types";
 
 // ====================================================== //
 // ====================== Endpoints ===================== //
@@ -35,12 +35,18 @@ export interface BeamResponseRegistry {
 	 */
 	beamResponse: {
 		params: {
-			electron_energy: number;
-			emission_angle: number;
-			source_material: number;
-			filters: Array<{ filterElement: number, filterThickness: number; }>;
-			generator: string;
-			projection: string;
+			method: SourceType;
+			voltage?: number;
+			energy?: number;
+			exposure?:number;
+			intensity?:number;
+			spotSize?:number;
+			material?:number;
+			anodeAngle?:number;
+			generator?:BeamGenerator
+			harmonics?:boolean;
+			mas?:number;
+			filters: Array<{ material: number, thickness: number; }>;
 		},
 		filteredSpectra: {
 			energies: Array<number>;
@@ -57,28 +63,6 @@ export interface BeamResponseRegistry {
 			emean: number;
 		};
 	};
-}
-
-/**
- * Registry containing direct-api transmission requests after conversion from
- * types.
- *
- * @remarks
- * Note: name of attributes must match those of the server-side API
- * implementation.
- */
-export interface BeamRequestRegistry {
-	/**
-	 * Request given when attempting to change beam parameters.
-	 */
-	beamRequest: {
-		electron_energy: number;
-		emission_angle: number,
-		source_material: Element;
-		filters: Array<{ filterElement: number, filterThickness: number; }>;
-		generator: string
-		projection: string
-	}
 }
 
 // ====================================================== //
@@ -98,7 +82,7 @@ export async function requestBeamData(): Promise<Response> {
  * @param data - Beam Properties to update on the server
  * @returns Potentially status codes symbolising the result of the put request.
  */
-export async function sendBeamData(data: BeamRequestRegistry["beamRequest"]): Promise<Response> {
+export async function sendBeamData(data: BeamProperties): Promise<Response> {
 	return await fetch(Endpoint.setBeamData, {
 		method: "PUT",
 		body: JSON.stringify(data),
@@ -136,43 +120,56 @@ export function processResponse(data: BeamResponseRegistry["beamResponse"]): [Be
 		emean: data.unfilteredSpectra.emean,
 	};
 
-	const properties: BeamProperties = {
-		tubeVoltage: data.params.electron_energy,
-		emissionAngle: data.params.emission_angle,
-		sourceMaterial: data.params.source_material,
-		filters: [
-			{
-				material: data.params.filters[0].filterElement,
-				thickness: data.params.filters[0].filterThickness
-			}
-		],
-		beamGenerator: data.params.generator,
-		beamProjection: data.params.projection,
-	};
+	const filters:Array<Filter> = [];
+
+	for (let index = 0; index < data.params.filters.length; index++) {
+		const filter = data.params.filters[index];
+		filters.push({
+			material: filter.material,
+			thickness: filter.thickness,
+		});
+	}
+	let beamProperties:BeamProperties;
+
+	switch (data.params.method) {
+	default:
+	case "lab":
+		beamProperties = new LabBeam(
+			data.params.voltage as number,
+			data.params.exposure as number,
+			data.params.intensity as number,
+			data.params.spotSize as number,
+			data.params.material as number,
+			data.params.generator as BeamGenerator,
+			data.params.anodeAngle as number,
+			filters
+		);
+		break;
+	case "med":
+		beamProperties = new MedBeam(
+			data.params.voltage as number,
+			data.params.mas as number,
+			data.params.spotSize as number,
+			data.params.material as number,
+			data.params.generator as BeamGenerator,
+			data.params.anodeAngle as number,
+			filters
+		);
+		break;
+	case "synch":
+		beamProperties = new SynchBeam(
+			data.params.energy as number,
+			data.params.exposure as number,
+			data.params.intensity as number,
+			data.params.harmonics as boolean,
+			filters,
+		);
+		break;
+	}
 
 	return [
-		properties,
+		beamProperties,
 		filteredSpectra,
 		unfilteredSpectra,
 	];
-}
-
-/**
- * Convert beam properties into structured API request data.
- * @param data - Beam properties to be sent to the server.
- */
-export function prepareRequest(data: BeamProperties): BeamRequestRegistry["beamRequest"] {
-	return {
-		filters: [
-			{
-				filterElement:data.filters[0].material,
-				filterThickness:data.filters[0].thickness,
-			}
-		],
-		electron_energy: data.tubeVoltage,
-		source_material: data.sourceMaterial,
-		emission_angle: data.emissionAngle,
-		generator: data.beamGenerator,
-		projection: data.beamProjection
-	};
 }
