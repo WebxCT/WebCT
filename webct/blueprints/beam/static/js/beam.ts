@@ -29,6 +29,7 @@ let BeamSpotSize:SlInput;
 
 let BeamMaterialElement:SlInput;
 
+let FilterSettings: HTMLDivElement;
 let FilterMaterialElement: SlSelect;
 let FilterSizeElement: SlInput;
 
@@ -73,8 +74,10 @@ export function setupBeam(): boolean {
 
 	const beam_material_element = document.getElementById("selectTubeMaterial");
 
+	const filter_settings_element = document.getElementById("settingsFilter");
 	const filter_material_element = document.getElementById("selectFilterMaterial");
 	const filter_size_element = document.getElementById("inputFilterSize");
+
 	const beam_generator_element = document.getElementById("selectBeamGen");
 	const spectra_canvas = document.getElementById("spectra");
 
@@ -93,6 +96,7 @@ export function setupBeam(): boolean {
 		spot_size == null ||
 		harmonics_element == null ||
 		beam_material_element == null ||
+		filter_settings_element == null ||
 		filter_material_element == null ||
 		filter_size_element == null ||
 		beam_generator_element == null ||
@@ -113,6 +117,7 @@ export function setupBeam(): boolean {
 		console.log(harmonics_element);
 		console.log(beam_material_element);
 		console.log(beam_generator_element);
+		console.log(filter_settings_element);
 		console.log(filter_material_element);
 		console.log(filter_size_element);
 		console.log(spectra_canvas);
@@ -124,6 +129,7 @@ export function setupBeam(): boolean {
 	}
 
 	TubeSettings = tube_settings_element as HTMLDivElement;
+	FilterSettings = filter_settings_element as HTMLDivElement;
 
 	BeamEnergyElement = energy_element as SlInput;
 	BeamExposureElement = exposure_element as SlInput;
@@ -144,6 +150,7 @@ export function setupBeam(): boolean {
 		BeamIntensityElement.classList.add("hidden");
 		BeamMASElement.classList.add("hidden");
 		BeamHarmonicsElement.classList.add("hidden");
+		FilterSettings.classList.add("hidden");
 
 		switch (BeamSourceSelectElement.value as SourceType) {
 		case "lab":
@@ -151,11 +158,13 @@ export function setupBeam(): boolean {
 			BeamExposureElement.classList.remove("hidden");
 			BeamIntensityElement.classList.remove("hidden");
 			TubeSettings.classList.remove("hidden");
+			FilterSettings.classList.remove("hidden");
 			break;
 		case "med":
 			BeamVoltageElement.classList.remove("hidden");
 			BeamMASElement.classList.remove("hidden");
 			TubeSettings.classList.remove("hidden");
+			FilterSettings.classList.remove("hidden");
 			break;
 		case "synch":
 			BeamEnergyElement.classList.remove("hidden");
