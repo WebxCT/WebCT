@@ -9,6 +9,8 @@ from enum import unique
 import spekpy as sp
 import xpecgen.xpecgen as xp
 import numpy as np
+import scipy.constants as cs
+
 
 # Type aliases
 KeV = float
@@ -83,16 +85,23 @@ class BeamParameters:
 		raise NotImplementedError("Cannot create a beam spectra from BeamParamaters.")
 
 @dataclass(frozen=True)
-class LabBeam(BeamParameters):
-	method = "lab"
-	projection = PROJECTION.POINT
+class TubeBeam():
 	voltage: float
-	exposure: float
-	intensity: float
 	spotSize: float
 	anodeAngle: float
 	generator: BEAM_GENERATOR
 	material: Element
+
+@dataclass(frozen=True)
+class LabBeam(BeamParameters, TubeBeam):
+	method = "lab"
+	projection = PROJECTION.POINT
+	exposure: float # uA
+	intensity: float
+
+	@property
+	def mas(self)->float:
+		return self.exposure * ( self.intensity / 1000 )
 
 	def to_json(self) -> dict:
 		return self.__dict__
@@ -125,7 +134,7 @@ class LabBeam(BeamParameters):
 		return generateSpectra(self)
 
 @dataclass(frozen=True)
-class MedBeam(LabBeam):
+class MedBeam(BeamParameters, TubeBeam):
 	method = "med"
 	projection = PROJECTION.POINT
 	mas: float
@@ -137,8 +146,7 @@ class MedBeam(LabBeam):
 	def from_json(json:dict):
 		voltage = float(json["voltage"])
 		mas = float(json["mas"])
-		# exposure = float(json["exposure"])
-		# intensity = float(json["intensity"])
+
 		spotSize = float(json["spotSize"])
 		anodeAngle = float(json["anodeAngle"])
 		generator = BEAM_GENERATOR(str(json["generator"]))
@@ -157,9 +165,7 @@ class MedBeam(LabBeam):
 			spotSize=spotSize,
 			anodeAngle=anodeAngle,
 			generator=generator,
-			material=material,
-			exposure=exposure,
-			intensity=intensity)
+			material=material)
 
 	def getSpectra(self) -> Tuple[Spectra, Spectra]:
 		return generateSpectra(self)
@@ -255,6 +261,7 @@ def generateSpectra(beam: BeamParameters) -> Tuple[Spectra, Spectra]:
 			kvp=params.voltage,
 			th=params.anodeAngle,
 			targ=params.material.name,
+			mas=params.mas
 			)
 			results = spec.get_std_results()
 
@@ -277,16 +284,32 @@ def generateSpectra(beam: BeamParameters) -> Tuple[Spectra, Spectra]:
 					emean=results.emean,
 				))
 		elif params.generator == BEAM_GENERATOR.XPECGEN:
-			# ? How to convert voltage into electron energy?
-			# ? Issues relating to converting voltage into electron kinetic energy
+
+			# ? kev value is way above what is expected when divided by e (kev: 5.242867622547042e+16)
+			# ? Or it's lower than expected (kev: 0.07)
+			# eV = V(It / e)
+			# intensity: uA
+			# exposure: s
+			# voltage: kV
+
+			# I = params.intensity / 1000000
+			# t = params.exposure
+			# V = params.voltage * 1000
+
+			# ev = V * ((I * t) / cs.elementary_charge)
+			# kev = ev / 1000
+
+			# print(f"{kev=}")
+			# What does xpecgen actally take?
 
 			# xpspec = xp.calculate_spectrum(
-			# 	beam.electron_energy,
-			# 	params.anodeAngle if isinstance(params, LabBeam) else 12,
-			# 	3,
-			# 	int(beam.electron_energy * 2),
-			# 	z=beam.source_material.value,
+			# 	e_0=kev,
+			# 	theta=params.anodeAngle,
+			# 	e_min=3,
+			# 	num_e=120,
+			# 	z=params.material.value,
 			# )
+
 			# unfiltered = Spectra(
 			# 	energies=tuple(xpspec.x),
 			# 	photons=tuple(xpspec.y),
@@ -294,10 +317,12 @@ def generateSpectra(beam: BeamParameters) -> Tuple[Spectra, Spectra]:
 			# 	flu=-1,
 			# 	emean=-1,
 			# )
+
 			# for filter in beam.filters:
 			# 	xpspec.attenuate(
-			# 		filter.filterThickness * 10, xp.get_mu(filter.filterElement.value)
+			# 		filter.thickness * 10, xp.get_mu(filter.material.value)
 			# 	)
+
 			# filtered = Spectra(
 			# 	energies=tuple(xpspec.x),
 			# 	photons=tuple(xpspec.y),
