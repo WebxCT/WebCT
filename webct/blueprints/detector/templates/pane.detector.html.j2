@@ -25,3 +25,19 @@
 
 <div class="pane">
 </div>
+
+<sl-dialog label="LSF Editor" id="dialogueLSF">
+	<div>
+		<sl-input id="inputLSF" label="PSF Array" placeholder="[0.1, 0.15, 0.5, 0.15, 0.1]" help-text="PSF in the format of [0.1, 0.15, 0.5, 0.15, 0.1]. Values will be normalised automatically."></sl-input>
+		<div class="LSFGraph">
+			<canvas id="canvasLSFDialog"></canvas>
+		</div>
+	</div>
+
+	<sl-divider></sl-divider>
+
+	<div class="buttons">
+		<sl-button variant="" class="close" id="buttonLSFClose">Close</sl-button>
+		<sl-button variant="success" id="buttonLSFSubmit" disabled>Set LSF</sl-button>
+	</div>
+</sl-dialog>

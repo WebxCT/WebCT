@@ -14,7 +14,7 @@ from PIL import Image
 from webct import Element
 from webct.components.Beam import (BEAM_GENERATOR, PROJECTION, BeamParameters, Filter, LabBeam, Spectra, generateSpectra)
 from webct.components.Capture import CaptureParameters
-from webct.components.Detector import DetectorParameters
+from webct.components.Detector import DEFAULT_LSF, DetectorParameters
 from webct.components.Reconstruction import (FBPParam, ReconParameters, reconstruct)
 from webct.components.Samples import RenderedSample, Sample
 from webct.components.sim.clients.SimClient import SimClient
@@ -74,7 +74,7 @@ class SimSession:
 			generator=BEAM_GENERATOR.SPEKPY,
 			material=Element.W
 		)
-		self.detector = DetectorParameters(250, 250, 0.5, None, None)
+		self.detector = DetectorParameters(250, 250, 0.5, DEFAULT_LSF, None)
 		self.samples = (
 			Sample(
 				"Dragon Model",
@@ -195,7 +195,7 @@ class SimSession:
 			# Perform no correction
 			return projection
 
-		proj = None
+		proj = self._detector_param.filter(projection)
 
 		# resize fields to patch the image
 		if (projection.shape[-2:] != self.flatfield.shape):

@@ -2,7 +2,7 @@
  * api.ts : API functions for communicating between the client and server.
  * @author Iwan Mitchell
  */
-import { DetectorProperties } from "./types";
+import { DetectorProperties, LSF } from "./types";
 
 // ====================================================== //
 // ====================== Endpoints ===================== //
@@ -14,6 +14,7 @@ import { DetectorProperties } from "./types";
 const Endpoint = {
 	getDetectorData: "detector/get",
 	setDetectorData: "detector/set",
+	getLSFData: "detector/lsf/get"
 };
 
 // ====================================================== //
@@ -37,6 +38,7 @@ export interface DetectorResponseRegistry {
 			pane_width: number;
 			pane_height: number;
 			pixel_size: number;
+			lsf: Array<number>;
 		},
 	};
 }
@@ -57,6 +59,7 @@ export interface DetectorRequestRegistry {
 		pane_width: number;
 		pane_height: number;
 		pixel_size: number;
+		lsf:Array<number>;
 	}
 }
 
@@ -100,7 +103,8 @@ export function processResponse(data: DetectorResponseRegistry["detectorResponse
 	const detector: DetectorProperties = {
 		paneHeight: data.params.pane_height,
 		paneWidth: data.params.pane_width,
-		pixelSize: data.params.pixel_size
+		pixelSize: data.params.pixel_size,
+		lsf: new LSF(data.params.lsf)
 	};
 
 	return detector;
@@ -114,6 +118,7 @@ export function prepareRequest(data: DetectorProperties): DetectorRequestRegistr
 	return {
 		pane_height:data.paneHeight,
 		pane_width:data.paneWidth,
-		pixel_size:data.pixelSize
+		pixel_size:data.pixelSize,
+		lsf: data.lsf.values,
 	};
 }
