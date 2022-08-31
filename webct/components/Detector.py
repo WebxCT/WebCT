@@ -14,11 +14,9 @@ class DetectorParameters:
 	energy_response: None  # Energy response function
 
 	def filter(self, images:np.ndarray) -> np.ndarray:
-		print(f"Filtering {images.shape} images...")
 		if self.lsf is not None:
+			print(f"Applying a {len(self.lsf)} element LSF across {images.shape} pixels...")
 			lsf = np.asarray(self.lsf)
-			print(len(lsf.shape))
-			print(len(images.shape))
 			if len(images.shape) == 3:
 				for z in range(images.shape[0]):
 					for y in range(images.shape[1]):

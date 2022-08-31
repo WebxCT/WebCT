@@ -3,11 +3,12 @@
  * @author Iwan Mitchell
  */
 
-import { SlInput } from "@shoelace-style/shoelace";
+import { SlButton, SlDialog, SlInput } from "@shoelace-style/shoelace";
 import { AlertType, showAlert } from "../../../base/static/js/base";
 import { SetPreviewSize } from "../../../preview/static/js/sim/projection";
 import { DetectorResponseRegistry, prepareRequest, processResponse, requestDetectorData, sendDetectorData } from "./api";
 import { DetectorConfigError, DetectorRequestError, showError } from "./errors";
+import { LSF, LSFDisplay, LSFParseEnum } from "./types";
 import { validateHeight, validatePixel, validateWidth } from "./validation";
 
 // ====================================================== //
@@ -20,9 +21,20 @@ let DetectorPreviewElement: HTMLDivElement;
 let DetectorHorizontalText: SVGTextElement;
 let DetectorVerticalText: SVGTextElement;
 
+let LSFDialogButton: SlButton;
+let LSFDialogClose: SlButton;
+let LSFDialogInput: SlInput;
+let LSFDialogSubmit: SlButton;
+let LSFDialog:SlDialog;
+let LSFCanvas: HTMLCanvasElement;
+let LSFDialogCanvas: HTMLCanvasElement;
+
 // ====================================================== //
 // ======================= Globals ====================== //
 // ====================================================== //
+
+let CurrentLSF: LSF;
+let NewLSF: LSF;
 
 // ====================================================== //
 // ======================== Setup ======================= //
@@ -42,19 +54,44 @@ export function setupDetector(): boolean {
 	const text_detector_horizontal = document.getElementById("textDetectorHorizontal");
 	const text_detector_vertical = document.getElementById("textDetectorVertical");
 
+	const dialog_lsf = document.getElementById("dialogueLSF");
+	const button_show_lsf = document.getElementById("buttonShowLSF");
+	const input_lsf = document.getElementById("inputLSF");
+	const button_lsf_submit = document.getElementById("buttonLSFSubmit");
+	const button_lsf_close = document.getElementById("buttonLSFClose");
+	const canvas_lsf = document.getElementById("canvasLSF");
+	const canvas_lsf_dialog = document.getElementById("canvasLSFDialog");
 
 	if (pane_width_element == null ||
 		pane_height_element == null ||
 		pane_pixel_size_element == null ||
 		detector_preview_element == null ||
 		text_detector_horizontal == null ||
-		text_detector_vertical == null) {
+		text_detector_vertical == null ||
+
+		dialog_lsf == null ||
+		button_show_lsf == null ||
+		input_lsf == null ||
+		button_lsf_submit == null ||
+		button_lsf_close == null ||
+		canvas_lsf == null ||
+		canvas_lsf_dialog == null) {
+
 		console.log(pane_width_element);
 		console.log(pane_height_element);
 		console.log(pane_pixel_size_element);
 		console.log(detector_preview_element);
 		console.log(text_detector_horizontal);
 		console.log(text_detector_vertical);
+
+		console.log(dialog_lsf);
+		console.log(button_show_lsf);
+		console.log(input_lsf);
+		console.log(button_lsf_submit);
+		console.log(button_lsf_close);
+		console.log(canvas_lsf);
+		console.log(canvas_lsf_dialog);
+
 
 		showAlert("Detector setup failure", AlertType.ERROR);
 		return false;
@@ -80,6 +117,54 @@ export function setupDetector(): boolean {
 	DetectorHorizontalText = text_detector_horizontal as unknown as SVGTextElement;
 	DetectorVerticalText = text_detector_vertical as unknown as SVGTextElement;
 
+	LSFDialog = dialog_lsf as SlDialog;
+	LSFDialogButton = button_show_lsf as SlButton;
+	LSFDialogInput = input_lsf as SlInput;
+	LSFDialogClose = button_lsf_close as SlButton;
+	LSFDialogSubmit = button_lsf_submit as SlButton;
+	LSFCanvas = canvas_lsf as HTMLCanvasElement;
+	LSFDialogCanvas = canvas_lsf_dialog as HTMLCanvasElement;
+
+	LSFDialogButton.onclick = () => {
+		LSFDialog.show();
+	};
+
+	LSFDialogClose.onclick = () => {
+		LSFDialog.hide();
+	};
+
+	LSFDialogSubmit.onclick = () => {
+		const parseResult = LSF.from_text(LSFDialogInput.value);
+		if (parseResult.status !== LSFParseEnum.SUCCESS) {
+			// Button should've been disabled by other validation methods, but
+			// wasn't done in time. Pre-emptively disable the submit button and
+			// then do nothing.
+			LSFDialogSubmit.disabled = true;
+			return;
+		}
+
+		// Submitted a new LSF!
+		CurrentLSF = NewLSF;
+		previewDetector();
+		LSFDialog.hide();
+	};
+
+	LSFDialogInput.addEventListener("sl-change", () => {
+		const parseResult = LSF.from_text(LSFDialogInput.value);
+		console.log(parseResult);
+
+		if (parseResult.status == LSFParseEnum.SUCCESS && parseResult.lsf !== undefined) {
+			// Save to new LSF
+			NewLSF = parseResult.lsf;
+			LSFDialogSubmit.disabled = false;
+		} else {
+			LSFDialogSubmit.disabled = true;
+		}
+
+		// Update dialog LSF Canvas
+		new LSFDisplay(NewLSF, LSFDialogCanvas).displayLSF();
+
+	});
 
 	previewDetector();
 	return true;
@@ -98,6 +183,10 @@ export function validateDetector(): boolean {
 // =================== Display and UI =================== //
 // ====================================================== //
 
+function updateDialog(): void {
+	return;
+}
+
 function previewDetector(): void {
 	if (!validateDetector()) {
 		return;
@@ -114,6 +203,13 @@ function previewDetector(): void {
 	// DetectorPreviewElement.textContent = width + "x" + height + " px"
 	DetectorHorizontalText.textContent = PaneWidthElement.value + "mm (" + width + "px)";
 	DetectorVerticalText.textContent = PaneHeightElement.value + "mm (" + height + "px)";
+
+	// Update LSF Graph
+	console.log("preview detector");
+	if (CurrentLSF != undefined ) {
+		const lsfdisp = new LSFDisplay(CurrentLSF, LSFCanvas);
+		lsfdisp.displayLSF();
+	}
 
 }
 
@@ -158,6 +254,11 @@ export function UpdateDetector(): Promise<void> {
 			PaneWidthElement.value = properties.paneWidth + "";
 			PanePixelSizeElement.value = properties.pixelSize * 1000 + "";
 
+			// Update LSF
+			CurrentLSF = properties.lsf;
+			LSFDialogInput.value = CurrentLSF.values.join(", ");
+			new LSFDisplay(CurrentLSF, LSFDialogCanvas).displayLSF();
+
 			previewDetector();
 		}).catch(() => {
 			showError(DetectorRequestError.RESPONSE_DECODE);
@@ -180,6 +281,7 @@ function setDetector(): Promise<void> {
 		paneHeight: parseFloat(PaneHeightElement.value),
 		paneWidth: parseFloat(PaneWidthElement.value),
 		pixelSize: parseFloat(PanePixelSizeElement.value) / 1000,
+		lsf: CurrentLSF
 	});
 
 	return sendDetectorData(detector).then((response: Response) => {
