@@ -85,6 +85,8 @@ sl-menu-item::part(base) {
 	white-space: unset;
 }
 
+sl-checkbox > span,
+sl-switch > span,
 sl-menu-item > span {
 	font-size: small;
 	color: var(--sl-color-gray-500);
@@ -343,16 +345,24 @@ sl-progress-bar[variant="long"]::part(indicator) {
 }
 
 .downloadPreview {
-	grid-row-start: 1;
-	height: 100rem;
+	height: 20rem;
 	border: 2px dashed var(--sl-color-neutral-300);
 	margin-right: 1rem;
 	border-radius: var(--sl-border-radius-large);
 	padding: 1rem;
+	overflow-y: scroll;
 }
 
 .downloadPreview pre {
 	margin: 0;
+}
+
+.settingsPanel {
+	background-color: var(--sl-color-neutral-100);
+	// border: 2px dashed var(--sl-color-neutral-300);
+	border-radius: var(--sl-border-radius-large);
+	padding: 1rem;
+	margin-top: 1rem;
 }
 
 sl-tag[size="x-small"]::part(base) {

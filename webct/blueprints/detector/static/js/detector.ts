@@ -8,7 +8,7 @@ import { AlertType, showAlert } from "../../../base/static/js/base";
 import { SetPreviewSize } from "../../../preview/static/js/sim/projection";
 import { DetectorResponseRegistry, prepareRequest, processResponse, requestDetectorData, sendDetectorData } from "./api";
 import { DetectorConfigError, DetectorRequestError, showError } from "./errors";
-import { LSF, LSFDisplay, LSFParseEnum } from "./types";
+import { DetectorProperties, LSF, LSFDisplay, LSFParseEnum } from "./types";
 import { validateHeight, validatePixel, validateWidth } from "./validation";
 
 // ====================================================== //
@@ -247,19 +247,8 @@ export function UpdateDetector(): Promise<void> {
 		result.then((result: unknown) => {
 
 			const properties = processResponse(result as DetectorResponseRegistry["detectorResponse"]);
+			setDetectorParams(properties);
 
-			// update local values
-			// no implicit cast from number to string, really js?
-			PaneHeightElement.value = properties.paneHeight + "";
-			PaneWidthElement.value = properties.paneWidth + "";
-			PanePixelSizeElement.value = properties.pixelSize * 1000 + "";
-
-			// Update LSF
-			CurrentLSF = properties.lsf;
-			LSFDialogInput.value = CurrentLSF.values.join(", ");
-			new LSFDisplay(CurrentLSF, LSFDialogCanvas).displayLSF();
-
-			previewDetector();
 		}).catch(() => {
 			showError(DetectorRequestError.RESPONSE_DECODE);
 		});
@@ -277,12 +266,7 @@ function setDetector(): Promise<void> {
 		throw DetectorConfigError;
 	}
 
-	const detector = prepareRequest({
-		paneHeight: parseFloat(PaneHeightElement.value),
-		paneWidth: parseFloat(PaneWidthElement.value),
-		pixelSize: parseFloat(PanePixelSizeElement.value) / 1000,
-		lsf: CurrentLSF
-	});
+	const detector = prepareRequest(getDetectorParams());
 
 	return sendDetectorData(detector).then((response: Response) => {
 		if (response.status == 200) {
@@ -295,4 +279,28 @@ function setDetector(): Promise<void> {
 	}).catch(() => {
 		showError(DetectorRequestError.SEND_ERROR);
 	});
+}
+
+function setDetectorParams(properties:DetectorProperties) {
+	// update local values
+	// no implicit cast from number to string, really js?
+	PaneHeightElement.value = properties.paneHeight + "";
+	PaneWidthElement.value = properties.paneWidth + "";
+	PanePixelSizeElement.value = properties.pixelSize * 1000 + "";
+
+	// Update LSF
+	CurrentLSF = properties.lsf;
+	LSFDialogInput.value = CurrentLSF.values.join(", ");
+	new LSFDisplay(CurrentLSF, LSFDialogCanvas).displayLSF();
+
+	previewDetector();
+}
+
+export function getDetectorParams():DetectorProperties {
+	return {
+		paneHeight: parseFloat(PaneHeightElement.value),
+		paneWidth: parseFloat(PaneWidthElement.value),
+		pixelSize: parseFloat(PanePixelSizeElement.value) / 1000,
+		lsf: CurrentLSF
+	};
 }

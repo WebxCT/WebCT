@@ -1,4 +1,10 @@
 import { SlButton, SlDialog, SlIconButton } from "@shoelace-style/shoelace";
+import { getBeamParms } from "../../../beam/static/js/beam";
+import { getCaptureParams } from "../../../capture/static/js/capture";
+import { getDetectorParams } from "../../../detector/static/js/detector";
+import { getReconParams } from "../../../reconstruction/static/js/recon";
+import { getSampleParams } from "../../../samples/static/js/samples";
+import { WebCTConfig } from "./types";
 
 // import hljs from "highlight.js"
 
@@ -7,6 +13,8 @@ let CloseDialogButton:SlButton;
 let ConfigDialog:SlDialog;
 
 let CodePreview:HTMLPreElement;
+
+let ConfigContent:string;
 
 export function setupConfig():boolean {
 	const button_config = document.getElementById("buttonConfig");
@@ -31,16 +39,35 @@ export function setupConfig():boolean {
 		ConfigDialog.hide();
 	};
 
+	CodePreview = preview_code as HTMLPreElement;
 	ConfigButton = button_config as SlIconButton;
 	ConfigButton.onclick = () => {
+		updateConfigPreview();
 		ConfigDialog.show();
 	};
-
-	CodePreview = preview_code as HTMLPreElement;
-	CodePreview.textContent = JSON.stringify({
-		hello: "How are you today"
-	},undefined,4);
-
 	// hljs.highlightElement(CodePreview)
 	return true;
+}
+
+function updateConfigPreview() {
+	// type==json
+	// const exportText:Array<string> = [];
+
+	// Create a config variable
+	const config:WebCTConfig = {
+		Beam: getBeamParms(),
+		Capture: getCaptureParams(),
+		Detector: getDetectorParams(),
+		Reconstruction: getReconParams(),
+		Samples: getSampleParams()
+	};
+
+	// Remove selected parts from the export
+	setExportContent(JSON.stringify(config, undefined, 4));
+}
+
+function setExportContent(content:string):void {
+	// Update code preview
+	CodePreview.textContent = content;
+	ConfigContent = content;
 }

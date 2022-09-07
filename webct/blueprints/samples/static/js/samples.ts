@@ -767,11 +767,7 @@ export function UpdateSamples(): Promise<void> {
 
 			result.then((result: unknown) => {
 				const properties = processResponse(result as SamplesResponseRegistry["sampleDataResponse"], "sampleDataResponse") as SampleProperties[];
-				SessionSamples = properties;
-
-				console.log(properties);
-
-				updateSampleCards();
+				setSampleParams(properties);
 			}).catch(() => {
 				return;
 			});
@@ -803,7 +799,7 @@ export function UpdateMaterials(): Promise<void> {
  * Send sample parameters to the server.
  */
 function setSamples(): Promise<void> {
-	const samples = prepareSampleRequest(SessionSamples);
+	const samples = prepareSampleRequest(getSampleParams());
 	return sendSamplesData(samples).then((response: Response) => {
 		if (response.status == 200) {
 			console.log("Samples updated");
@@ -815,4 +811,13 @@ function setSamples(): Promise<void> {
 		showError(DetectorRequestError.SEND_ERROR);
 		return;
 	});
+}
+
+export function setSampleParams(properties:SampleProperties[]) {
+	SessionSamples = properties;
+	updateSampleCards();
+}
+
+export function getSampleParams():SampleProperties[] {
+	return SessionSamples;
 }

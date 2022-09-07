@@ -8,22 +8,29 @@
 				<li><sl-checkbox><sl-icon name="camera-reels"></sl-icon> Capture Plan</sl-checkbox></li>
 				<li><sl-checkbox><sl-icon name="box"></sl-icon> Reconstruction</sl-checkbox></li>
 			</ul>
+			<sl-button>	</sl-button>
 		</div>
 		<div class="downloadPanel">
 			<sl-button-group>
-				<sl-dropdown>
-				<sl-button slot="trigger" caret>Format: JSON</sl-button>
-					<sl-menu>
-					<sl-menu-item>JSON</sl-menu-item>
-					<sl-menu-item disabled>XTEK</sl-menu-item>
-				</sl-menu>
-				</sl-dropdown>
-				<sl-button>
-					<sl-icon slot="prefix" name="cloud-download"></sl-icon>
+				<sl-button variant="primary" outline>
+					<!-- <sl-icon slot="prefix" name="cloud-download"></sl-icon> -->
 					Download
 				</sl-button>
+				<sl-dropdown>
+					<sl-button slot="trigger" caret value="json">Format: JSON</sl-button>
+					<sl-menu>
+						<sl-menu-item value="json" checked>JSON</sl-menu-item>
+						<sl-menu-item value="xtek" disabled>XTEK</sl-menu-item>
+					</sl-menu>
+				</sl-dropdown>
 			</sl-button-group>
+
+			<div class="settingsPanel">
+				<sl-checkbox>Materials as IDs <span>- Store sample materials as references rather than embedding material data.</span></sl-checkbox>
+			</div>
+
 			<sl-divider></sl-divider>
+
 			<div class="downloadPreview">
 			<pre id="codePreview"></pre>
 		</div>
