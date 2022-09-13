@@ -363,6 +363,7 @@ sl-progress-bar[variant="long"]::part(indicator) {
 	border-radius: var(--sl-border-radius-large);
 	padding: 1rem;
 	margin-top: 1rem;
+	width: 95%;
 }
 
 sl-tag[size="x-small"]::part(base) {

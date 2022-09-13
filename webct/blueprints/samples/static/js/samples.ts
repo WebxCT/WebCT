@@ -484,7 +484,7 @@ function updateSampleCards(): void {
 				// * last clicked, and hoping there is no deviation.
 				item.onclick = () => {
 					// Remove one count from current material
-					RecentMaterials[sample.materialID] -= 1;
+					RecentMaterials[sample.materialID as string] -= 1;
 
 					// Change material
 					console.log("Set matid 	" + matID);
@@ -526,7 +526,7 @@ function updateSampleCards(): void {
 
 
 		console.log("Current Material: " + sample.materialID);
-		materialSelect.value = sample.materialID;
+		materialSelect.value = sample.materialID as string;
 		console.log("New Material " + materialSelect.value);
 
 		contentDiv.appendChild(modelName);
@@ -819,5 +819,6 @@ export function setSampleParams(properties:SampleProperties[]) {
 }
 
 export function getSampleParams():SampleProperties[] {
-	return SessionSamples;
+	// Create a copy to ensure downstream changes are not propagated.
+	return structuredClone(SessionSamples);
 }

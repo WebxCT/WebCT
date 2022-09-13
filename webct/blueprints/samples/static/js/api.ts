@@ -273,7 +273,7 @@ export function prepareSampleRequest(data: SampleProperties[]): SamplesRequestRe
 		const sample = data[index];
 		samples.samples.push({
 			label: sample.label,
-			materialID: sample.materialID,
+			materialID: sample.materialID as string,
 			modelPath: sample.modelPath,
 			sizeUnit: sample.sizeUnit,
 		});
