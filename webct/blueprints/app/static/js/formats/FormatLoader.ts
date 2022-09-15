@@ -8,5 +8,6 @@ export interface FormatLoader {
 
 export interface FormatLoaderStatic {
 	from_config: (config:configFull) => FormatLoader;
-	from_text: (obj:unknown) => FormatLoader;
+	from_text: (obj:string) => FormatLoader;
+	can_parse: (text:string) => boolean;
 }

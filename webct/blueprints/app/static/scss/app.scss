@@ -339,13 +339,14 @@ sl-progress-bar[variant="long"]::part(indicator) {
 // }
 
 .downloadPanel {
-	grid-template-rows: max-content auto;
 	padding-left: 1rem;
 	padding-right: 0.25rem;
+	max-height: 40rem;
+	overflow: hidden;
 }
 
 .downloadPreview {
-	height: 20rem;
+	height: 28rem;
 	border: 2px dashed var(--sl-color-neutral-300);
 	margin-right: 1rem;
 	border-radius: var(--sl-border-radius-large);
@@ -377,3 +378,44 @@ sl-tag[size="x-small"]::part(base) {
 	// from higher specificity sources
 	display: none !important;
 }
+
+#dialogueConfig > div.dialogpanel > div:not(.downloadPanel) {
+	display: grid;
+	grid-template-rows: 21.3rem 10rem 3rem;
+}
+
+#dialogueConfig > div.dialogpanel > div:not(.downloadPanel) > ul {
+	grid-row-start: 1;
+	grid-row-end: 2;
+}
+
+#dialogueConfig > div.dialogpanel > div:not(.downloadPanel) > div {
+	grid-row-start: 2;
+	grid-row-end: 3;
+}
+
+#dialogueConfig > div.dialogpanel > div:not(.downloadPanel) > sl-button {
+	grid-row-start: 3;
+	grid-row-end: 4;
+}
+
+#panelImport {
+	display: grid;
+	grid-template-rows: auto;
+	grid-template-columns: auto;
+}
+
+#panelImport > div {
+	grid-row-start: 1;
+	grid-column-start: 1;
+}
+
+// #areaConfigUpload {
+// 	background-color: var(--sl-color-neutral-100);
+// 	// border: 2px dashed var(--sl-color-neutral-300);
+// 	border-radius: var(--sl-border-radius-large);
+// 	padding: 1rem;
+// 	margin-top: 0.5rem;
+// 	margin-bottom: 0.5rem;
+// 	min-height: 10rem;
+// }

@@ -104,7 +104,7 @@ export class WebCTConfig {
 	}
 
 	static parse_json(data:unknown):configSubset {
-		return {};
+		return data as configSubset;
 	}
 }
 

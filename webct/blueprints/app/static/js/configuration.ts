@@ -1,13 +1,14 @@
 import { SlButton, SlCheckbox, SlDialog, SlIconButton, SlMenuItem } from "@shoelace-style/shoelace";
 import { FormatLoader } from "./formats/FormatLoader";
 import { GVXRConfig } from "./formats/GVXRLoader";
-import { configFull, configSubset, ExportModes as ExportMode, ExportOptions, WebCTConfig } from "./types";
+import { configFull, configSubset, ExportModes as ExportMode, ExportOptions, getConfigKeys, WebCTConfig } from "./types";
 
 let ConfigButton:SlIconButton;
 let CloseDialogButton:SlButton;
 let ConfigDialog:SlDialog;
 let JsonSettingsPanel:HTMLDivElement;
 let DownloadConfigButton:SlButton;
+let UploadConfigButton:SlButton;
 
 let ModeButton: SlButton;
 let ModeJson: SlMenuItem;
@@ -35,6 +36,7 @@ export function setupConfig():boolean {
 	const preview_code = document.getElementById("codePreview");
 	const settings_panel_json = document.getElementById("settingsPanelJson");
 	const button_config_download = document.getElementById("buttonConfigDownload");
+	const button_config_upload = document.getElementById("buttonConfigUpload");
 
 	const button_mode = document.getElementById("buttonMode");
 	const menu_mode_json = document.getElementById("menuModeJson");
@@ -56,6 +58,7 @@ export function setupConfig():boolean {
 		button_mode == null ||
 		settings_panel_json == null ||
 		button_config_download == null ||
+		button_config_upload == null ||
 		menu_mode_json == null ||
 		menu_mode_gvxr == null ||
 		menu_mode_xtek == null ||
@@ -71,6 +74,7 @@ export function setupConfig():boolean {
 		console.log(preview_code);
 		console.log(settings_panel_json);
 		console.log(button_config_download);
+		console.log(button_config_upload);
 
 		console.log(button_mode);
 		console.log(menu_mode_json);
@@ -96,6 +100,8 @@ export function setupConfig():boolean {
 	JsonSettingsPanel = settings_panel_json as HTMLDivElement;
 	DownloadConfigButton = button_config_download as SlButton;
 	DownloadConfigButton.onclick = downloadConfig;
+	UploadConfigButton = button_config_upload as SlButton;
+	UploadConfigButton.onclick = showUploadConfigDialog;
 
 	ModeButton = button_mode as SlButton;
 	ModeJson = menu_mode_json as SlMenuItem;
@@ -271,4 +277,75 @@ function downloadConfig():void {
 	}
 
 	va.click();
+}
+
+function showUploadConfigDialog():void {
+	const fInput = document.createElement("input");
+	fInput.type = "file";
+	fInput.accept = ".json";
+
+	fInput.addEventListener("change",()=> {
+		console.log("Filebrowser change");
+
+		// check to see if a file was selected
+		if (fInput.files === undefined || fInput.files?.length != 1) {
+			return;
+		}
+		const file = fInput.files[0];
+
+		console.log("Loading file");
+
+		file.text().then((text) => {
+			console.log("Parsing file");
+			parseImport(text);
+		});
+	});
+	fInput.dispatchEvent(new MouseEvent("click"));
+}
+
+function parseImport(text:string) {
+	let config:configSubset | null = null;
+	if (text[0] == "{") {
+		// File format starts with a json token, try parsing and see what happens
+		try {
+			const result = JSON.parse(text);
+
+			// File format is a json format, check to see if webct or gvxr loaders will parse it.
+			if (GVXRConfig.can_parse(result)) {
+				// gvxr
+				console.log("Importing GVXR Config");
+				config = GVXRConfig.from_text(result).as_config();
+			} else {
+				// webct
+				console.log("Importing WebCT Config");
+				config = WebCTConfig.parse_json(result);
+			}
+		} catch (error) {
+			console.error(error);
+			// Json parse error, but first key is a {
+			console.error("Unparsable JSON file!");
+			return;
+		}
+	} else {
+		// Invalid file?
+		console.error("Unknown config filetype");
+		return;
+	}
+
+	// Assume config is now populated, any errors are early returns
+	if (config === null) {
+		return;
+	}
+
+	const keys = getConfigKeys(config);
+	// Update checkboxes to show what properties are being imported...
+
+	BeamCheckbox.checked = keys.beam;
+	DetectorCheckbox.checked = keys.detector;
+	SampleCheckbox.checked = keys.samples;
+	CaptureCheckbox.checked = keys.capture;
+	ReconCheckbox.checked = keys.recon;
+
+	console.log("Loaded Config");
+	console.log(config);
 }

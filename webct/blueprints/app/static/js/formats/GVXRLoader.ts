@@ -161,12 +161,40 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 		return new GVXRConfig(detector, source, samples);
 	}
 
-	static from_text(data:unknown): GVXRConfig {
-		return {} as GVXRConfig;
+	static from_text(data:string): GVXRConfig {
+		return new GVXRConfig({} as detectorConfig,{} as sourceConfig,{} as sampleConfig[]);
 	}
 
 	as_config():configSubset {
 		return {
 		};
+	}
+
+	static can_parse(obj:unknown): boolean {
+		// Ensure we have an object
+		if (typeof obj !== "object") {
+			return false;
+		}
+
+		// ! https://github.com/microsoft/TypeScript/pull/50666
+		// Please fix this issue microsoft, why can we not coherece typing on
+		// the unknown type????
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const o:any = obj;
+		// if (!("Detector" in obj)) {
+		// 	return false;
+		// }
+
+		// Workaround until aformentioned 'unknown' issues are fixed...
+		if(!Object.prototype.hasOwnProperty.call(obj, "Detector")){return false;}
+		if(!Object.prototype.hasOwnProperty.call(obj, "Source")){return false;}
+		if(!Object.prototype.hasOwnProperty.call(obj, "Samples")){return false;}
+		if(!Object.prototype.hasOwnProperty.call(o.Source, "Shape")){return false;}
+		if(!Object.prototype.hasOwnProperty.call(o.Detector, "Position")){return false;}
+
+		// We've assured a bunch of gvxr-only keys exist, therefore it looks
+		// like a gvxr config we can parse later on. We don't do the full
+		// parsing here as can_parse is supposed to be a quick check.
+		return true;
 	}
 };
