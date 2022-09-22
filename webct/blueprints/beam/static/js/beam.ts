@@ -411,7 +411,9 @@ export function setBeamParams(beam:BeamProperties) {
 		break;
 	}
 
-	FilterMaterialElement.value = beam.filters[0].material + "";
-	FilterSizeElement.value = beam.filters[0].thickness + "";
+	if (beam.method !== "synch") {
+		FilterMaterialElement.value = beam.filters[0].material + "";
+		FilterSizeElement.value = beam.filters[0].thickness + "";
+	}
 
 }

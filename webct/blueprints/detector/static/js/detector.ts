@@ -281,7 +281,7 @@ function setDetector(): Promise<void> {
 	});
 }
 
-function setDetectorParams(properties:DetectorProperties) {
+export function setDetectorParams(properties:DetectorProperties) {
 	// update local values
 	// no implicit cast from number to string, really js?
 	PaneHeightElement.value = properties.paneHeight + "";

@@ -30,10 +30,12 @@
 			</ul>
 			<div id="areaConfigUpload">
 			</div>
-			<sl-button id="buttonUploadConfig" variant="primary" outline>Import Config</sl-button>
+			<sl-button id="buttonConfigUpload" variant="primary" outline>Import Config
+				<sl-icon name="file-earmark-arrow-up" slot="prefix"></sl-icon>
+			</sl-button>
 		</div>
 
-		<div class="downloadPanel hidden" id="panelExport">
+		<div class="downloadPanel" id="panelExport">
 			<sl-button-group>
 				<sl-button variant="primary" outline id="buttonConfigDownload">
 					<!-- <sl-icon slot="prefix" name="cloud-download"></sl-icon> -->
@@ -61,7 +63,7 @@
 			</div>
 		</div>
 
-		<div class="downloadPanel" id="panelImport">
+		<div class="downloadPanel hidden" id="panelImport">
 			<div class="ImportPreview">
 			</div>
 			<div class="ImportPanel">
@@ -70,7 +72,7 @@
 				</sl-button>
 			</div>
 		</div>
-	</div>
+		</div>
 	<div slot="footer">
 		<sl-divider></sl-divider>
 		<div class="buttons">

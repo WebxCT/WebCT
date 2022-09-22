@@ -220,7 +220,7 @@ function InitialUpdate(): void {
 		});
 }
 
-function UpdatePage(): Promise<void> {
+export function UpdatePage(): Promise<void> {
 	setPageLoading(true);
 	MarkLoading();
 	console.log("UpdatePage");

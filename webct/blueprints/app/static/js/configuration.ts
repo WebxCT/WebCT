@@ -1,4 +1,5 @@
 import { SlButton, SlCheckbox, SlDialog, SlIconButton, SlMenuItem } from "@shoelace-style/shoelace";
+import { AlertType, showAlert } from "../../../base/static/js/base";
 import { FormatLoader } from "./formats/FormatLoader";
 import { GVXRConfig } from "./formats/GVXRLoader";
 import { configFull, configSubset, ExportModes as ExportMode, ExportOptions, getConfigKeys, WebCTConfig } from "./types";
@@ -346,6 +347,11 @@ function parseImport(text:string) {
 	CaptureCheckbox.checked = keys.capture;
 	ReconCheckbox.checked = keys.recon;
 
-	console.log("Loaded Config");
+	console.log("Applied Config");
+	ConfigDialog.hide();
+	showAlert("Configuration Applied", AlertType.INFO, 5);
+
+	// apply config
+	WebCTConfig.apply(config);
 	console.log(config);
 }

@@ -1,13 +1,14 @@
-import { getBeamParms } from "../../../beam/static/js/beam";
+import { getBeamParms, setBeamParams } from "../../../beam/static/js/beam";
 import { BeamProperties } from "../../../beam/static/js/types";
-import { getCaptureParams } from "../../../capture/static/js/capture";
+import { getCaptureParams, setCaptureParams } from "../../../capture/static/js/capture";
 import { CaptureProperties } from "../../../capture/static/js/types";
-import { getDetectorParams } from "../../../detector/static/js/detector";
+import { getDetectorParams, setDetectorParams } from "../../../detector/static/js/detector";
 import { DetectorProperties } from "../../../detector/static/js/types";
-import { getReconParams } from "../../../reconstruction/static/js/recon";
+import { getReconParams, setReconParams } from "../../../reconstruction/static/js/recon";
 import { ReconstructionParams } from "../../../reconstruction/static/js/types";
-import { getSampleParams, MaterialLib } from "../../../samples/static/js/samples";
+import { getSampleParams, MaterialLib, setSampleParams } from "../../../samples/static/js/samples";
 import { SampleProperties } from "../../../samples/static/js/types";
+import { UpdatePage } from "./app";
 
 export interface configSubset {
 	beam?:BeamProperties;
@@ -105,6 +106,32 @@ export class WebCTConfig {
 
 	static parse_json(data:unknown):configSubset {
 		return data as configSubset;
+	}
+
+	static apply(config:configSubset) {
+		const keys = getConfigKeys(config);
+
+		if (keys.beam && config.beam !== undefined) {
+			setBeamParams(config.beam);
+		}
+
+		if (keys.detector && config.detector !== undefined) {
+			setDetectorParams(config.detector);
+		}
+
+		if (keys.samples && config.samples !== undefined) {
+			setSampleParams(config.samples);
+		}
+
+		if (keys.capture && config.capture !== undefined) {
+			setCaptureParams(config.capture);
+		}
+
+		if (keys.recon && config.recon !== undefined) {
+			setReconParams(config.recon);
+		}
+
+		UpdatePage();
 	}
 }
 
