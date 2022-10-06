@@ -38,7 +38,7 @@ class Sample:
 	@staticmethod
 	def from_json(json: dict):
 		if "label" not in json or "modelPath" not in json or "materialID" not in json:
-			raise ValueError("Missing keys.")
+			raise ValueError(f"Missing keys. {json.keys()}")
 
 		str(json["label"])
 		str(json["modelPath"])

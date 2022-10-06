@@ -315,11 +315,13 @@ function parseImport(text:string) {
 			if (GVXRConfig.can_parse(result)) {
 				// gvxr
 				console.log("Importing GVXR Config");
-				config = GVXRConfig.from_text(result).as_config();
+				config = GVXRConfig.from_text(text).as_config();
+				console.log(config);
 			} else {
 				// webct
 				console.log("Importing WebCT Config");
 				config = WebCTConfig.parse_json(result);
+				console.log(config);
 			}
 		} catch (error) {
 			console.error(error);
@@ -349,9 +351,9 @@ function parseImport(text:string) {
 
 	console.log("Applied Config");
 	ConfigDialog.hide();
-	showAlert("Configuration Applied", AlertType.INFO, 5);
 
 	// apply config
 	WebCTConfig.apply(config);
 	console.log(config);
+	showAlert("Configuration Applied", AlertType.INFO, 5);
 }

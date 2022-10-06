@@ -1,5 +1,7 @@
-import { SynchBeam, TubeBeam } from "../../../../beam/static/js/types";
+import { ElementSymbols } from "../../../../base/static/js/elements";
+import { BeamProperties, Filter, LabBeam, SynchBeam, TubeBeam } from "../../../../beam/static/js/types";
 import { MaterialLib } from "../../../../samples/static/js/samples";
+import { Material, SampleProperties } from "../../../../samples/static/js/types";
 import { configFull, configSubset } from "../types";
 import { FormatLoader, FormatLoaderStatic } from "./FormatLoader";
 
@@ -16,7 +18,8 @@ interface detectorConfig {
 	Position: Position
 	UpVector: [number, number, number]
 	NumberOfPixels: [number, number],
-	Spacing: [number, number, string]
+	Spacing: [number, number, string],
+	LSF: number[],
 }
 
 type ParallelBeam = "ParallelBeam" | "Parallel"
@@ -56,18 +59,19 @@ interface sourceConfig {
 
 type MatMixture = string | [string, number][]
 
-type Material = ["element", MatElement] | ["compound", MatCompound] | ["mixture", MatMixture] | ["hu", MatHU] | ["mu", MatMU]
+type GVXRMaterial = ["element", MatElement] | ["compound", MatCompound] | ["mixture", MatMixture] | ["hu", MatHU] | ["mu", MatMU]
 
 interface sampleConfig {
 	Label:string,
 	Cube?:[number, DistanceUnit]
 	Cylinder?:[number, number,number, DistanceUnit],
 	Path?: FilePath,
-	Material: Material,
+	Material: GVXRMaterial,
 	Density?:number,
 	Transform?: ["Rotation",number,number, number, number] | ["Translation", number, number, number, DistanceUnit] | ["Scaling", number, number, number]
 	Type?: "inner" | "outer"
-	opacity?:number
+	opacity?:number,
+	Unit:DistanceUnit,
 }
 
 export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatLoader {
@@ -82,15 +86,20 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 	}
 
 	static from_config(data:configFull){
+		console.log("fromconfig");
 
 		const detector:detectorConfig = {
 			UpVector: [0, 1, 0],
 			Position: [...data.capture.beamPosition, "mm" as DistanceUnit],
 			Spacing: [data.detector.pixelSize, data.detector?.pixelSize, "mm" as DistanceUnit],
-			NumberOfPixels: [data.detector.paneWidth / (data.detector.pixelSize), data.detector.paneHeight / (data.detector.pixelSize)]
+			NumberOfPixels: [data.detector.paneWidth / (data.detector.pixelSize), data.detector.paneHeight / (data.detector.pixelSize)],
+			LSF: data.detector.lsf.values
 		};
+		console.log(detector);
+
 		let beam:BeamSource;
 		if (data.beam.method == "synch") {
+			console.log("beamsynch");
 			const synchBeam:SynchBeam = data.beam as never;
 			const totalCount = synchBeam.exposure * synchBeam.intensity;
 			beam = [{
@@ -130,7 +139,7 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 		for (let index = 0; index < data.samples.length; index++) {
 			const sample = data.samples[index];
 
-			let material:Material;
+			let material:GVXRMaterial;
 			if (sample.material == undefined) {
 				const matsplit = sample.materialID?.split("/");
 				if (matsplit !== undefined) {
@@ -155,6 +164,7 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 				Material: material,
 				Path: sample.modelPath,
 				Density: sample.material.density,
+				Unit: "mm"
 			});
 		}
 
@@ -162,11 +172,114 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 	}
 
 	static from_text(data:string): GVXRConfig {
-		return new GVXRConfig({} as detectorConfig,{} as sourceConfig,{} as sampleConfig[]);
+		// Parse json, allow error to be thrown upwards
+		const obj = JSON.parse(data);
+
+		// Yes, we're assuming the json file has all objects existing and no mismatched errors.
+		// Yes, this should be replaced with a proper procedure to typecheck and validate all properties
+		const detector:detectorConfig = obj["Detector"];
+		const source:sourceConfig = obj["Source"];
+		const samples:sampleConfig[] = obj["Samples"];
+
+		if (detector.LSF === undefined) {
+			console.log("Undefined lsf");
+			detector.LSF = [0,1,0];
+		}
+
+		return new GVXRConfig(detector, source, samples);
 	}
 
 	as_config():configSubset {
+		let beam:BeamProperties;
+
+		if (this.Source.Shape == "Parallel" || this.Source.Shape == "ParallelBeam") {
+			// setup synch properties
+			const configBeam = this.Source.Beam as BeamEnergy[];
+			beam = new SynchBeam(
+				configBeam[0].Energy,
+				1,1,false,[]
+			);
+		} else {
+			// We only support kvp imports
+			const configBeam = this.Source.Beam as Tube;
+			let filters:Filter[] = [];
+			if (configBeam.filter !== undefined && configBeam.filter.length > 0) {
+				filters = [{
+					material:ElementSymbols[configBeam.filter[0][0] as string as keyof typeof ElementSymbols],
+					thickness:configBeam.filter[0][1]
+				}];
+			}
+			beam = new LabBeam(
+				configBeam.kvp,
+				1,
+				1,
+				1,
+				ElementSymbols.W,
+				"spekpy",
+				configBeam["tube angle"],
+				filters,
+			);
+		}
+
+		const samples:SampleProperties[] = [];
+		for (let index = 0; index < this.Samples.length; index++) {
+			const sample = this.Samples[index];
+
+			if (!("Path" in sample) || sample.Path == undefined) {
+				throw "Only path samples are supported";
+			}
+
+			if (sample.Material[0] == "mu") {
+				throw "MU Materials not supported";
+			}
+
+			const material: Material = {
+				density: sample.Density as number,
+				description: "Imported GVXR Material",
+				material: sample.Material as Material["material"],
+				label: "GVXR Material "+index
+			};
+
+			samples.push({
+				label:sample.Label,
+				modelPath:sample.Path,
+				sizeUnit:sample.Unit,
+				material:material
+			});
+		}
+
+		// Convert units into mm
+		let pixelSize = this.Detector.Spacing[0];
+		let paneHeight = this.Detector.NumberOfPixels[0] * pixelSize;
+		let paneWidth = this.Detector.NumberOfPixels[1] * pixelSize;
+
+		if (this.Detector.Spacing[2] !== "mm") {
+			switch (this.Detector.Spacing[2]) {
+			case "cm":
+				paneHeight = paneHeight * 10;
+				paneWidth = paneHeight * 10;
+				pixelSize = paneHeight * 10;
+				break;
+			case "um":
+				paneHeight = paneHeight * 0.001;
+				paneWidth = paneHeight * 0.001;
+				pixelSize = paneHeight * 0.001;
+				break;
+			default:
+				// Eh
+				break;
+			}
+		}
+
 		return {
+			detector: {
+				paneHeight: paneHeight,
+				paneWidth: paneWidth,
+				pixelSize: pixelSize,
+				lsf: {pixels:Array.from(this.Detector.LSF, (e,i)=>i-Math.floor(this.Detector.LSF.length/2)), values:this.Detector.LSF}
+			},
+			beam: beam,
+			samples: samples
 		};
 	}
 
