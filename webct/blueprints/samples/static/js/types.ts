@@ -22,7 +22,24 @@ export interface SampleProperties {
 	/**
 	 * An ID pointing to a material stored in the Material Library.
 	 */
-	materialID: string;
+	materialID?: string;
+	material?: Material;
+}
+
+/**
+ * A sample with a material defined as a reference
+ */
+export interface SamplePropertiesID extends SampleProperties {
+	material:undefined;
+	materialID: string,
+}
+
+/**
+ * A sample with a material defined as a Material
+ */
+export interface SamplePropertiesMat extends SampleProperties {
+	material:Material
+	materialID:undefined;
 }
 
 /**

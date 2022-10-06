@@ -3,8 +3,7 @@
  * @author Iwan Mitchell
  */
 
-import { DetectorRequestError, showError } from "./errors";
-import { MaterialLibrary, Material, SampleProperties } from "./types";
+import { MaterialLibrary, Material, SampleProperties, SamplePropertiesID } from "./types";
 
 // ====================================================== //
 // ====================== Endpoints ===================== //
@@ -264,7 +263,7 @@ export function processResponse(data: SamplesResponseRegistry[keyof SamplesRespo
  * Convert samples properties into structured API request data.
  * @param data - Sample properties to be sent to the server.
  */
-export function prepareSampleRequest(data: SampleProperties[]): SamplesRequestRegistry["sampleDataRequest"] {
+export function prepareSampleRequest(data: SamplePropertiesID[]): SamplesRequestRegistry["sampleDataRequest"] {
 	const samples: SamplesRequestRegistry["sampleDataRequest"] = {
 		samples: []
 	};

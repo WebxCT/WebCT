@@ -62,7 +62,7 @@ export interface BeamProperties {
 	filters: Array<Filter>;
 }
 
-interface TubeBeam {
+export interface TubeBeam {
 	voltage: number;
 	spotSize: number;
 	material:number;

@@ -283,39 +283,7 @@ export function UpdateBeam(): Promise<void> {
 
 			const [properties, spectraFiltered, spectraUnfiltered,] = processResponse(result as BeamResponseRegistry["beamResponse"]);
 
-			let params;
-			BeamSourceSelectElement.value = properties.method;
-			switch (properties.method) {
-			case "lab":
-				params = properties as LabBeam;
-				BeamVoltageElement.value = params.voltage+"";
-				BeamExposureElement.value = params.exposure+"";
-				BeamIntensityElement.value = params.intensity+"";
-				BeamAngleElement.value = params.anodeAngle+"";
-				BeamGeneratorElement.value = params.generator;
-				BeamMaterialElement.value = params.material+"";
-				BeamSpotSize.value = params.spotSize+"";
-				break;
-			case "med":
-				params = properties as MedBeam;
-				BeamVoltageElement.value = params.voltage+"";
-				BeamMASElement.value = params.mas+"";
-				BeamGeneratorElement.value = params.generator;
-				BeamAngleElement.value = params.anodeAngle+"";
-				BeamMaterialElement.value = params.material+"";
-				BeamSpotSize.value = params.spotSize+"";
-				BeamVoltageElement.value = params.voltage+"";
-				break;
-			case "synch":
-				params = properties as SynchBeam;
-				BeamEnergyElement.value = params.energy+"";
-				BeamExposureElement.value = params.exposure+"";
-				BeamIntensityElement.value = params.intensity+"";
-				break;
-			}
-
-			FilterMaterialElement.value = properties.filters[0].material + "";
-			FilterSizeElement.value = properties.filters[0].thickness + "";
+			setBeamParams(properties);
 
 			let format: ViewFormat = "None";
 			if (Spectra?.viewFormat !== undefined) {
@@ -340,6 +308,22 @@ function setBeam(): Promise<void> {
 		throw BeamConfigError;
 	}
 
+	const beam = getBeamParms();
+
+	return sendBeamData(beam).then((response: Response) => {
+		if (response.status == 200) {
+			console.log("Beam updated");
+		} else if (response.status == 400) {
+			showError(BeamRequestError.UNSUPPORTED_PARAMETERS);
+		} else {
+			showError(BeamRequestError.UNEXPECTED_SERVER_ERROR);
+		}
+	}).catch(() => {
+		showError(BeamRequestError.SEND_ERROR);
+	});
+}
+
+export function getBeamParms():BeamProperties {
 	const BeamType = BeamSourceSelectElement.value as SourceType;
 	let beam:BeamProperties;
 	switch (BeamType) {
@@ -391,16 +375,48 @@ function setBeam(): Promise<void> {
 		);
 		break;
 	}
+	return beam;
+}
 
-	return sendBeamData(beam).then((response: Response) => {
-		if (response.status == 200) {
-			console.log("Beam updated");
-		} else if (response.status == 400) {
-			showError(BeamRequestError.UNSUPPORTED_PARAMETERS);
+export function setBeamParams(beam:BeamProperties) {
+	let params;
+	BeamSourceSelectElement.value = beam.method;
+
+	switch (beam.method) {
+	case "lab":
+		params = beam as LabBeam;
+		BeamVoltageElement.value = params.voltage+"";
+		BeamExposureElement.value = params.exposure+"";
+		BeamIntensityElement.value = params.intensity+"";
+		BeamAngleElement.value = params.anodeAngle+"";
+		BeamGeneratorElement.value = params.generator;
+		BeamMaterialElement.value = params.material+"";
+		BeamSpotSize.value = params.spotSize+"";
+		break;
+	case "med":
+		params = beam as MedBeam;
+		BeamVoltageElement.value = params.voltage+"";
+		BeamMASElement.value = params.mas+"";
+		BeamGeneratorElement.value = params.generator;
+		BeamAngleElement.value = params.anodeAngle+"";
+		BeamMaterialElement.value = params.material+"";
+		BeamSpotSize.value = params.spotSize+"";
+		BeamVoltageElement.value = params.voltage+"";
+		break;
+	case "synch":
+		params = beam as SynchBeam;
+		BeamEnergyElement.value = params.energy+"";
+		BeamExposureElement.value = params.exposure+"";
+		BeamIntensityElement.value = params.intensity+"";
+		break;
+	}
+
+	if (beam.method !== "synch") {
+		if (beam.filters.length == 0) {
+			FilterSizeElement.value = 0 + "";
 		} else {
-			showError(BeamRequestError.UNEXPECTED_SERVER_ERROR);
+			FilterMaterialElement.value = beam.filters[0].material + "";
+			FilterSizeElement.value = beam.filters[0].thickness + "";
 		}
-	}).catch(() => {
-		showError(BeamRequestError.SEND_ERROR);
-	});
+	}
 }

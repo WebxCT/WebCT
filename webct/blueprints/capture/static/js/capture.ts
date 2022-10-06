@@ -284,23 +284,8 @@ export function UpdateCapture(): Promise<void> {
 		result.then((result: unknown) => {
 
 			const properties = processResponse(result as CaptureResponseRegistry["captureResponse"], "captureResponse") as CaptureProperties;
+			setCaptureParams(properties);
 
-			// update local values
-			// no implicit cast from number to string, really js?
-			TotalProjectionsElement.value = properties.numProjections + "";
-			TotalRotationElement.value = properties.totalAngle + "";
-
-			BeamPosXElement.value = properties.beamPosition[0] + "";
-			BeamPosYElement.value = properties.beamPosition[1] + "";
-			BeamPosZElement.value = properties.beamPosition[2] + "";
-
-			DetectorPosXElement.value = properties.detectorPosition[0] + "";
-			DetectorPosYElement.value = properties.detectorPosition[1] + "";
-			DetectorPosZElement.value = properties.detectorPosition[2] + "";
-
-			SampleRotateXElement.value = properties.sampleRotation[0] + "";
-			SampleRotateYElement.value = properties.sampleRotation[1] + "";
-			SampleRotateZElement.value = properties.sampleRotation[2] + "";
 		}).catch(() => {
 			showError(CaptureRequestError.RESPONSE_DECODE);
 		});
@@ -318,13 +303,7 @@ function setCapture(): Promise<void> {
 		throw CaptureConfigError;
 	}
 
-	const capture = prepareRequest({
-		numProjections: parseInt(TotalProjectionsElement.value),
-		totalAngle: parseInt(TotalRotationElement.value as string),
-		beamPosition: [parseFloat(BeamPosXElement.value), parseFloat(BeamPosYElement.value), parseFloat(BeamPosZElement.value)],
-		detectorPosition: [parseFloat(DetectorPosXElement.value), parseFloat(DetectorPosYElement.value), parseFloat(DetectorPosZElement.value)],
-		sampleRotation: [parseFloat(SampleRotateXElement.value), parseFloat(SampleRotateYElement.value), parseFloat(SampleRotateZElement.value)],
-	});
+	const capture = prepareRequest(getCaptureParams());
 
 	return sendCaptureData(capture).then((response: Response) => {
 		if (response.status == 200) {
@@ -373,4 +352,34 @@ export function UpdateCapturePreview(): Promise<void> {
 			MarkError();
 		});
 	}).catch(() => { MarkError(); });
+}
+
+export function getCaptureParams():CaptureProperties {
+	return {
+		numProjections: parseInt(TotalProjectionsElement.value),
+		totalAngle: parseInt(TotalRotationElement.value as string),
+		beamPosition: [parseFloat(BeamPosXElement.value), parseFloat(BeamPosYElement.value), parseFloat(BeamPosZElement.value)],
+		detectorPosition: [parseFloat(DetectorPosXElement.value), parseFloat(DetectorPosYElement.value), parseFloat(DetectorPosZElement.value)],
+		sampleRotation: [parseFloat(SampleRotateXElement.value), parseFloat(SampleRotateYElement.value), parseFloat(SampleRotateZElement.value)],
+	};
+}
+
+export function setCaptureParams(properties:CaptureProperties) {
+	// update local values
+	// no implicit cast from number to string, really js?
+	TotalProjectionsElement.value = properties.numProjections + "";
+	TotalRotationElement.value = properties.totalAngle + "";
+
+	BeamPosXElement.value = properties.beamPosition[0] + "";
+	BeamPosYElement.value = properties.beamPosition[1] + "";
+	BeamPosZElement.value = properties.beamPosition[2] + "";
+
+	DetectorPosXElement.value = properties.detectorPosition[0] + "";
+	DetectorPosYElement.value = properties.detectorPosition[1] + "";
+	DetectorPosZElement.value = properties.detectorPosition[2] + "";
+
+	SampleRotateXElement.value = properties.sampleRotation[0] + "";
+	SampleRotateYElement.value = properties.sampleRotation[1] + "";
+	SampleRotateZElement.value = properties.sampleRotation[2] + "";
+
 }

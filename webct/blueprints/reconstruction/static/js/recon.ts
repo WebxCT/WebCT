@@ -757,48 +757,13 @@ export function UpdateRecon(): Promise<void> {
 			resultText = resultText.replaceAll("Infinity", "null");
 
 			const resultJson = JSON.parse(resultText);
-			console.log(resultJson);
-
 			const properties = processResponse(resultJson as ReconResponseRegistry["reconResponse"], "reconResponse") as ReconstructionParams;
-			console.log(properties);
 
 			if (properties === undefined) {
 				return;
 			}
 
-			// Update local values
-			AlgElement.value = properties.method;
-			QualityElement.value = properties.quality + "";
-
-			let params;
-			switch (properties.method) {
-			case "FDK":
-				params = properties as unknown as FDKParams;
-				FDKFilter.value = params.filter + "";
-				break;
-			case "FBP":
-				params = properties as unknown as FBPParams;
-				FBPFilter.value = params.filter + "";
-				break;
-			case "CGLS":
-				params = properties as CGLSParams;
-				CGLSIterElement.value = params.iterations + "";
-				CGLSToleranceElement.value = params.tolerance + "";
-				UpdateTikValues(params.operator);
-				break;
-			case "SIRT":
-				params = properties as SIRTParams;
-				SIRTIterElement.value = params.iterations + "";
-				UpdateTikValues(params.operator);
-				UpdateConValues(params.constraint);
-				break;
-			case "FISTA":
-				params = properties as FISTAParams;
-				FISTAIterElement.value = params.iterations + "";
-				UpdateConValues(params.constraint);
-				UpdateDiffValues(params.diff);
-				break;
-			}
+			setReconParams(properties);
 		});
 	});
 }
@@ -828,6 +793,90 @@ function setRecon(): Promise<void> {
 	if (!validateRecon()) {
 		throw Error;
 	}
+
+	let request = undefined;
+	request = prepareRequest(getReconParams());
+
+	console.log("---Sent---");
+	console.log(request);
+	return sendReconData(request).then((response: Response) => {
+		if (response.status == 200) {
+			console.log("Reconstruction updated");
+		} else {
+			console.error(response);
+		}
+	});
+}
+
+export function UpdateReconPreview(): Promise<void> {
+	return UpdateRecon().then(() => {
+		MarkLoading();
+
+		requestReconPreview().then((response: Response) => {
+			console.log("Reconstruction Preview Response Status:" + response.status);
+			if (response.status == 500) {
+				return;
+			}
+
+			// Convert to json
+			const result = response.json();
+
+			result.then((result: unknown) => {
+				const preview = processResponse(result as ReconResponseRegistry["reconPreviewResponse"], "reconPreviewResponse") as ReconstructionPreview;
+				window.dispatchEvent(new CustomEvent("stopLoading", {
+					bubbles: true,
+					cancelable: false,
+					composed: false,
+				}));
+
+				SetPreviewImages(preview);
+				MarkDone();
+			}).catch(() => {
+				MarkError();
+			});
+		}).catch(() => {
+			MarkError();
+		});
+	}).catch(() => { MarkError(); });
+}
+
+export function setReconParams(properties:ReconstructionParams) {
+	// Update local values
+	AlgElement.value = properties.method;
+	QualityElement.value = properties.quality + "";
+
+	let params;
+	switch (properties.method) {
+	case "FDK":
+		params = properties as unknown as FDKParams;
+		FDKFilter.value = params.filter + "";
+		break;
+	case "FBP":
+		params = properties as unknown as FBPParams;
+		FBPFilter.value = params.filter + "";
+		break;
+	case "CGLS":
+		params = properties as CGLSParams;
+		CGLSIterElement.value = params.iterations + "";
+		CGLSToleranceElement.value = params.tolerance + "";
+		UpdateTikValues(params.operator);
+		break;
+	case "SIRT":
+		params = properties as SIRTParams;
+		SIRTIterElement.value = params.iterations + "";
+		UpdateTikValues(params.operator);
+		UpdateConValues(params.constraint);
+		break;
+	case "FISTA":
+		params = properties as FISTAParams;
+		FISTAIterElement.value = params.iterations + "";
+		UpdateConValues(params.constraint);
+		UpdateDiffValues(params.diff);
+		break;
+	}
+}
+
+export function getReconParams():ReconstructionParams {
 
 	// Collate paramaters for all reconstruction types
 	const method = AlgElement.value + "";
@@ -951,64 +1000,18 @@ function setRecon(): Promise<void> {
 		diff: diff,
 	};
 
-	let request = undefined;
 	switch (method) {
 	case "FBP":
 	default:
-		request = prepareRequest(FBPParams);
-		break;
+		return FBPParams;
 	case "FDK":
-		request = prepareRequest(FDKParams);
-		break;
+		return FDKParams;
 	case "CGLS":
-		request = prepareRequest(CGLSParams);
-		break;
+		return CGLSParams;
 	case "SIRT":
-		request = prepareRequest(SIRTParams);
-		break;
+		return SIRTParams;
 	case "FISTA":
-		request = prepareRequest(FISTAParams);
+		return FISTAParams;
 	}
 
-	console.log("---Sent---");
-	console.log(request);
-	return sendReconData(request).then((response: Response) => {
-		if (response.status == 200) {
-			console.log("Reconstruction updated");
-		} else {
-			console.error(response);
-		}
-	});
-}
-
-export function UpdateReconPreview(): Promise<void> {
-	return UpdateRecon().then(() => {
-		MarkLoading();
-
-		requestReconPreview().then((response: Response) => {
-			console.log("Reconstruction Preview Response Status:" + response.status);
-			if (response.status == 500) {
-				return;
-			}
-
-			// Convert to json
-			const result = response.json();
-
-			result.then((result: unknown) => {
-				const preview = processResponse(result as ReconResponseRegistry["reconPreviewResponse"], "reconPreviewResponse") as ReconstructionPreview;
-				window.dispatchEvent(new CustomEvent("stopLoading", {
-					bubbles: true,
-					cancelable: false,
-					composed: false,
-				}));
-
-				SetPreviewImages(preview);
-				MarkDone();
-			}).catch(() => {
-				MarkError();
-			});
-		}).catch(() => {
-			MarkError();
-		});
-	}).catch(() => { MarkError(); });
 }

@@ -10,7 +10,7 @@ import { prepareSampleRequest, processResponse, requestMaterialList, requestMode
 import { DetectorRequestError, showError } from "./errors";
 import { getSelectedMaterial, MixtureInputList, setSelectedMaterial, updateMaterialDialog } from "./materialDialogue";
 
-import { EventNewCategory, Material, MaterialLibrary, SampleProperties } from "./types";
+import { EventNewCategory, Material, MaterialLibrary, SampleProperties, SamplePropertiesID } from "./types";
 
 // ====================================================== //
 // ================== Document Elements ================= //
@@ -484,7 +484,7 @@ function updateSampleCards(): void {
 				// * last clicked, and hoping there is no deviation.
 				item.onclick = () => {
 					// Remove one count from current material
-					RecentMaterials[sample.materialID] -= 1;
+					RecentMaterials[sample.materialID as string] -= 1;
 
 					// Change material
 					console.log("Set matid 	" + matID);
@@ -526,7 +526,7 @@ function updateSampleCards(): void {
 
 
 		console.log("Current Material: " + sample.materialID);
-		materialSelect.value = sample.materialID;
+		materialSelect.value = sample.materialID as string;
 		console.log("New Material " + materialSelect.value);
 
 		contentDiv.appendChild(modelName);
@@ -703,8 +703,6 @@ export function DeleteMaterial(categoryKey: string, materialKey: string) {
 		return;
 	}
 
-
-
 	if (!Object.prototype.hasOwnProperty.call(MaterialLib, categoryKey)) {
 		console.error("Unable to find category '" + categoryKey + "' in materialLib for deletion");
 		return;
@@ -767,11 +765,7 @@ export function UpdateSamples(): Promise<void> {
 
 			result.then((result: unknown) => {
 				const properties = processResponse(result as SamplesResponseRegistry["sampleDataResponse"], "sampleDataResponse") as SampleProperties[];
-				SessionSamples = properties;
-
-				console.log(properties);
-
-				updateSampleCards();
+				setSampleParams(properties);
 			}).catch(() => {
 				return;
 			});
@@ -799,20 +793,112 @@ export function UpdateMaterials(): Promise<void> {
 	});
 }
 
+
+/**
+ * Search the material database and return an existing material based on material properties
+ * @param refMat-Material instance
+ */
+function idFromMaterial(refMat:Material):string|null {
+	for (const catKey in MaterialLib) {
+		if (Object.prototype.hasOwnProperty.call(MaterialLib, catKey)) {
+			const cat = MaterialLib[catKey];
+			for (const matkey in cat) {
+				if (Object.prototype.hasOwnProperty.call(cat, matkey)) {
+					const mat = cat[matkey];
+					console.log(mat);
+					console.log(mat.material);
+					console.log(refMat.material);
+					if (mat.material[0] === refMat.material[0] && mat.material[1] === refMat.material[1]) {
+						return catKey+"/"+matkey;
+					}
+				}
+			}
+		}
+	}
+	return null;
+}
+
 /**
  * Send sample parameters to the server.
  */
 function setSamples(): Promise<void> {
-	const samples = prepareSampleRequest(SessionSamples);
-	return sendSamplesData(samples).then((response: Response) => {
-		if (response.status == 200) {
-			console.log("Samples updated");
-		} else if (response.status == 500) {
-			showError(DetectorRequestError.UNEXPECTED_SERVER_ERROR);
+	console.log("setsamples");
+
+	// Ensure current samples are using IDs rather than materials
+	const sampleParams = getSampleParams();
+	const newMaterials:Material[] = [];
+
+	for (let index = 0; index < sampleParams.length; index++) {
+		const sample = sampleParams[index];
+		if (sample.materialID === undefined && sample.material !== undefined) {
+			// Attempt to get material from current database
+			const perhapsMat = idFromMaterial(sample.material);
+			if (perhapsMat !== null) {
+				sample.materialID = perhapsMat;
+			} else {
+				newMaterials.push(sample.material);
+
+				// Make an assumption that the imported material will succeed, and use the new ID
+				sample.materialID = "Imported/" + sample.material.label;
+			}
 		}
-		return;
-	}).catch(() => {
-		showError(DetectorRequestError.SEND_ERROR);
-		return;
+	}
+
+	console.log("Found " + newMaterials.length + " new materials.");
+
+	const newMats:SamplesRequestRegistry["materialDataRequest"][] = [];
+
+	if (newMaterials.length > 0) {
+		// We have materials that do not exist in the database; we will create new ones
+		if (!("Imported" in MaterialLib)) {
+			MaterialLib.Imported = {};
+		}
+
+		for (let index = 0; index < newMaterials.length; index++) {
+			console.log("Creating new material...");
+			const mat = newMaterials[index];
+			MaterialLib["Imported"][mat.label] = mat;
+
+			const nMat:SamplesRequestRegistry["materialDataRequest"] = mat as SamplesRequestRegistry["materialDataRequest"];
+			nMat.category = "Imported";
+			newMats.push(nMat);
+		}
+	}
+
+	const basePromise:Promise<void|Response> = Promise.resolve();
+	for (let index = 0; index < newMats.length; index++) {
+		const request = newMats[index];
+		basePromise.then(()=>{
+			console.log("Sent new material");
+			console.log(request);
+			return sendMaterialData(request);
+		});
+	}
+
+	const samples = prepareSampleRequest(sampleParams as SamplePropertiesID[]);
+
+	return basePromise.then(()=>{
+
+		return sendSamplesData(samples).then((response: Response) => {
+			if (response.status == 200) {
+				console.log("Samples updated");
+			} else if (response.status == 500) {
+				showError(DetectorRequestError.UNEXPECTED_SERVER_ERROR);
+			}
+			return;
+		}).catch(() => {
+			showError(DetectorRequestError.SEND_ERROR);
+			return;
+		});
 	});
+}
+
+export function setSampleParams(properties:SampleProperties[]) {
+	SessionSamples = properties;
+	updateSampleCards();
+}
+
+export function getSampleParams():SampleProperties[] {
+	// Create a copy to ensure downstream changes are not propagated.
+	return structuredClone(SessionSamples);
 }

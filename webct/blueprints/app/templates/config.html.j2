@@ -2,37 +2,81 @@
 	<div class="dialogpanel">
 		<div>
 			<ul>
-				<li><sl-checkbox><span><sl-icon name="sunrise"></sl-icon></span> X-Ray Beam </sl-checkbox></li>
-				<li><sl-checkbox><sl-icon name="border-outer"></sl-icon> Detector Pane</sl-checkbox></li>
-				<li><sl-checkbox><sl-icon name="server"></sl-icon> Materials & Samples</sl-checkbox></li>
-				<li><sl-checkbox><sl-icon name="camera-reels"></sl-icon> Capture Plan</sl-checkbox></li>
-				<li><sl-checkbox><sl-icon name="box"></sl-icon> Reconstruction</sl-checkbox></li>
+				<li>
+					<sl-checkbox checked id="checkboxConfigBeam"><span>
+							<sl-icon name="sunrise"></sl-icon>
+						</span> X-Ray Beam </sl-checkbox>
+				</li>
+				<li>
+					<sl-checkbox checked id="checkboxConfigDetector">
+						<sl-icon name="border-outer"></sl-icon> Detector Pane
+					</sl-checkbox>
+				</li>
+				<li>
+					<sl-checkbox checked id="checkboxConfigSamples">
+						<sl-icon name="server"></sl-icon> Materials & Samples
+					</sl-checkbox>
+				</li>
+				<li>
+					<sl-checkbox checked id="checkboxConfigCapture">
+						<sl-icon name="camera-reels"></sl-icon> Capture Plan
+					</sl-checkbox>
+				</li>
+				<li>
+					<sl-checkbox checked id="checkboxConfigRecon">
+						<sl-icon name="box"></sl-icon> Reconstruction
+					</sl-checkbox>
+				</li>
 			</ul>
+			<div id="areaConfigUpload">
+			</div>
+			<sl-button id="buttonConfigUpload" variant="primary" outline>Import Config
+				<sl-icon name="file-earmark-arrow-up" slot="prefix"></sl-icon>
+			</sl-button>
 		</div>
-		<div class="downloadPanel">
+
+		<div class="downloadPanel" id="panelExport">
 			<sl-button-group>
-				<sl-dropdown>
-				<sl-button slot="trigger" caret>Format: JSON</sl-button>
-					<sl-menu>
-					<sl-menu-item>JSON</sl-menu-item>
-					<sl-menu-item disabled>XTEK</sl-menu-item>
-				</sl-menu>
-				</sl-dropdown>
-				<sl-button>
-					<sl-icon slot="prefix" name="cloud-download"></sl-icon>
+				<sl-button variant="primary" outline id="buttonConfigDownload">
+					<!-- <sl-icon slot="prefix" name="cloud-download"></sl-icon> -->
 					Download
 				</sl-button>
+				<sl-dropdown>
+					<sl-button slot="trigger" caret value="json" id="buttonMode">Format: JSON</sl-button>
+					<sl-menu>
+						<sl-menu-item value="json" id="menuModeJson" checked>JSON</sl-menu-item>
+						<sl-menu-item value="gvxr" id="menuModeGVXR">GVXR</sl-menu-item>
+						<sl-menu-item value="xtek" id="menuModeXTEK" disabled>XTEK</sl-menu-item>
+					</sl-menu>
+				</sl-dropdown>
 			</sl-button-group>
+
+			<div class="settingsPanel" id="settingsPanelJson">
+				<sl-checkbox checked id="checkboxOptMatasID">Materials as IDs <span>- Export materials as references,
+						rather than embedding material data.</span></sl-checkbox>
+			</div>
+
 			<sl-divider></sl-divider>
+
 			<div class="downloadPreview">
-			<pre id="codePreview"></pre>
+				<pre id="codePreview"></pre>
+			</div>
+		</div>
+
+		<div class="downloadPanel hidden" id="panelImport">
+			<div class="ImportPreview">
+			</div>
+			<div class="ImportPanel">
+				<sl-button variant="primary" id="buttonConfigUpload">Select File
+					<sl-icon name="document" slot="prefix"></sl-icon>
+				</sl-button>
+			</div>
 		</div>
 		</div>
+	<div slot="footer">
+		<sl-divider></sl-divider>
+		<div class="buttons">
+			<sl-button variant="" class="close" type="button" id="buttonConfigClose">Close</sl-button>
+		</div>
 	</div>
-<div slot="footer">
-	<sl-divider></sl-divider>
-	<div class="buttons">
-		<sl-button variant="" class="close" type="button" id="buttonConfigClose">Close</sl-button>
-	</div>
-</div>
 </sl-dialog>
