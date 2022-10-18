@@ -7,6 +7,7 @@
 // otherwise vague unhelpful runtime errors will occur...
 import { SlButton, SlCheckbox, SlInput, SlSelect } from "@shoelace-style/shoelace";
 import { AlertType, showAlert } from "../../../base/static/js/base";
+import { AlgElement } from "../../../reconstruction/static/js/recon";
 import { BeamResponseRegistry, processResponse, requestBeamData, sendBeamData } from "./api";
 import { BeamConfigError, BeamRequestError, showError } from "./errors";
 import { BeamGenerator, BeamProperties, Filter, LabBeam, MedBeam, SourceType, SpectraDisplay, SynchBeam, ViewFormat } from "./types";
@@ -159,18 +160,33 @@ export function setupBeam(): boolean {
 			BeamIntensityElement.classList.remove("hidden");
 			TubeSettings.classList.remove("hidden");
 			FilterSettings.classList.remove("hidden");
+
+			if (AlgElement.value == "FBP") {
+				AlgElement.value = "FDK";
+			}
+
 			break;
 		case "med":
 			BeamVoltageElement.classList.remove("hidden");
 			BeamMASElement.classList.remove("hidden");
 			TubeSettings.classList.remove("hidden");
 			FilterSettings.classList.remove("hidden");
+
+			if (AlgElement.value == "FBP") {
+				AlgElement.value = "FDK";
+			}
+
 			break;
 		case "synch":
 			BeamEnergyElement.classList.remove("hidden");
 			BeamExposureElement.classList.remove("hidden");
 			BeamIntensityElement.classList.remove("hidden");
 			BeamHarmonicsElement.classList.remove("hidden");
+
+			if (AlgElement.value == "FDK") {
+				AlgElement.value = "FBP";
+			}
+
 			break;
 		}
 	});
