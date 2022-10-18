@@ -55,11 +55,11 @@ let UploadData: FormData | null;
 
 export let MaterialLib: MaterialLibrary;
 
-const SelectedSample = 0;
+let SelectedSampleIndex = 0;
 
 let RecentMaterials: Record<string, number> = {};
 
-export const DefaultMaterial = "element/copper";
+export const DefaultMaterial = "element/aluminium";
 
 
 // ====================================================== //
@@ -155,7 +155,7 @@ export function setupSamples(): boolean {
 		return false;
 	}
 
-	RecentMaterials = {};
+	RecentMaterials = {"element/aluminium":1};
 
 	UploadCompleteDialog = dialogue_complete_upload as SlDialog;
 	SampleDialog = dialogue_sample_element as SlDialog;
@@ -327,7 +327,7 @@ export function setupSamples(): boolean {
 // ====================================================== //
 
 function setSampleElement(catID: string, matID: string): void {
-	if (matID == null || catID == null || SelectedSample == null) {
+	if (matID == null || catID == null || SelectedSampleIndex == null) {
 		return;
 	}
 
@@ -345,7 +345,7 @@ function setSampleElement(catID: string, matID: string): void {
 
 	console.log(RecentMaterials);
 
-	SessionSamples[SelectedSample].materialID = fullmatID;
+	SessionSamples[SelectedSampleIndex].materialID = fullmatID;
 
 	updateSampleCards();
 }
@@ -427,13 +427,23 @@ function updateDialog(): void {
 }
 
 function updateSampleCards(): void {
-	const nodes: HTMLDivElement[] = [];
-
 	// I dislike this method of menu list updating to display a mutable state.
+
+	const nodes: HTMLDivElement[] = [];
+	for (let index = 0; index < SessionSamples.length; index++) {
+		const sample = SessionSamples[index];
+		if (sample.materialID === undefined) {
+			continue;
+		}
+
+		if (RecentMaterials[sample.materialID] == undefined) {
+			RecentMaterials[sample.materialID] = 1;
+		}
+	}
+
 
 	for (let index = 0; index < SessionSamples.length; index++) {
 		const sample = SessionSamples[index];
-		console.log(sample);
 		const card = document.createElement("div");
 		card.classList.add("model");
 
@@ -466,9 +476,7 @@ function updateSampleCards(): void {
 
 		for (const matID in RecentMaterials) {
 			if (Object.prototype.hasOwnProperty.call(RecentMaterials, matID)) {
-				const uses = RecentMaterials[matID];
 				const material = MaterialLib[matID.split("/")[0]][matID.split("/")[1]];
-
 				if (material === null) {
 					// silently ignore deleted materials; the user will just have
 					// less recently used materials until they're replaced.
@@ -484,12 +492,12 @@ function updateSampleCards(): void {
 				// * last clicked, and hoping there is no deviation.
 				item.onclick = () => {
 					// Remove one count from current material
-					RecentMaterials[sample.materialID as string] -= 1;
+					// RecentMaterials[sample.materialID as string] -= 1;
 
 					// Change material
-					console.log("Set matid 	" + matID);
+					console.log("Set sample"+index+" to "+matID);
+
 					SessionSamples[index].materialID = matID;
-					console.log(sample);
 
 					// Add one count to new material
 					RecentMaterials[matID] += 1;
@@ -497,7 +505,6 @@ function updateSampleCards(): void {
 				materialSelect.appendChild(item);
 			}
 		}
-
 		const air = document.createElement("sl-menu-item");
 		air.textContent = "Air";
 		air.value = "special/air";
@@ -516,7 +523,7 @@ function updateSampleCards(): void {
 		customIcon.name = "gear";
 		custom.appendChild(customIcon);
 		custom.onclick = () => {
-			console.log("custom click");
+			SelectedSampleIndex = index;
 			showMaterialLibrary(true);
 		};
 
@@ -524,10 +531,7 @@ function updateSampleCards(): void {
 		materialSelect.appendChild(divider3);
 		materialSelect.appendChild(custom);
 
-
-		console.log("Current Material: " + sample.materialID);
 		materialSelect.value = sample.materialID as string;
-		console.log("New Material " + materialSelect.value);
 
 		contentDiv.appendChild(modelName);
 		contentDiv.appendChild(modelPath);
@@ -895,7 +899,11 @@ function setSamples(): Promise<void> {
 
 export function setSampleParams(properties:SampleProperties[]) {
 	SessionSamples = properties;
-	updateSampleCards();
+	// Not really sure why, but there's a bug in updateSampleCards that vanishes
+	// when using a debugger. This is likely due to a race condition, but I
+	// don't for the life of my know what's causing it.
+	// Adding a small delay of 100ms is enough to solve the problem.
+	setTimeout(updateSampleCards, 100);
 }
 
 export function getSampleParams():SampleProperties[] {
