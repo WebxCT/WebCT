@@ -36,6 +36,13 @@ def asVideo(array: np.ndarray) -> str:
 	# First, compress capture to be 0-255
 	print("normalising array")
 	array = ((array - array.min()) / (array.max() - array.min()) * 255).astype("uint8")
+
+	# Expand dimensions to all be even
+	newShape = [[0,0]]
+	for i in range(1, len(array.shape)):
+		newShape.append([0,array.shape[i] % 2])
+	array = np.pad(array, newShape)
+
 	duration = 10
 	fps = array.shape[0] / duration
 	byteStream = io.BytesIO()
