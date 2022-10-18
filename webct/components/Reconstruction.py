@@ -81,15 +81,15 @@ ReconMethods = {
 	},
 	"CGLS": {
 		"type": CGLSParam,
-		"projections": (PROJECTION.PARALLEL)
+		"projections": (PROJECTION.PARALLEL, PROJECTION.POINT)
 	},
 	"SIRT": {
 		"type": SIRTParam,
-		"projections": (PROJECTION.PARALLEL)
+		"projections": (PROJECTION.PARALLEL, PROJECTION.POINT)
 	},
 	"FISTA": {
 		"type": FISTAParam,
-		"projections": (PROJECTION.PARALLEL)
+		"projections": (PROJECTION.PARALLEL, PROJECTION.POINT)
 	},
 	# "PDHG": {
 	# 	"type":PDHGParam,
