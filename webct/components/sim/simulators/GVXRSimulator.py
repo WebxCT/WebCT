@@ -87,6 +87,10 @@ class GVXRSimulator(Simulator):
 
 	@detector.setter
 	def detector(self, value: DetectorParameters) -> None:
+		if value.lsf is not None:
+			gvxr.setLSF(value.lsf)
+		else:
+			gvxr.setLSF([0,1,0])
 		print(type(self.detector))
 		if self.quality == Quality.MEDIUM or self.quality == Quality.HIGH:
 			gvxr.setDetectorNumberOfPixels(value.shape[1], value.shape[0])

@@ -195,8 +195,6 @@ class SimSession:
 			# Perform no correction
 			return projection
 
-		proj = self._detector_param.filter(projection)
-
 		# resize fields to patch the image
 		if (projection.shape[-2:] != self.flatfield.shape):
 			print(projection.shape)

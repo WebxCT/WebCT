@@ -13,21 +13,6 @@ class DetectorParameters:
 	lsf: Optional[List[float]]  # Point spread function
 	energy_response: None  # Energy response function
 
-	def filter(self, images:np.ndarray) -> np.ndarray:
-		if self.lsf is not None:
-			print(f"Applying a {len(self.lsf)} element LSF across {images.shape} pixels...")
-			lsf = np.asarray(self.lsf)
-			if len(images.shape) == 3:
-				for z in range(images.shape[0]):
-					for y in range(images.shape[1]):
-						images[z][y] = ndimage.convolve(images[z][y], lsf, mode='wrap')
-			else:
-				for z in range(images.shape[0]):
-					images[z] = ndimage.convolve(images[z], lsf, mode='wrap')
-
-		print(f"Filtering Done!")
-		return images
-
 	@property
 	def shape(self) -> Tuple[int, int]:
 		return tuple(
