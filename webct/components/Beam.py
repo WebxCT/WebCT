@@ -9,8 +9,6 @@ from enum import unique
 import spekpy as sp
 import xpecgen.xpecgen as xp
 import numpy as np
-import scipy.constants as cs
-
 
 # Type aliases
 KeV = float
@@ -284,53 +282,38 @@ def generateSpectra(beam: BeamParameters) -> Tuple[Spectra, Spectra]:
 					emean=results.emean,
 				))
 		elif params.generator == BEAM_GENERATOR.XPECGEN:
+			# Generate a spectrum
+			unfiltered = xp.calculate_spectrum(params.voltage, params.anodeAngle, 1, 200, epsrel=0.5, monitor=None, z=params.material.value)
 
-			# ? kev value is way above what is expected when divided by e (kev: 5.242867622547042e+16)
-			# ? Or it's lower than expected (kev: 0.07)
-			# eV = V(It / e)
-			# intensity: uA
-			# exposure: s
-			# voltage: kV
+			#Inherent filtration: 1.2mm Al
+			# mu_Al = xp.get_mu(Element.Al.value)
+			# unfiltered.attenuate(0.12, mu_Al)
 
-			# I = params.intensity / 1000000
-			# t = params.exposure
-			# V = params.voltage * 1000
+			# Apply filters
+			filtered = unfiltered.clone()
+			for filter in params.filters:
+				filtered.attenuate(filter.thickness / 10, xp.get_mu(filter.material.value))
 
-			# ev = V * ((I * t) / cs.elementary_charge)
-			# kev = ev / 1000
 
-			# print(f"{kev=}")
-			# What does xpecgen actally take?
+			(filter_energies,filter_count) = filtered.get_points()
+			(unfiltered_energies,unfiltered_count) = unfiltered.get_points()
 
-			# xpspec = xp.calculate_spectrum(
-			# 	e_0=kev,
-			# 	theta=params.anodeAngle,
-			# 	e_min=3,
-			# 	num_e=120,
-			# 	z=params.material.value,
-			# )
+			return (
+				Spectra(
+					energies=tuple([float(f'{x:.4}') for x in filter_energies]),
+					photons=tuple([float(f'{x:.4}') for x in filter_count]),
+					kerma=0,
+					flu=0,
+					emean=0,
+				),
+				Spectra(
+					energies=tuple([float(f'{x:.4}') for x in unfiltered_energies]),
+					photons=tuple([float(f'{x:.4}') for x in unfiltered_count]),
+					kerma=0,
+					flu=0,
+					emean=0,
+				))
 
-			# unfiltered = Spectra(
-			# 	energies=tuple(xpspec.x),
-			# 	photons=tuple(xpspec.y),
-			# 	kerma=-1,
-			# 	flu=-1,
-			# 	emean=-1,
-			# )
-
-			# for filter in beam.filters:
-			# 	xpspec.attenuate(
-			# 		filter.thickness * 10, xp.get_mu(filter.material.value)
-			# 	)
-
-			# filtered = Spectra(
-			# 	energies=tuple(xpspec.x),
-			# 	photons=tuple(xpspec.y),
-			# 	kerma=-1,
-			# 	flu=-1,
-			# 	emean=-1,
-			# )
-			# return (unfiltered, filtered)
 			raise NotImplementedError("XPECGEN is currently not implemented.")
 		else:
 			raise NotImplementedError("Other beam spectra generators are not implemented.")
