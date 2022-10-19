@@ -167,6 +167,8 @@ export function setupPreview(): void {
 			image.classList.remove("invert");
 		});
 	}
+
+	ButtonPreviewProjection.click();
 }
 
 export function SetPreviewSize(height: number, width: number): void {
