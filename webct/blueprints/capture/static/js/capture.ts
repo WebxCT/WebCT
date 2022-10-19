@@ -5,7 +5,7 @@
 
 import { SlDropdown, SlInput, SlRange, SlSelect } from "@shoelace-style/shoelace";
 import { AlertType, showAlert } from "../../../base/static/js/base";
-import { PaneWidthElement } from "../../../detector/static/js/detector";
+import { PanePixelSizeElement, PaneWidthElement } from "../../../detector/static/js/detector";
 import { CaptureResponseRegistry, processResponse, requestCaptureData, sendCaptureData, prepareRequest, requestCapturePreview } from "./api";
 import { CaptureConfigError, CaptureRequestError, showError } from "./errors";
 import { CapturePreview, CaptureProperties } from "./types";
@@ -132,7 +132,7 @@ export function setupCapture(): boolean {
 
 	NyquistRange = range_nyquist as SlRange;
 	NyquistRange.addEventListener("sl-change", () => {
-		TotalProjectionsElement.value = Math.floor((Math.PI / 2.0 * parseInt(PaneWidthElement.value)) * (NyquistRange.value as number / 100)) + "";
+		TotalProjectionsElement.value = Math.floor((Math.PI / 2.0 * (parseInt(PaneWidthElement.value) / (parseFloat(PanePixelSizeElement.value) / 1000))) * (NyquistRange.value as number / 100)) + "";
 		NyquistRange.classList.add("linked");
 	});
 	NyquistRange.tooltipFormatter = (value: number) => {
