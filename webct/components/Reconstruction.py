@@ -6,7 +6,7 @@ from cil.framework import (
 	AcquisitionData, AcquisitionGeometry,
 	ImageData)
 from cil.optimisation.algorithms import CGLS, SIRT, FISTA
-from cil.processors import AbsorptionTransmissionConverter
+from cil.processors import TransmissionAbsorptionConverter
 from cil.recon import FBP, FDK
 from matplotlib import use
 from webct.components.Beam import PROJECTION, BeamParameters
@@ -130,7 +130,7 @@ def reconstruct(projections: np.ndarray, capture: CaptureParameters, beam: BeamP
 	acData.fill(projections)
 
 	# Correction
-	acData = AbsorptionTransmissionConverter()(acData)
+	acData = TransmissionAbsorptionConverter(min_intensity=1e-10,white_level=1)(acData)
 
 	rec: Optional[ImageData] = None
 	ig = geo.get_ImageGeometry()
@@ -235,9 +235,8 @@ def asSinogram(projections: np.ndarray, capture: CaptureParameters, beam: BeamPa
 
 	acData: AcquisitionData = geo.allocate()
 	acData.fill(projections)
-	acData = AbsorptionTransmissionConverter()(acData)
+	acData = TransmissionAbsorptionConverter()(acData)
 	acData.reorder(("vertical", "angle", "horizontal"))
-
 
 	return acData.array
 
