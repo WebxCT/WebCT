@@ -1,6 +1,8 @@
 from typing import List, Tuple
 from gvxrPython3 import gvxr
+from gvxrPython3.json2gvxr import initGVXR
 import numpy as np
+import platform
 
 from webct.components.Beam import PROJECTION, Beam
 from webct.components.Capture import CaptureParameters
@@ -33,7 +35,11 @@ class GVXRSimulator(Simulator):
 		self._initRenderer()
 
 	def _initRenderer(self):
-		gvxr.createWindow(-1, 0, "OPENGL")
+		if platform.system() == "Windows":
+			# Use OPENGL for windows
+			gvxr.createWindow(-1, 0, "OPENGL")
+		else:
+			gvxr.createWindow(-1, 0, "EGL")
 		gvxr.removePolygonMeshesFromSceneGraph()
 		gvxr.disableArtefactFiltering()
 		gvxr.setDetectorUpVector(0, 0, -1)

@@ -10,6 +10,7 @@ dependencies:
   - python>=3.9
   - flask
   - scipy
+  - scikit-image
   - matplotlib<3.5
   - opencv
   - cil
@@ -27,3 +28,6 @@ dependencies:
     - imageio[ffmpeg]
     - git+https://bitbucket.org/spekpy/spekpy_release.git
     - xpecgen
+
+    # Docker
+    - gunicorn
