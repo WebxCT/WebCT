@@ -17,9 +17,21 @@ from webct.components.Material import (
 from webct.components.Samples import RenderedSample
 from webct.components.sim.Quality import Quality
 from webct.components.sim.simulators.Simulator import Simulator
-
 from webct import model_folder
+from matplotlib.colors import hsv_to_rgb
+from zlib import crc32
 
+def colour_from_string(string:str) -> Tuple[float,float,float]:
+	"""Deterministically Creates a rgb colour from a given string.
+		The same text input will always return the same colour.
+
+	Args:
+		string (str): String to create a colour from.
+
+	Returns:
+		Tuple[float,float,float]: A series of 0.0 - 1.0 floats representing (R, G, B)
+	"""
+	return hsv_to_rgb((float(crc32(string.encode("utf-8")) & 0xffffffff) / 2**32, 0.75, 0.9))
 
 class GVXRSimulator(Simulator):
 	total_rotation: Tuple[float, float, float] = (0, 0, 0)
@@ -34,9 +46,16 @@ class GVXRSimulator(Simulator):
 
 	def _initRenderer(self):
 		gvxr.createWindow(-1, 0, "OPENGL")
+		gvxr.setWindowSize(1800, 600)
+
 		gvxr.removePolygonMeshesFromSceneGraph()
 		gvxr.disableArtefactFiltering()
 		gvxr.setDetectorUpVector(0, 0, -1)
+
+		# This specific rotation matrix assumes using CIL standards (z-)
+		gvxr.setSceneRotationMatrix((-0.11599329859018326, -0.580069899559021, 0.8062660098075867, 0.0, 0.9919215440750122, -0.025721648707985878, 0.1241975873708725, 0.0, -0.05130457878112793, 0.8141602873802185, 0.578368604183197, 0.0, 0.0, 0.0, 0.0, 1.0))
+		gvxr.setWindowBackGroundColour(0.94, 0.98, 1)
+
 		gvxr.rotateNode("root", 90, 0, 1, 0)
 
 	def SimSingleProjection(self) -> np.ndarray:
@@ -155,7 +174,11 @@ class GVXRSimulator(Simulator):
 			# Density has to be set after setting the mixture, otherwise gvxr crashes.
 			if not isinstance(mat, HUMaterial):
 				gvxr.setDensity(label, mat.density, "g/cm3")
+
+			gvxr.setColour(label, *colour_from_string(label), 1)
 			gvxr.moveToCenter(label)
+
+
 
 	@property
 	def capture(self) -> CaptureParameters:
@@ -191,3 +214,23 @@ class GVXRSimulator(Simulator):
 		self._quality = value
 		# Update detector with new quality settings
 		self.detector = self._detector
+
+
+	def RenderScene(self) -> Tuple[Tuple[float]]:
+		gvxr.displayScene()
+
+		# Zoom scene
+		dist = np.asarray(gvxr.getDetectorPosition("mm")) - np.asarray(gvxr.getSourcePosition("mm"))
+
+		zoom = (abs(dist[1]) * 0.5)
+		if zoom < self.detector.pixel_size * 2000:
+			zoom += (7 - np.log(zoom)) * ((self.detector.pixel_size*1000) / 2)
+
+		gvxr.setZoom(zoom)
+
+		# Update scene
+		gvxr.displayScene()
+		gvxr.takeScreenshot()
+		gvxr.displayScene()
+
+		return gvxr.takeScreenshot()

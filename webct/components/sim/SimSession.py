@@ -52,6 +52,7 @@ class SimSession:
 	_projection: dict[Quality, np.ndarray]
 	_reconstruction: dict[Quality, np.ndarray]
 	_recon_param: ReconParameters
+	_scene: Optional[np.ndarray]
 
 	# since flask runs python code concurrently, we need to ensure the simclient
 	# class is not used by multiple threads at once; or we have concurrency
@@ -227,9 +228,22 @@ class SimSession:
 			if self._dirty[0]:
 				self._projection = {}
 				self._dirty[0] = False
+				self._scene = None
 
 			self._projection[quality] = self._simClient.getProjection(quality)
 			return self._corrected(self._projection[quality]) if corrected else self._projection[quality]
+
+	def scene(self) -> np.ndarray:
+		with self._lock:
+			if not self._dirty[0] and hasattr(self, "_scene") and self._scene is not None:
+				print("Using cached scene")
+				return self._scene
+			self._counter += 1
+			print(f"[SC-{self._sid}-{self._simClient.pid}]-Lock-{self._counter}-Scene")
+
+			self._scene = self._simClient.getScene()
+			return self._scene
+
 
 	def allProjections(self, quality=Quality.MEDIUM, corrected=True) -> np.ndarray:
 		with self._lock:

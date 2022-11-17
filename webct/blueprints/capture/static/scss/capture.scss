@@ -17,8 +17,8 @@
 	border-style: solid;
 	transition: all 0.5s ease-out;
 	background-position: center center;
-	background-repeat: no-repeat;
-	background-size: contain;
+	object-position: center center;
+	object-fit: contain;
 	background-color: white;
 }
 

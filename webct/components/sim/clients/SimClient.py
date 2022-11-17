@@ -6,7 +6,7 @@ import sys
 from dataclasses import dataclass
 from enum import Enum
 from multiprocessing import Pipe, Process, shared_memory
-from multiprocessing.connection import Connection
+from multiprocessing.connection import PipeConnection
 from random import Random
 from typing import Any, Tuple
 
@@ -41,6 +41,9 @@ class STM_PROJECTION(STM):
 	result_arr_shape: tuple
 	result_arr_type: type
 
+@dataclass(frozen=True)
+class STM_SCENE(STM):
+	pass
 
 @dataclass(frozen=True)
 class STM_ALL_PROJECTION(STM):
@@ -111,8 +114,8 @@ class SimClient(Process):
 	capture: CaptureParameters
 
 	# ''Shared'' variables
-	conn_parent: Connection
-	conn_child: Connection
+	conn_parent: PipeConnection
+	conn_child: PipeConnection
 
 	# process variables
 	_simulator: GVXRSimulator
@@ -168,9 +171,16 @@ class SimClient(Process):
 			elif isinstance(input, STM_SAMPLES):
 				print(f"[SIM-{self.pid}] Setting samples")
 				self.conn_child.send(SimResponse.ACCEPTED)
-				self._simulator.samples = input.samples
+				self._simulator.samples = list(input.samples)
 				self.conn_child.send(SimResponse.DONE)
 				continue
+
+			elif isinstance(input, STM_SCENE):
+				print(f"[SIM-{self.pid}] Creating scene preview")
+				self.conn_child.send(SimResponse.ACCEPTED)
+				scene = self._simulator.RenderScene()
+				self.conn_child.send(SimResponse.DONE)
+				self.conn_child.send(scene)
 
 			elif isinstance(input, STM_PROJECTION):
 				print(f"[SIM-{self.pid}] SimSingle with memory pool {input.result_sm}")
@@ -182,7 +192,7 @@ class SimClient(Process):
 					buffer=mem.buf,
 				)
 
-				# Setup done, signal to parent and start simulationF
+				# Setup done, signal to parent and start simulation
 				self.conn_child.send(SimResponse.ACCEPTED)
 
 				# Set quality of simulator
@@ -451,6 +461,24 @@ class SimClient(Process):
 			# return result
 			print("Simulation completed.")
 			return result
+		else:
+			raise SimThreadError(
+				f"Unexpected response: {response}, wanted SimResponse.DONE"
+			)
+
+	def getScene(self) -> np.ndarray:
+		request = STM_SCENE()
+		self.conn_parent.send(request)
+		self.check_confirm()
+		response = self.response(msg="sim timeout while rendering scene.")
+
+		if not isinstance(response, SimResponse):
+			raise SimThreadError(f"Expected a response, but got a {type(response)}")
+		elif response is SimResponse.DONE:
+			scene = self.response(msg="sim timeout while generating scene.")
+			if not isinstance(scene, tuple):
+				raise SimThreadError(f"Unexpected scene type of '{type(scene)}', expected 'tuple'")
+			return np.asarray(scene)
 		else:
 			raise SimThreadError(
 				f"Unexpected response: {response}, wanted SimResponse.DONE"

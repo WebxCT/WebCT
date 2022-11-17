@@ -10,7 +10,6 @@ import { PreviewData } from "./types";
 
 let ButtonPreviewProjection: SlButton;
 let ButtonPreviewLayout: SlButton;
-let ButtonPreviewReconstruction: SlButton;
 let PreviewPane: HTMLDivElement;
 
 let SettingRawElement: SlRadio;
@@ -24,6 +23,7 @@ let SettingInvertElement: SlCheckbox;
 
 let PreviewImages: NodeListOf<HTMLImageElement>;
 let LayoutImages: NodeListOf<HTMLImageElement>;
+let SceneImages: NodeListOf<HTMLImageElement>;
 let PreviewData: PreviewData;
 
 export function MarkLoading(): void {
@@ -50,6 +50,10 @@ export function updateProjection(): Promise<void> {
 				const image = LayoutImages[index];
 				image.classList.add("error");
 			}
+			for (let index = 0; index < SceneImages.length; index++) {
+				const image = SceneImages[index];
+				image.classList.add("error");
+			}
 			return;
 		}
 		const result = response.json();
@@ -71,6 +75,12 @@ export function updateProjection(): Promise<void> {
 				image.height = PreviewData.layout.height;
 				image.classList.remove("updating");
 			}
+			for (let index = 0; index < SceneImages.length; index++) {
+				const image = SceneImages[index];
+				image.width = PreviewData.scene.width;
+				image.height = PreviewData.scene.height;
+				image.classList.remove("updating");
+			}
 		});
 	});
 }
@@ -78,7 +88,7 @@ export function updateProjection(): Promise<void> {
 function updateImageDisplay(): void {
 	for (let index = 0; index < PreviewImages.length; index++) {
 		const image = PreviewImages[index];
-		image.style.backgroundImage = "url('" + "data:image/png;base64," + PreviewData.projection.image + "')";
+		image.src = "data:image/png;base64," + PreviewData.projection.image;
 
 		if (SettingInvertElement.checked) {
 			window.dispatchEvent(new CustomEvent("invertOn",{bubbles:true, cancelable:false}));
@@ -102,7 +112,11 @@ function updateImageDisplay(): void {
 	}
 	for (let index = 0; index < LayoutImages.length; index++) {
 		const image = LayoutImages[index];
-		image.style.backgroundImage = "url('" + "data:image/png;base64," + PreviewData.layout.image + "')";
+		image.src = "data:image/png;base64," + PreviewData.layout.image;
+	}
+	for (let index = 0; index < SceneImages.length; index++) {
+		const image = SceneImages[index];
+		image.src = "data:image/png;base64," + PreviewData.scene.image;
 	}
 }
 
@@ -110,31 +124,22 @@ export function setupPreview(): void {
 	PreviewPane = document.getElementById("previewPane") as HTMLDivElement;
 	PreviewImages = document.querySelectorAll("img.image-projection") as NodeListOf<HTMLImageElement>;
 	LayoutImages = document.querySelectorAll("img.image-layout") as NodeListOf<HTMLImageElement>;
+	SceneImages = document.querySelectorAll("img.image-scene") as NodeListOf<HTMLImageElement>;
 
 	ButtonPreviewLayout = document.getElementById("buttonPreviewLayout") as SlButton;
 	ButtonPreviewProjection = document.getElementById("buttonPreviewProjection") as SlButton;
-	ButtonPreviewReconstruction = document.getElementById("buttonPreviewReconstruction") as SlButton;
 
 	ButtonPreviewLayout.onclick = () => {
 		ButtonPreviewLayout.variant = "primary";
 		ButtonPreviewProjection.variant = "default";
-		ButtonPreviewReconstruction.variant = "default";
 		PreviewPane.setAttribute("selected", "layout");
 		SettingsDiv.setAttribute("selected", "layout");
 	};
 	ButtonPreviewProjection.onclick = () => {
 		ButtonPreviewLayout.variant = "default";
 		ButtonPreviewProjection.variant = "primary";
-		ButtonPreviewReconstruction.variant = "default";
 		PreviewPane.setAttribute("selected", "projection");
 		SettingsDiv.setAttribute("selected", "projection");
-	};
-	ButtonPreviewReconstruction.onclick = () => {
-		ButtonPreviewLayout.variant = "default";
-		ButtonPreviewProjection.variant = "default";
-		ButtonPreviewReconstruction.variant = "primary";
-		PreviewPane.setAttribute("selected", "recon");
-		SettingsDiv.setAttribute("selected", "recon");
 	};
 
 	const SettingsDiv = document.getElementById("settingsPane") as HTMLDivElement;

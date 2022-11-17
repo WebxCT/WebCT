@@ -3,9 +3,15 @@ img.image-projection {
 	border-color: #7ECEFD;
 	border-style: solid;
 	transition: all 0.5s ease-out;
-	background-position: center center;
-	background-repeat: no-repeat;
-	background-size: cover;
+	object-position: center center;
+	object-fit: cover;
+}
+
+.image-scene {
+	transition: all 0.5s ease-out;
+	object-position: center center;
+	object-fit: cover;
+	background-color: white;
 }
 
 video.updating,
@@ -58,9 +64,8 @@ img.image-layout {
 	border-color: #7ECEFD;
 	border-style: solid;
 	transition: all 0.5s ease-out;
-	background-position: center center;
-	background-repeat: no-repeat;
-	background-size: contain;
+	object-position: center center;
+	object-fit: contain;
 	background-color: white;
 }
 
@@ -87,6 +92,10 @@ img.image-layout {
 
 #settingsPane:not([selected=projection]) {
 	display: none;
+}
+
+#previewSettings > sl-button-group > sl-button {
+	width: 7rem;
 }
 
 #previewSettings > sl-button-group {
@@ -132,8 +141,8 @@ img.image-layout {
 	opacity: 100;
 	transition: all 0.25s;
 	height: auto;
-	padding-top: 1rem;
-	width: 15.5rem;
+	padding-top: 0.5rem;
+	width: 14rem;
 	position: fixed;
 	border-radius: 0.9rem;
 	background-color: var(--sl-color-primary-50);

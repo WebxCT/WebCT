@@ -9,5 +9,10 @@ export interface PreviewData {
 		image:string,
 		height:number,
 		width:number
+	},
+	scene:{
+		image:string,
+		height:number,
+		width:number
 	}
 }

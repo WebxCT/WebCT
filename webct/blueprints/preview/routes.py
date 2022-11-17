@@ -46,6 +46,9 @@ def getPreviews() -> Response:
 	layout = sim.layout()
 	layoutstr = AsPng(layout)
 
+	scene = sim.scene()
+	scenestr = AsPng(scene)
+
 	return jsonify(
 		{
 			"time": f"{(then-datetime.now()).total_seconds()}",
@@ -59,5 +62,10 @@ def getPreviews() -> Response:
 				"height": layout.shape[0],
 				"width": layout.shape[1],
 			},
+			"scene": {
+				"image": scenestr,
+				"height": scene.shape[0],
+				"width": scene.shape[1],
+			}
 		}
 	)

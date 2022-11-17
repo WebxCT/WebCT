@@ -43,6 +43,11 @@ export interface SimResponseRegistry {
 			image:string,
 			height:number,
 			width:number
+		},
+		scene: {
+			image:string,
+			height:number,
+			width:number
 		}
 	};
 }
@@ -77,6 +82,11 @@ export function processResponse(data: SimResponseRegistry["simResponse"]): Previ
 			image: data.layout.image,
 			height: data.layout.height,
 			width: data.layout.width,
+		},
+		scene: {
+			image: data.scene.image,
+			height: data.scene.height,
+			width: data.scene.width,
 		}
 	};
 
