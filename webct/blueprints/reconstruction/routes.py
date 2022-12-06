@@ -1,9 +1,9 @@
 from flask import jsonify, request, session
 from flask.wrappers import Response
 import numpy as np
-from webct.blueprints.capture.routes import asVideo
 from webct.blueprints.reconstruction import bp
 from webct.components.Reconstruction import ReconstructionFromJson, asSinogram
+from webct.components.imgutils import asPngStr, asMp4Str
 from webct.components.sim.SimSession import Sim
 
 
@@ -44,7 +44,7 @@ def createSliceVideo(array: np.ndarray) -> str:
 	for i in range(array.shape[0]):
 		arr[i, i, :] = np.array((255, 0, 0))
 
-	return asVideo(arr)
+	return asMp4Str(arr)
 
 
 @bp.route("/recon/preview/get")
@@ -52,11 +52,14 @@ def getReconstruction() -> dict:
 	simdata = Sim(session)
 	recon = simdata.getReconstruction()
 
-	reconVideo = asVideo(recon)
+	reconVideo = asMp4Str(recon)
 	proj = simdata.projection()
 	sliceVideo = createSliceVideo(proj)
 	sino = asSinogram(simdata.allProjections(), simdata.capture, simdata.beam, simdata.detector)
-	sinoVideo = asVideo(sino)
+	sinoVideo = asMp4Str(sino)
+
+	reconSlice = recon[recon.shape[0]//2]
+	reconSliceStr = asPngStr(reconSlice)
 
 	print(f"Created {reconVideo.__sizeof__()/1024:.2f}kb recon video.")
 	print(f"Created {sliceVideo.__sizeof__()/1024:.2f}kb slice video.")
@@ -78,4 +81,9 @@ def getReconstruction() -> dict:
 			"height": sino[0].shape[0],
 			"width": sino[0].shape[1],
 		},
+		"centreSlice": {
+			"image": reconSliceStr,
+			"height": reconSlice.shape[0],
+			"width": reconSlice.shape[1]
+		}
 	}

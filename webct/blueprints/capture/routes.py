@@ -1,15 +1,9 @@
-from base64 import b64encode
-from pathlib import Path
-import tempfile
-import io
 from flask import jsonify, request, session
 from flask.wrappers import Response
-import numpy as np
 from webct.blueprints.capture import bp
 from webct.components.Capture import CaptureParameters
+from webct.components.imgutils import asMp4Str
 from webct.components.sim.SimSession import Sim
-import imageio.v3 as iio
-
 
 @bp.route("/capture/set", methods=["PUT"])
 def setCapture() -> Response:
@@ -31,40 +25,15 @@ def getCapture() -> Response:
 	return jsonify(response)
 
 
-def asVideo(array: np.ndarray) -> str:
-	print("Generating files from array")
-	# First, compress capture to be 0-255
-	print("normalising array")
-	array = ((array - array.min()) / (array.max() - array.min()) * 255).astype("uint8")
-
-	# Expand dimensions to all be even
-	newShape = [[0,0]]
-	for i in range(1, len(array.shape)):
-		newShape.append([0,array.shape[i] % 2])
-	array = np.pad(array, newShape)
-
-	duration = 10
-	fps = array.shape[0] / duration
-	byteStream = io.BytesIO()
-	with tempfile.TemporaryDirectory() as d:
-		dir = Path(d)
-		iio.imwrite(dir / "capture.mp4", array, macro_block_size=1, fps=fps)
-		# optimize(dir/"capture.gif")
-		with open(dir / "capture.mp4", "rb") as f:
-			byteStream.write(f.read())
-
-	byteStream.seek(0)
-	return str(b64encode(byteStream.read()))[2:-1]
-
-
 @bp.route("/capture/preview/get")
 def getPreview() -> dict:
 	sim = Sim(session)
 	projections = sim.allProjections()
+	print(f"{projections.nbytes/1000/1000}=")
 
 	# Sending the animation as gifs are too large, and therefore don't work properly.
 	# Instead, we will create a video file in-memory and use flask to serve it.
-	video = asVideo(projections)
+	video = asMp4Str(projections)
 
 	print(f"Created {video.__sizeof__()/1024:.2f}kb capture video.")
 	return {

@@ -1,0 +1,92 @@
+<sl-dialog label="" id="dialogueDownload">
+	<span slot="label" style="margin: 0;"><sl-icon name="cloud-download"></sl-icon> Download Data</span>
+
+	<div class="downloadPanel">
+		<div>
+			<img src="" alt="" class="image-projection">
+			<h1 style="justify-content: center;"> Projection Data </h1>
+			<sl-button-group>
+				<sl-button variant="primary" outline id="">
+					Single Radiograph (12MB)
+				</sl-button>
+				<sl-dropdown>
+					<sl-button slot="trigger" caret value="tiff" id="">Format: TIFF Image</sl-button>
+					<sl-menu>
+						<sl-menu-item value="tiff" id="" checked>TIFF Image</sl-menu-item>
+						<sl-menu-item value="jpg" id="">JPEG Image</sl-menu-item>
+						<sl-menu-item value="npy" id="">Numpy Array</sl-menu-item>
+					</sl-menu>
+				</sl-dropdown>
+			</sl-button-group>
+			<p><small id="smallDownloadRadiograph">Single 32bit float .tiff (500x500).</small></p>
+			<!-- <p><small>Single 32bit float .tiff (500x500).</small></p>
+			<p><small>Single compressed JPEG picture (500x500).</small></p>
+			<p><small>Single 500x500 float32 numpy array</small></p> -->
+
+			<sl-button-group>
+				<sl-button variant="primary" outline id="">
+					All Projections (710MB)
+				</sl-button>
+				<sl-dropdown>
+					<sl-button slot="trigger" caret value="tiffStack" id="">Format: TIFF Hyperstack</sl-button>
+					<sl-menu>
+						<sl-menu-item value="tiffFolder" id="">TIFF Folder</sl-menu-item>
+						<sl-menu-item value="tiffStack" id="" checked>TIFF Hyperstack</sl-menu-item>
+						<sl-menu-item value="npy" id="">Numpy Array</sl-menu-item>
+					</sl-menu>
+				</sl-dropdown>
+			</sl-button-group>
+			<p><small id="smallDownloadProjections">Single 32bit float TIFF stack with 360 (500x500) projections</small></p>
+			<!-- <p><small>Single 32bit float TIFF stack with 360 projections</small></p>
+			<p><small>Zip file containing 360, 32bit TIFFs</small></p>
+			<p><small>Single 360x500x500 float32 numpy array</small></p> -->
+		</div>
+		<div>
+			{% include "recon-centre.html.j2" %}
+			<h1>Reconstruction Data</h1>
+			<sl-button-group>
+				<sl-button variant="primary" outline id="">
+					Centre Slice (11MB)
+				</sl-button>
+				<sl-dropdown>
+					<sl-button slot="trigger" caret value="tiff" id="">Format: TIFF Image</sl-button>
+					<sl-menu>
+						<sl-menu-item value="tiff" id="" checked>TIFF Image</sl-menu-item>
+						<sl-menu-item value="jpg" id="">JPEG Image</sl-menu-item>
+						<sl-menu-item value="npy" id="">Numpy Array</sl-menu-item>
+					</sl-menu>
+				</sl-dropdown>
+			</sl-button-group>
+			<p><small id="smallDownloadRadiograph">Single 32bit float .tiff (500x500).</small></p>
+
+			<sl-button-group>
+				<sl-button variant="primary" outline id="">
+					Reconstruction (710MB)
+				</sl-button>
+				<sl-dropdown>
+					<sl-button slot="trigger" caret value="tiff" id="">Format: TIFF Hyperstack</sl-button>
+					<sl-menu>
+						<sl-menu-item value="tiffFolder" id="">TIFF Folder</sl-menu-item>
+						<sl-menu-item value="tiffStack" id="" checked>TIFF Hyperstack</sl-menu-item>
+						<sl-menu-item value="npy" id="">Numpy Array</sl-menu-item>
+					</sl-menu>
+				</sl-dropdown>
+			</sl-button-group>
+			<p><small id="smallDownloadReconSlice">Single 32bit float TIFF stack with 500 (500x500) slices</small></p>
+		</div>
+	</div>
+
+	<div id="downloadProgressPanel">
+		<div>
+			<p><sl-spinner></sl-spinner> Packaging projections...</p>
+			<sl-progress-bar value="75"></sl-progress-bar>
+		</div>
+	</div>
+
+	<div slot="footer">
+		<sl-divider></sl-divider>
+		<div class="buttons">
+			<sl-button variant="" class="close" type="button" id="buttonDownloadClose">Close</sl-button>
+		</div>
+	</div>
+</sl-dialog>

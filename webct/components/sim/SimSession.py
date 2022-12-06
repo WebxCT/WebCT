@@ -15,8 +15,9 @@ from webct import Element
 from webct.components.Beam import (BEAM_GENERATOR, PROJECTION, BeamParameters, Filter, LabBeam, Spectra, generateSpectra)
 from webct.components.Capture import CaptureParameters
 from webct.components.Detector import DEFAULT_LSF, DetectorParameters
-from webct.components.Reconstruction import (FBPParam, ReconParameters, reconstruct)
+from webct.components.Reconstruction import (FDKParam, ReconParameters, reconstruct)
 from webct.components.Samples import RenderedSample, Sample
+from webct.components.sim.Download import DownloadManager
 from webct.components.sim.clients.SimClient import SimClient
 from webct.components.sim.Quality import Quality
 from webct.components.sim.SimManager import getClient
@@ -53,6 +54,7 @@ class SimSession:
 	_reconstruction: dict[Quality, np.ndarray]
 	_recon_param: ReconParameters
 	_scene: Optional[np.ndarray]
+	_dlmanager:DownloadManager
 
 	# since flask runs python code concurrently, we need to ensure the simclient
 	# class is not used by multiple threads at once; or we have concurrency
@@ -63,6 +65,7 @@ class SimSession:
 		self._simClient = getClient(session)
 		self._lock = Semaphore(1)
 		self._sid = sid
+		self.download = DownloadManager(self)
 
 		# Instantiate default values
 		self.beam = LabBeam(method="lab", projection=PROJECTION.POINT,
@@ -85,7 +88,7 @@ class SimSession:
 			),
 		)
 		self.capture = CaptureParameters(360, 360, (0, 100, 0), (0, -400, 0), (0, 0, 90))
-		self.recon = FBPParam(quality=Quality.MEDIUM, filter="ram-lak")
+		self.recon = FDKParam(quality=Quality.MEDIUM, filter="ram-lak")
 
 	@property
 	def beam(self) -> BeamParameters:

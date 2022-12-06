@@ -235,7 +235,7 @@ def asSinogram(projections: np.ndarray, capture: CaptureParameters, beam: BeamPa
 
 	acData: AcquisitionData = geo.allocate()
 	acData.fill(projections)
-	acData = TransmissionAbsorptionConverter()(acData)
+	acData = TransmissionAbsorptionConverter(min_intensity=1e-10,white_level=1)(acData)
 	acData.reorder(("vertical", "angle", "horizontal"))
 
 	return acData.array

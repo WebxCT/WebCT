@@ -69,10 +69,12 @@ let DiffLSScalingElement: SlInput;
 let SliceImages: NodeListOf<HTMLVideoElement>;
 let SinogramImages: NodeListOf<HTMLVideoElement>;
 let ReconImages: NodeListOf<HTMLVideoElement>;
+let CentreSliceImages: NodeListOf<HTMLVideoElement>;
 
 let SliceOverlays: HTMLDivElement[];
 let ReconOverlays: HTMLDivElement[];
 let SinogramOverlays: HTMLDivElement[];
+let CentreSliceOverlays: HTMLDivElement[];
 let Overlays: HTMLDivElement[];
 
 // ====================================================== //
@@ -96,14 +98,17 @@ export function setupRecon(): boolean {
 	SliceImages = document.querySelectorAll("video.image-slice") as NodeListOf<HTMLVideoElement>;
 	SinogramImages = document.querySelectorAll("video.image-sinogram") as NodeListOf<HTMLVideoElement>;
 	ReconImages = document.querySelectorAll("video.image-recon") as NodeListOf<HTMLVideoElement>;
+	CentreSliceImages = document.querySelectorAll("img.image-recon-centre") as NodeListOf<HTMLVideoElement>;
 
 	// Convert to arrays for later concat
 	SinogramOverlays = Array.prototype.slice.call(document.querySelectorAll(".overlay-sinogram") as NodeListOf<HTMLDivElement>);
 	ReconOverlays = Array.prototype.slice.call(document.querySelectorAll(".overlay-recon") as NodeListOf<HTMLDivElement>);
 	SliceOverlays = Array.prototype.slice.call(document.querySelectorAll(".overlay-slice") as NodeListOf<HTMLDivElement>);
+	CentreSliceOverlays = Array.prototype.slice.call(document.querySelectorAll(".overlay-recon-centre") as NodeListOf<HTMLDivElement>);
 
 	Overlays = SinogramOverlays
 		.concat(ReconOverlays)
+		.concat(CentreSliceOverlays)
 		.concat(SliceOverlays);
 
 	const select_alg = document.getElementById("selectReconstruction");
@@ -498,6 +503,12 @@ function MarkLoading(): void {
 		image.classList.remove("error");
 	}
 
+	for (let index = 0; index < CentreSliceImages.length; index++) {
+		const image = CentreSliceImages[index];
+		image.classList.add("updating");
+		image.classList.remove("error");
+	}
+
 	for (let index = 0; index < Overlays.length; index++) {
 		const overlay = Overlays[index];
 		overlay.classList.add("updating");
@@ -516,6 +527,12 @@ function MarkDone(): void {
 
 	for (let index = 0; index < SliceImages.length; index++) {
 		const image = SliceImages[index];
+		image.classList.remove("updating");
+		image.classList.remove("error");
+	}
+
+	for (let index = 0; index < CentreSliceImages.length; index++) {
+		const image = CentreSliceImages[index];
 		image.classList.remove("updating");
 		image.classList.remove("error");
 	}
@@ -548,6 +565,12 @@ function MarkNeedsUpdate(): void {
 		image.classList.remove("error");
 	}
 
+	for (let index = 0; index < CentreSliceImages.length; index++) {
+		const image = CentreSliceImages[index];
+		image.classList.add("updating");
+		image.classList.remove("error");
+	}
+
 	for (let index = 0; index < SinogramImages.length; index++) {
 		const image = SinogramImages[index];
 		image.classList.remove("updating");
@@ -572,6 +595,12 @@ function MarkError(): void {
 
 	for (let index = 0; index < SliceImages.length; index++) {
 		const image = SliceImages[index];
+		image.classList.add("updating");
+		image.classList.remove("error");
+	}
+
+	for (let index = 0; index < SliceImages.length; index++) {
+		const image = CentreSliceImages[index];
 		image.classList.add("updating");
 		image.classList.remove("error");
 	}
@@ -601,6 +630,10 @@ function SetPreviewImages(preview: ReconstructionPreview): void {
 	for (let index = 0; index < ReconImages.length; index++) {
 		const image = ReconImages[index];
 		image.src = "data:video/mp4;base64," + preview.recon.video;
+	}
+	for (let index = 0; index < CentreSliceImages.length; index++) {
+		const image = CentreSliceImages[index];
+		image.src = "data:image/png;base64," + preview.centreSlice.image;
 	}
 }
 

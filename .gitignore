@@ -2,6 +2,9 @@
 *.pyc
 __pycache__/
 
+# Runtime folders
+output/
+
 # Ignore build files and folders
 .mypy_cache/
 .pytest_cache/

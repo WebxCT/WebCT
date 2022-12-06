@@ -8,6 +8,7 @@ import { MarkLoading, setupPreview, updateProjection } from "../../../preview/st
 import { setupRecon, SyncRecon, UpdateRecon, UpdateReconPreview as UpdateReconPreview } from "../../../reconstruction/static/js/recon";
 import { setupSamples, SyncSamples, UpdateSamples } from "../../../samples/static/js/samples";
 import { setupConfig } from "./configuration";
+import { setupDownload } from "./download";
 
 let UpdateButtons: HTMLCollectionOf<SlButton>;
 let CaptureButtons: HTMLCollectionOf<SlButton>;
@@ -149,6 +150,8 @@ function loadApp() {
 	setupSamples();
 	setupCapture();
 	setupRecon();
+
+	setupDownload();
 
 	// We do an initial update rather than a normal update in order to obtain
 	// remote parameters first.

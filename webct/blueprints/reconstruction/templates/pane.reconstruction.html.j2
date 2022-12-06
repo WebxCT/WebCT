@@ -1,60 +1,11 @@
 <div class="previewContainer">
 	<div id="previewRecon">
-		<div class="recon-slice stacker">
-			<video src="" class="image-slice" alt="" muted autoplay loop></video>
-			<div class="overlay overlay-slice update">
-				<div>
-					<div>
-						Use<br />
-						<span>
-							<sl-icon name="box"></sl-icon> Reconstruct
-						</span><br />
-						To perform a tomographic reconstruction on simulated projections.<br>
-					</div>
-					<div class="generating">
-						Reconstructing Volume...<br>
-						<sl-spinner></sl-spinner>
-					</div>
-				</div>
-			</div>
-		</div>
 
-		<div class="recon-sinogram stacker">
-			<div class="overlay overlay-sinogram update">
-				<div>
-					<div>
-						Use<br />
-						<span>
-							<sl-icon name="box"></sl-icon> Reconstruct
-						</span><br />
-						To perform a tomographic reconstruction on simulated projections.<br>
-					</div>
-					<div class="generating">
-						Reconstructing Volume...<br>
-						<sl-spinner></sl-spinner>
-					</div>
-				</div>
-			</div>
-			<video src="" class="image-sinogram" alt="" muted autoplay loop></video>
-		</div>
+		{% include "recon-slice.html.j2" %}
 
-		<div class="recon-recon stacker">
-			<video src="" class="image-recon" alt="" muted autoplay loop></video>
-			<div class="overlay overlay-recon update">
-				<div>
-					<div>
-						Use<br />
-						<span>
-							<sl-icon name="box"></sl-icon> Reconstruct
-						</span><br />
-						To perform a tomographic reconstruction on simulated projections.<br>
-					</div>
-					<div class="generating">
-						Reconstructing Volume...<br>
-						<sl-spinner></sl-spinner>
-					</div>
-				</div>
-			</div>
-		</div>
+		{% include "recon-sinogram.html.j2" %}
+
+		{% include "recon-recon.html.j2" %}
+
 	</div>
 </div>
