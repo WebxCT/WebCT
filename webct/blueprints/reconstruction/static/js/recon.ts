@@ -856,7 +856,7 @@ export function UpdateReconPreview(): Promise<void> {
 
 			result.then((result: unknown) => {
 				const preview = processResponse(result as ReconResponseRegistry["reconPreviewResponse"], "reconPreviewResponse") as ReconstructionPreview;
-				window.dispatchEvent(new CustomEvent("stopLoading", {
+				window.dispatchEvent(new CustomEvent("stopLoadingRecon", {
 					bubbles: true,
 					cancelable: false,
 					composed: false,

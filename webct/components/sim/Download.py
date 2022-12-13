@@ -87,11 +87,21 @@ class DownloadPrepper():
 		if not DownloadPrepper.checkCompat(resource):
 			return False
 
+		if location.exists():
+			try:
+				os.remove(location.absolute())
+			except:
+				pass
+
+		# Not sure why this doesn't always work?
+		location.absolute().unlink(missing_ok=True)
+
 		if resource.Format == ResourceFormat.NUMPY:
 			npy = None
 			if resource.Resource == ResourceType.RECON_SLICE:
 				npy = sim.getReconstruction()
 				npy = npy[npy.shape[0]//2]
+				print(npy.nbytes)
 
 			elif resource.Resource == ResourceType.ALL_PROJECTION:
 				npy = sim.allProjections(quality=Quality.HIGH)
@@ -107,12 +117,20 @@ class DownloadPrepper():
 			return True
 
 		elif resource.Format == ResourceFormat.TIFF_STACK:
-			if resource.Resource == ResourceType.RECONSTRUCTION:
-				tf.imwrite(location, sim.getReconstruction(), imagej=True)
+			if resource.Resource == ResourceType.RECON_SLICE:
+				recon = sim.getReconstruction()
+				tf.imwrite(location, recon[recon.shape[0]//2])
 
+			elif resource.Resource == ResourceType.PROJECTION:
+				tf.imwrite(location, sim.projection(quality=Quality.HIGH))
+
+			elif resource.Resource == ResourceType.ALL_PROJECTION:
+				tf.imwrite(location, sim.allProjections(quality=Quality.HIGH),imagej=True)
+
+			elif resource.Resource == ResourceType.RECONSTRUCTION:
+				tf.imwrite(location, sim.getReconstruction(),imagej=True)
 			else:
-			# elif resource.Resource == ResourceType.PROJECTION:
-				tf.imwrite(location, sim.projection(quality=Quality.HIGH), imagej=True)
+				return False
 
 			return True
 
@@ -136,15 +154,15 @@ class DownloadPrepper():
 		elif resource.Format == ResourceFormat.TIFF_ZIP:
 			if resource.Resource == ResourceType.RECONSTRUCTION:
 				array = sim.getReconstruction()
-				name = "reconstruction"
 			else:
 				array = sim.allProjections(quality=Quality.HIGH)
-				name = "projection"
 
+			name = location.with_suffix("").name
 			# For each slice, create a tiff image within a temporary folder, and write to a zip file
 			with tempfile.TemporaryDirectory() as d:
 				tmpPath = Path(d)
 				zipPath = tmpPath / f"{name}.zip"
+				print(zipPath)
 				with ZipFile(zipPath, "w") as z:
 					for i in range(0, array.shape[0]):
 						projPath = tmpPath / f"{name}-{i:04}.tiff"
@@ -152,7 +170,7 @@ class DownloadPrepper():
 						z.write(projPath, f"{name}-{i:04}.tiff")
 						if (i % (array.shape[0] // 10)) == 0:
 							print(f"Processed slice [{i: 4} / {array.shape[0]: 4}] ({i/array.shape[0]:.2%})")
-				shutil.move(zipPath, location)
+				shutil.move(zipPath, location.parent)
 			return True
 
 		return False
@@ -211,7 +229,12 @@ class DownloadManager:
 			print("[DMAN] - Simulating")
 
 			self._working = True
-			if not DownloadPrepper.simulate(self._session, self._resource):
+			try:
+				simmed = DownloadPrepper.simulate(self._session, self._resource)
+			except:
+				simmed = False
+
+			if not simmed:
 				self._working = False
 				self._status = DownloadStatus.WAITING
 				print("[DMAN] - Waiting")
@@ -223,10 +246,13 @@ class DownloadManager:
 
 			path = self.location(resource)
 			print(path)
-			makedirs(path, exist_ok=True)
+			makedirs(path.parent, exist_ok=True)
 
-			prepped = DownloadPrepper.package(self._session, self._resource, self.location(self._resource))
-			if prepped is False:
+			try:
+				prepped = DownloadPrepper.package(self._session, self._resource, self.location(self._resource))
+			except:
+				prepped = False
+			if not prepped:
 				self._working = False
 				self._status = DownloadStatus.WAITING
 				print("[DMAN] - Waiting")
@@ -248,11 +274,11 @@ class DownloadManager:
 		ext = ""
 		name = ""
 		if resource.Format == ResourceFormat.TIFF_STACK:
-			ext = "tiff"
+			ext = ".tiff"
 		elif resource.Format == ResourceFormat.NUMPY:
-			ext = "npy"
+			ext = ".npy"
 		elif resource.Format == ResourceFormat.JPEG:
-			ext = "jpg"
+			ext = ".jpg"
 		elif resource.Format == ResourceFormat.TIFF_ZIP:
 			ext = ".zip"
 

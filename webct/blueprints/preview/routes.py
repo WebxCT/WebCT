@@ -1,4 +1,6 @@
 from datetime import datetime
+import os
+import stat
 from typing import List
 
 from flask import jsonify, session, request, send_file, send_from_directory
@@ -69,7 +71,6 @@ def getDownloadPrepare():
 	sim = Sim(session)
 	resource = DownloadResource.from_json(data)
 
-
 	# Prepare step is blocking...
 	if not sim.download.prepare(resource):
 		return Response(None, 500)
@@ -85,23 +86,25 @@ def getDownloadStatus() -> Response:
 
 	if status == DownloadStatus.DONE:
 		return Response(status.value, 200)
-	elif status == DownloadStatus.SIMULATING or DownloadStatus.PACKAGING:
+	elif status == DownloadStatus.SIMULATING or status == DownloadStatus.PACKAGING:
 		return Response(status.value, 425)
 	return Response(DownloadStatus.WAITING.value, 400)
 
-
 @bp.route("/sim/download/", methods=["GET"])
-def getDownload() -> Response:
-	data = request.get_json()
+def getDownload():
+	data = request.values.to_dict()
 	if data is None:
 		data = {"resource":"ALL_PROJECTIONS","format":"TIFF_ZIP"}
 
+	print(data)
 	resource = DownloadResource.from_json(data)
 
 	sim = Sim(session)
 	print(sim.download.location(resource))
 
 	if sim.download.status == DownloadStatus.DONE:
-		send_file(sim.download.location(resource).absolute())
+		sim.download.location(resource).absolute().chmod(stat.S_IRWXO)
+		return send_file(sim.download.location(resource).absolute(), as_attachment=True,mimetype="data")
+		# ??? PermissionError: [Errno 13] Permission denied: 'E:\\Development\\Projects\\Research\\XCT\\WebCT\\output\\160382522621\\projections.zip'
 
 	return Response(None, 400)

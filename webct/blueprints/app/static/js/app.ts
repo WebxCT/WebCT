@@ -8,12 +8,16 @@ import { MarkLoading, setupPreview, updateProjection } from "../../../preview/st
 import { setupRecon, SyncRecon, UpdateRecon, UpdateReconPreview as UpdateReconPreview } from "../../../reconstruction/static/js/recon";
 import { setupSamples, SyncSamples, UpdateSamples } from "../../../samples/static/js/samples";
 import { setupConfig } from "./configuration";
-import { setupDownload } from "./download";
+import { setupDownload, UpdateStats } from "./download";
 
 let UpdateButtons: HTMLCollectionOf<SlButton>;
 let CaptureButtons: HTMLCollectionOf<SlButton>;
 let ReconButtons: HTMLCollectionOf<SlButton>;
 let LoadingBar: SlProgressBar;
+
+type LongLoadingSource = "Recon"|"Capture"|"Download"|"";
+
+let LongLoadingSource: LongLoadingSource;
 
 function bindGroupButtons() {
 	const groups = document.getElementsByClassName("group");
@@ -126,6 +130,27 @@ function setupEvents(): void {
 	window.addEventListener("stopLoading", () => {
 		setPageLoading(false);
 	});
+	window.addEventListener("stopLoadingCapture", () => {
+		setPageLoading(false, "long", "Capture");
+	});
+	window.addEventListener("stopLoadingRecon", () => {
+		setPageLoading(false, "long", "Recon");
+	});
+	window.addEventListener("stopLoadingDownload", () => {
+		setPageLoading(false, "long", "Download");
+	});
+	window.addEventListener("startLongLoading", () => {
+		setPageLoading(true, "long");
+	});
+	window.addEventListener("startLongLoadingCapture", () => {
+		setPageLoading(true, "long", "Capture");
+	});
+	window.addEventListener("startLongLoadingRecon", () => {
+		setPageLoading(true, "long", "Recon");
+	});
+	window.addEventListener("startLongLoadingDownload", () => {
+		setPageLoading(true, "long", "Download");
+	});
 }
 
 function loadApp() {
@@ -160,9 +185,10 @@ function loadApp() {
 
 type LoadingType = "default" | "long";
 
-function setPageLoading(loading: boolean, type: LoadingType = "default"): void {
+function setPageLoading(loading: boolean, type: LoadingType = "default", source: LongLoadingSource=""): void {
 	if (loading) {
 		console.log("## Button Loading");
+		LongLoadingSource = source;
 
 		for (let index = 0; index < UpdateButtons.length; index++) {
 			const button = UpdateButtons[index];
@@ -184,6 +210,32 @@ function setPageLoading(loading: boolean, type: LoadingType = "default"): void {
 		LoadingBar.setAttribute("variant", type);
 		LoadingBar.removeAttribute("hidden");
 	} else {
+		// Check to see if the finish loading source supercedes the caller
+
+		switch (LongLoadingSource) {
+		case "Capture":
+			// Capture loading cannot be cancelled by random sources
+			if (source == "") {
+				return;
+			}
+			break;
+		case "Recon":
+			// Reconstruction loading has a higher priority than capture
+			if (source == "" || source == "Capture") {
+				return;
+			}
+			break;
+		case "Download":
+			// Download loading has the highest priority
+			if (source !== "Download") {
+				return;
+			}
+			break;
+		case "":
+		default:
+			break;
+		}
+
 		console.log("## Finished Loading");
 		for (let index = 0; index < UpdateButtons.length; index++) {
 			const button = UpdateButtons[index];
@@ -220,6 +272,7 @@ function InitialUpdate(): void {
 		.finally(() => {
 			setPageLoading(false);
 			spectraNormPercentButton.click();
+			UpdateStats();
 		});
 }
 
@@ -234,13 +287,16 @@ export function UpdatePage(): Promise<void> {
 		.then(() => SyncCapture())
 		.then(() => SyncRecon())
 		.then(() => updateProjection())
-		.finally(() => setPageLoading(false));
+		.finally(() => {
+			setPageLoading(false);
+			UpdateStats();
+		});
 }
 
 function updatePreviewCapture(): void {
 	UpdatePage().then(() => {
 		// Due to the way things work with nested requests, we need to make an event listener
-		setPageLoading(true, "long");
+		setPageLoading(true, "long","Capture");
 		UpdateCapturePreview();
 	});
 }
@@ -248,7 +304,7 @@ function updatePreviewCapture(): void {
 function updatePreviewRecon(): void {
 	UpdatePage().then(() => {
 		// Due to the way things work with nested requests, we need to make an event listener
-		setPageLoading(true, "long");
+		setPageLoading(true, "long","Recon");
 
 		UpdateReconPreview();
 		// Also generate capture preview, since recon needs to process all projections anyway.

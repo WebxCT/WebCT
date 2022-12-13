@@ -438,7 +438,7 @@ sl-tag[size="x-small"]::part(base) {
 // }
 
 #dialogueDownload {
-	--width:60%
+	--width:80%
 }
 
 #dialogueDownload > .downloadPanel {
@@ -464,16 +464,20 @@ sl-dialog::part(body) {
 	padding-bottom: 0;
 }
 
-#downloadProgressPanel {
+#panelDownloadStatus {
 	overflow: hidden;
 }
 
-#downloadProgressPanel > div {
+#panelDownloadStatus > div {
 	transition: all 0.5s ease-in-out;
 }
 
-#downloadProgressPanel:not([active]) > div {
+#panelDownloadStatus:not([active]) > div {
 	transition: all 1s ease-in-out;
 	transform: translateY(10rem);
 	transition-delay: 5s;
+}
+
+#panelDownloadStatus:not([active])  sl-spinner {
+	display: none;
 }
