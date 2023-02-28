@@ -12,10 +12,9 @@ dependencies:
   - scipy
   - matplotlib<3.5
   - opencv
-  - cil
+  - cil>=22.2.0
   - tigre
   - astra-toolbox
-  - cil-astra
   - ccpi-regulariser
 
   # Pip packages
