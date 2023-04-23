@@ -126,7 +126,7 @@ class DownloadPrepper():
 				tf.imwrite(location, sim.projection(quality=Quality.HIGH))
 
 			elif resource.Resource == ResourceType.ALL_PROJECTION:
-				tf.imwrite(location, sim.allProjections(quality=Quality.HIGH),imagej=True)
+				tf.imwrite(location, sim.allProjections(quality=Quality.HIGH))
 
 			elif resource.Resource == ResourceType.RECONSTRUCTION:
 				tf.imwrite(location, sim.getReconstruction(),imagej=True)
@@ -147,7 +147,7 @@ class DownloadPrepper():
 				array = sim.projection(quality=Quality.HIGH)
 
 			array = (array - array.min()) / (array.max() - array.min())
-			array = (array * 255).astype("uint8")
+			array = (array * 255).astype(np.uint8)
 
 			Image.fromarray(array).save(location)
 			return True

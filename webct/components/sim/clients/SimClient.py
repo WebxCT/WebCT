@@ -401,7 +401,7 @@ class SimClient(Process):
 
 			# return result
 			print("Simulation completed.")
-			return result
+			return result.astype(np.float32)
 		else:
 			raise SimThreadError(
 				f"Unexpected response: {response}, wanted SimResponse.DONE"
@@ -460,7 +460,7 @@ class SimClient(Process):
 
 			# return result
 			print("Simulation completed.")
-			return result
+			return result.astype(np.float32)
 		else:
 			raise SimThreadError(
 				f"Unexpected response: {response}, wanted SimResponse.DONE"

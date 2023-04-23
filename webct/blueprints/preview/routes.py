@@ -100,11 +100,9 @@ def getDownload():
 	resource = DownloadResource.from_json(data)
 
 	sim = Sim(session)
-	print(sim.download.location(resource))
 
 	if sim.download.status == DownloadStatus.DONE:
 		sim.download.location(resource).absolute().chmod(stat.S_IRWXO)
 		return send_file(sim.download.location(resource).absolute(), as_attachment=True,mimetype="data")
-		# ??? PermissionError: [Errno 13] Permission denied: 'E:\\Development\\Projects\\Research\\XCT\\WebCT\\output\\160382522621\\projections.zip'
 
 	return Response(None, 400)

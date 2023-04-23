@@ -327,35 +327,35 @@ export function UpdateStats() {
 	const recon = (w_px * w_px * h_px * 4) / 1000 / 1000;
 	const slice = (w_px * w_px * 4) / 1000 / 1000;
 
-	RadiographDownloadButton.textContent = "Single Radiograph ("+radiograph.toFixed(2)+"MB)";
+	RadiographDownloadButton.textContent = "Single Radiograph (~"+radiograph.toFixed(0)+"MB)";
 	switch (SelectedRadiographFormat) {
 	case DownloadFormat.TIFF_STACK:
 		RadiographSmall.textContent = "Single 32bit float .tiff ("+w_px+"x"+h_px+")";
 		break;
 	case DownloadFormat.JPEG:
 		RadiographSmall.textContent = "Single compressed 0-255 JPEG ("+w_px+"x"+h_px+")";
-		RadiographDownloadButton.textContent = "Single Radiograph ("+(radiograph/4).toFixed(2)+"MB)";
+		RadiographDownloadButton.textContent = "Single Radiograph (~"+(radiograph/4).toFixed(0)+"MB)";
 		break;
 	case DownloadFormat.NUMPY:
 		RadiographSmall.textContent = "Raw 32bit 2D Numpy Array ("+w_px+", "+h_px+")";
 		break;
 	}
 
-	ReconCentreSmall.textContent = "Reconstruction Center Slice ("+slice.toFixed(2)+"MB)";
+	ReconCentreSmall.textContent = "Reconstruction Center Slice (~"+slice.toFixed(0)+"MB)";
 	switch (SelectedReconCentreFormat) {
 	case DownloadFormat.TIFF_STACK:
 		ReconCentreSmall.textContent = "Single 32bit float .tiff ("+w_px+"x"+w_px+")";
 		break;
 	case DownloadFormat.JPEG:
 		ReconCentreSmall.textContent = "Single compressed 0-255 JPEG ("+w_px+"x"+w_px+")";
-		ReconCentreDownloadButton.textContent = "Reconstruction Centre Slice ("+(slice/4).toFixed(2)+"MB)";
+		ReconCentreDownloadButton.textContent = "Reconstruction Centre Slice (~"+(slice/4).toFixed(0)+"MB)";
 		break;
 	case DownloadFormat.NUMPY:
 		ReconCentreSmall.textContent = "Raw 32bit 2D Numpy Array ("+w_px+", "+w_px+")";
 		break;
 	}
 
-	ProjectionsDownloadButton.textContent = "All Projections ("+projections.toFixed(2)+"MB)";
+	ProjectionsDownloadButton.textContent = "All Projections (~"+projections.toFixed(0)+"MB)";
 	switch (SelectedProjectionsFormat) {
 	case DownloadFormat.TIFF_STACK:
 		ProjectionsSmall.textContent = "Single 32bit float .tiff stack with "+n+" ("+w_px+"x"+h_px+") projections";
@@ -368,7 +368,7 @@ export function UpdateStats() {
 		break;
 	}
 
-	ReconDownloadButton.textContent = "Full Reconstruction ("+recon.toFixed(2)+"MB)";
+	ReconDownloadButton.textContent = "Full Reconstruction (~"+recon.toFixed(0)+"MB)";
 	switch (SelectedReconFormat) {
 	case DownloadFormat.TIFF_STACK:
 		ReconSmall.textContent = "Single 32bit float .tiff stack with "+h_px+" ("+w_px+"x"+w_px+") projections";
