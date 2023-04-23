@@ -11,6 +11,7 @@ import tifffile as tf
 from PIL import Image
 from zipfile import ZipFile
 import shutil
+from datetime import datetime
 
 # Circular import, so we can't do typing unless we refactor SimSession...
 # from webct.components.sim.SimSession import SimSession
@@ -223,6 +224,7 @@ class DownloadManager:
 
 			# Set resource
 			self._resource = resource
+			self._result_path = str(datetime.utcnow()).replace("-","").replace(":","").replace(" ","")
 
 			# Simulate requested data
 			self._status = DownloadStatus.SIMULATING
@@ -231,7 +233,8 @@ class DownloadManager:
 			self._working = True
 			try:
 				simmed = DownloadPrepper.simulate(self._session, self._resource)
-			except:
+			except Exception as e:
+				print(f"[DMAN] - Simulation fail: {e}")
 				simmed = False
 
 			if not simmed:
@@ -249,8 +252,9 @@ class DownloadManager:
 			makedirs(path.parent, exist_ok=True)
 
 			try:
-				prepped = DownloadPrepper.package(self._session, self._resource, self.location(self._resource))
-			except:
+				prepped = DownloadPrepper.package(self._session, self._resource, path)
+			except Exception as e:
+				print(f"[DMAN] - Package fail: {e}")
 				prepped = False
 			if not prepped:
 				self._working = False
@@ -291,4 +295,4 @@ class DownloadManager:
 		elif resource.Resource == ResourceType.RECONSTRUCTION:
 			name = "reconstruction"
 
-		return Path(f"./output/{self._session.__hash__()}/file").with_name(name).with_suffix(ext)
+		return Path(f"./output/{self._result_path}/file").with_name(name).with_suffix(ext)
