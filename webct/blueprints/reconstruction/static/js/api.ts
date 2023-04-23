@@ -54,6 +54,11 @@ export interface ReconResponseRegistry {
 			video:string,
 			height:number,
 			width:number,
+		},
+		centreSlice: {
+			image:string,
+			height:number,
+			width:number,
 		}
 	};
 }

@@ -216,7 +216,7 @@ def reconstruct(projections: np.ndarray, capture: CaptureParameters, beam: BeamP
 		raise NotImplementedError(f"Reconstruction method {method_name} is not implemented.")
 
 	assert rec is not None
-	return rec.as_array()
+	return rec.as_array().astype(np.float32)
 
 def asSinogram(projections: np.ndarray, capture: CaptureParameters, beam: BeamParameters, detector: DetectorParameters) -> np.ndarray:
 	geo: Optional[AcquisitionGeometry] = None
@@ -235,7 +235,7 @@ def asSinogram(projections: np.ndarray, capture: CaptureParameters, beam: BeamPa
 
 	acData: AcquisitionData = geo.allocate()
 	acData.fill(projections)
-	acData = TransmissionAbsorptionConverter()(acData)
+	acData = TransmissionAbsorptionConverter(min_intensity=1e-10,white_level=1)(acData)
 	acData.reorder(("vertical", "angle", "horizontal"))
 
 	return acData.array

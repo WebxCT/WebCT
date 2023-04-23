@@ -349,6 +349,19 @@ sl-progress-bar[variant="long"]::part(indicator) {
 	overflow: hidden;
 }
 
+.downloadPanel > div > :first-child {
+	width: 100%;
+	box-sizing: border-box;
+	height: 30%;
+	object-fit: contain;
+}
+
+.downloadPanel > div > :first-child > img {
+	height: 100%;
+	width: 100%;
+	object-fit: contain;
+}
+
 .downloadPreview {
 	height: 28rem;
 	border: 2px dashed var(--sl-color-neutral-300);
@@ -385,7 +398,7 @@ sl-tag[size="x-small"]::part(base) {
 
 #dialogueConfig > div.dialogpanel > div:not(.downloadPanel) {
 	display: grid;
-	grid-template-rows: 21.3rem 10rem 3rem;
+	grid-template-rows: 21.3rem auto 3rem;
 }
 
 #dialogueConfig > div.dialogpanel > div:not(.downloadPanel) > ul {
@@ -423,3 +436,48 @@ sl-tag[size="x-small"]::part(base) {
 // 	margin-bottom: 0.5rem;
 // 	min-height: 10rem;
 // }
+
+#dialogueDownload {
+	--width:80%
+}
+
+#dialogueDownload > .downloadPanel {
+	grid-template-columns: 50% 50%;
+	display: grid;
+	column-gap: 20px;
+}
+
+#dialogueDownload > .downloadPanel > div > sl-button-group + p {
+	margin-top: 0;
+	color: var(--sl-color-gray-500);
+}
+
+#dialogueDownload > .downloadPanel > div > h1 {
+	text-align: center;
+}
+
+sl-dialog::part(footer) {
+	padding-top: 0;
+}
+
+sl-dialog::part(body) {
+	padding-bottom: 0;
+}
+
+#panelDownloadStatus {
+	overflow: hidden;
+}
+
+#panelDownloadStatus > div {
+	transition: all 0.5s ease-in-out;
+}
+
+#panelDownloadStatus:not([active]) > div {
+	transition: all 1s ease-in-out;
+	transform: translateY(10rem);
+	transition-delay: 5s;
+}
+
+#panelDownloadStatus:not([active])  sl-spinner {
+	display: none;
+}

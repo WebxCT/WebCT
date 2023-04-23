@@ -25,6 +25,7 @@ let PreviewImages: NodeListOf<HTMLImageElement>;
 let LayoutImages: NodeListOf<HTMLImageElement>;
 let SceneImages: NodeListOf<HTMLImageElement>;
 let PreviewData: PreviewData;
+let PreviewPaneImage: HTMLImageElement;
 
 export function MarkLoading(): void {
 	for (let index = 0; index < PreviewImages.length; index++) {
@@ -64,21 +65,15 @@ export function updateProjection(): Promise<void> {
 
 			for (let index = 0; index < PreviewImages.length; index++) {
 				const image = PreviewImages[index];
-				image.width = PreviewData.projection.width;
-				image.height = PreviewData.projection.height;
 				image.classList.remove("updating");
 			}
 
 			for (let index = 0; index < LayoutImages.length; index++) {
 				const image = LayoutImages[index];
-				image.width = PreviewData.layout.width;
-				image.height = PreviewData.layout.height;
 				image.classList.remove("updating");
 			}
 			for (let index = 0; index < SceneImages.length; index++) {
 				const image = SceneImages[index];
-				image.width = PreviewData.scene.width;
-				image.height = PreviewData.scene.height;
 				image.classList.remove("updating");
 			}
 		});
@@ -125,6 +120,9 @@ export function setupPreview(): void {
 	PreviewImages = document.querySelectorAll("img.image-projection") as NodeListOf<HTMLImageElement>;
 	LayoutImages = document.querySelectorAll("img.image-layout") as NodeListOf<HTMLImageElement>;
 	SceneImages = document.querySelectorAll("img.image-scene") as NodeListOf<HTMLImageElement>;
+
+	// Projection image of the preview pane. Supports live updates when changing detector sizes.
+	PreviewPaneImage = document.querySelector("#previewImage>img.image-projection") as HTMLImageElement;
 
 	ButtonPreviewLayout = document.getElementById("buttonPreviewLayout") as SlButton;
 	ButtonPreviewProjection = document.getElementById("buttonPreviewProjection") as SlButton;
@@ -181,12 +179,8 @@ export function SetPreviewSize(height: number, width: number): void {
 		// Catch for calling update in the detector setup before previews are ready.
 		return;
 	}
-
-	for (let index = 0; index < PreviewImages.length; index++) {
-		const image = PreviewImages[index];
-		image.width = width;
-		image.height = height;
-	}
+	PreviewPaneImage.height = height;
+	PreviewPaneImage.width = width;
 }
 
 // ====================================================== //

@@ -102,11 +102,13 @@ export function setupDetector(): boolean {
 		validateWidth(PaneWidthElement);
 		previewDetector();
 	});
+
 	PaneHeightElement = pane_height_element as SlInput;
 	PaneHeightElement.addEventListener("sl-change", () => {
 		validateHeight(PaneHeightElement);
 		previewDetector();
 	});
+
 	PanePixelSizeElement = pane_pixel_size_element as SlInput;
 	PanePixelSizeElement.addEventListener("sl-change", () => {
 		validatePixel(PanePixelSizeElement);

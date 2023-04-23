@@ -1,6 +1,6 @@
 
 <sl-dialog label="" id="dialogueMaterial">
-	<span slot="label" style="margin 0;"><sl-icon name="boxes"></sl-icon> Material Library</span>
+	<span slot="label" style="margin: 0;"><sl-icon name="boxes"></sl-icon> Material Library</span>
 	<sl-tab-group placement="start" id="tabMaterial">
 		<sl-tab slot="nav" panel="Elements">Elements</sl-tab>
 		<sl-tab slot="nav" panel="Rods">Rods</sl-tab>
@@ -76,7 +76,7 @@
 	<sl-divider></sl-divider>
 	<small>Empty categories will be automatically deleted.</small>
 
-	<div class="buttons">
+	<div class="buttons" slot="footer">
 		<sl-button variant="" class="close" id="buttonMaterialClose" type="button">Close</sl-button>
 		<sl-button outline variant="success" id="buttonMaterialSave" type="button"><sl-icon slot="prefix" name="journal-check"></sl-icon>Save</sl-button>
 		<sl-button variant="success" id="buttonMaterialSubmit" outline disabled="" type="button">Select Material</sl-button>

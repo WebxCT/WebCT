@@ -334,7 +334,7 @@ export function UpdateCapturePreview(): Promise<void> {
 
 			result.then((result: unknown) => {
 				const preview = processResponse(result as CaptureResponseRegistry["captureResponse"], "capturePreviewResponse") as CapturePreview;
-				window.dispatchEvent(new CustomEvent("stopLoading", {
+				window.dispatchEvent(new CustomEvent("stopLoadingCapture", {
 					bubbles: true,
 					cancelable: false,
 					composed: false,

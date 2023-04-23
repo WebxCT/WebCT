@@ -99,10 +99,14 @@ WebCT
 			<sl-tooltip content="Configuration">
 				<sl-icon-button name="gear" label="Configuration" id="buttonConfig"></sl-icon>
 			</sl-tooltip>
+			<sl-tooltip content="Download">
+				<sl-icon-button name="cloud-download" label="Download" id="buttonDownload"></sl-icon>
+			</sl-tooltip>
 			<sl-tooltip content="Github">
 				<sl-icon-button name="github" label="github" href="https://webct.io" target="_blank"></sl-icon>
 			</sl-tooltip>
 		</div>
 		{% include "config.html.j2" %}
+		{% include "download.html.j2" %}
 	</main>
 {% endblock content %}
