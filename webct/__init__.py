@@ -1,7 +1,9 @@
 import os
+import sys
 from flask import Flask
 from enum import IntEnum
 import logging
+from pathlib import Path
 
 import matplotlib
 
@@ -128,7 +130,14 @@ class Element(IntEnum):
 	Og = 118
 
 
-app = Flask(__name__)
+if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+	# use template and static folders from
+	template_folder = os.path.join(sys._MEIPASS, 'templates') # pylint: disable=no-member
+	static_folder = os.path.join(sys._MEIPASS, 'static') # pylint: disable=no-member
+	app = Flask(__name__, template_folder=template_folder, static_folder=static_folder)
+else:
+	app = Flask(__name__)
+
 app.secret_key = os.urandom(24)
 
 # Enforce backend to avoid QT crashes
@@ -143,6 +152,26 @@ logger.addHandler(logging.StreamHandler())
 # multiprocess communication.
 model_folder = "./data/models/"
 material_folder = "./data/materials/"
+
+# technically folders could be created, but if they don't
+# exist then the default configuration would also fail.
+# ideally we should fail earlier with an error message
+if not Path(model_folder).parent.exists():
+	logger.error(f"Unable to locate existing data folder, did you remember to copy it? Could not find {Path(model_folder).parent}\nThis folder contains required defaults used by WebCT during initialisation.")
+	try:
+		# in windows, display an alert box, otherwise the console will close abruptly
+		# force close splash screen if it exists, since the messagebox can get stuck underneath it
+		try:
+			import pyi_splash as splash
+			splash.close()
+		except:
+			pass
+		import ctypes
+		ctypes.windll.user32.MessageBoxW(0, "WebCT failed to start because of a missing data folder. Please ensure the data folder exists in the same location as this executable.", "Failed to start WebCT", 0x0+0x10+0x1000+0x10000 )
+	except:
+		pass
+# os.makedirs(Path(model_folder), exist_ok=True)
+# os.makedirs(Path(material_folder), exist_ok=True)
 
 # ! Unfortunately, redirecting logging to files doesn't actually work correctly
 # try:

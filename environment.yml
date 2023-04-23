@@ -1,13 +1,17 @@
 name: webct
 channels:
-  - defaults
   - conda-forge
   - ccpi
   - intel
   - astra-toolbox
 dependencies:
-  # Runtime
   - python>=3.9
+
+  # use (smaller, better, faster, stronger) open-source BLAS libraries to avoid
+  # massive bloatware and license infringements from mkl used by default numpy
+  - conda-forge::blas=*=openblas
+
+  # Runtime
   - flask
   - scipy
   - matplotlib<3.5
