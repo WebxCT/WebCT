@@ -20,6 +20,7 @@ from webct.components.sim.simulators.Simulator import Simulator
 from webct import model_folder
 from matplotlib.colors import hsv_to_rgb
 from zlib import crc32
+from tqdm import trange
 
 def colour_from_string(string:str) -> Tuple[float,float,float]:
 	"""Deterministically Creates a rgb colour from a given string.
@@ -73,9 +74,12 @@ class GVXRSimulator(Simulator):
 		img1 = np.array(gvxr.computeXRayImage())
 		images = np.empty((self.capture.projections, *img1.shape))
 
-		print(self.capture.angle_delta)
+		for i in trange(0, self.capture.angles.shape[0]):
+			images[i] = gvxr.computeXRayImage()
+			gvxr.rotateNode("root", self.capture.angle_delta, 0, 0, 1)
 
-		images = np.asarray(gvxr.computeProjectionSet(0, 0, 0, "mm", self.capture.projections, self.capture.angle_delta))
+		# Currently removed from gvxr; pending a rewrite
+		# images = np.asarray(gvxr.computeProjectionSet(0, 0, 0, "mm", self.capture.projections, self.capture.angle_delta))
 
 		images_in_kev = images / gvxr.getUnitOfEnergy("keV")
 
@@ -87,8 +91,15 @@ class GVXRSimulator(Simulator):
 
 	@beam.setter
 	def beam(self, value: Beam) -> None:
+		print(value)
 		if value.params.projection == PROJECTION.POINT:
 			gvxr.usePointSource()
+			if value.params.spotSize != 0:
+				gvxr.setFocalSpot(*self.capture.beam_position, value.params.spotSize, "mm", 3)
+			else:
+				# workaround to disable focalspot
+				if self.capture is not None:
+					gvxr.setSourcePosition(*self.capture.beam_position, "mm")
 		elif value.params.projection == PROJECTION.PARALLEL:
 			gvxr.useParallelBeam()
 		else:
@@ -110,7 +121,6 @@ class GVXRSimulator(Simulator):
 			gvxr.setLSF(value.lsf)
 		else:
 			gvxr.setLSF([0,1,0])
-		print(type(self.detector))
 		if self.quality == Quality.MEDIUM or self.quality == Quality.HIGH:
 			gvxr.setDetectorNumberOfPixels(value.shape[1], value.shape[0])
 			gvxr.setDetectorPixelSize(value.pixel_size, value.pixel_size, "mm")
@@ -133,8 +143,6 @@ class GVXRSimulator(Simulator):
 			# pixel scale factor
 			scale = value.shape[maxax] / 100
 
-			print(shape)
-			print(value.pixel_size * scale)
 			gvxr.setDetectorNumberOfPixels(*shape)
 			gvxr.setDetectorPixelSize(value.pixel_size * scale, value.pixel_size * scale, "mm")
 
@@ -186,9 +194,11 @@ class GVXRSimulator(Simulator):
 
 	@capture.setter
 	def capture(self, value: CaptureParameters) -> None:
+		print(value)
 		gvxr.setDetectorPosition(*value.detector_position, "mm")
-		gvxr.setSourcePosition(*value.beam_position, "mm")
-
+		if self.beam.params.spotSize == 0.0:
+			# if using a spot size, the focal point is handled in beam settings
+			gvxr.setSourcePosition(*value.beam_position, "mm")
 		# Changing detector/source position will effect if the source is in
 		# parallel or point mode. We re-set the beam value to fix this.
 		self.beam = self._beam
