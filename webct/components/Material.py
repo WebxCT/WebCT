@@ -41,7 +41,7 @@ class Material(SaveableParameters):
 	density: float  # g/cm-3
 
 	def to_json(self) -> dict:
-		return self.__dict__
+		return self.__dict__.copy()
 
 	@staticmethod
 	def from_json(json: dict):
@@ -97,6 +97,7 @@ class ElementMaterial(Material):
 	def to_json(self) -> dict:
 		parent = super().to_json()
 		parent["material"] = ["element", self.element]
+		del parent["element"]
 		return parent
 
 	@staticmethod
@@ -138,6 +139,7 @@ class CompoundMaterial(Material):
 	def to_json(self) -> dict:
 		parent = super().to_json()
 		parent["material"] = ["compound", self.compound]
+		del parent["compound"]
 		return parent
 
 	@staticmethod
@@ -228,6 +230,7 @@ class MixtureMaterial(Material):
 	def __iter__(self) -> Iterator[str]:
 		return self.elements.__iter__()
 
+
 @dataclass(frozen=True)
 class HUMaterial(Material):
 
@@ -236,6 +239,7 @@ class HUMaterial(Material):
 	def to_json(self) -> dict:
 		parent = super().to_json()
 		parent["material"] = ["hu", self.HUunit]
+		del parent["HUunit"]
 		return parent
 
 	@staticmethod
@@ -271,6 +275,7 @@ class SpecialMaterial(Material):
 	def to_json(self) -> dict:
 		parent = super().to_json()
 		parent["material"] = ["special", self.matType.value]
+		del parent["matType"]
 		return parent
 
 	@staticmethod
