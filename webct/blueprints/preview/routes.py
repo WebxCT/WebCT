@@ -102,7 +102,8 @@ def getDownload():
 	sim = Sim(session)
 
 	if sim.download.status == DownloadStatus.DONE:
-		sim.download.location(resource).absolute().chmod(stat.S_IRWXO)
+		# Change permissions to rw-r--r--, default permissions cause issues in WSL.
+		sim.download.location(resource).absolute().chmod(0o644)
 		return send_file(sim.download.location(resource).absolute(), as_attachment=True,mimetype="data")
 
 	return Response(None, 400)
