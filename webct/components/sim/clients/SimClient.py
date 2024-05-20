@@ -6,7 +6,7 @@ import sys
 from dataclasses import dataclass
 from enum import Enum
 from multiprocessing import Pipe, Process, shared_memory
-from multiprocessing.connection import PipeConnection
+from multiprocessing.connection import Connection
 from random import Random
 from typing import Any, Tuple
 
@@ -114,8 +114,8 @@ class SimClient(Process):
 	capture: CaptureParameters
 
 	# ''Shared'' variables
-	conn_parent: PipeConnection
-	conn_child: PipeConnection
+	conn_parent: Connection
+	conn_child: Connection
 
 	# process variables
 	_simulator: GVXRSimulator

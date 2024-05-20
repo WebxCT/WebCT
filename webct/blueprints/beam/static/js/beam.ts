@@ -11,7 +11,7 @@ import { AlgElement } from "../../../reconstruction/static/js/recon";
 import { BeamResponseRegistry, processResponse, requestBeamData, sendBeamData } from "./api";
 import { BeamConfigError, BeamRequestError, showError } from "./errors";
 import { BeamGenerator, BeamProperties, Filter, LabBeam, MedBeam, SourceType, SpectraDisplay, SynchBeam, ViewFormat } from "./types";
-import { validateFilter } from "./validation";
+import { validateFilter, validateSpotSize } from "./validation";
 
 // ====================================================== //
 // ================== Document Elements ================= //
@@ -26,7 +26,7 @@ let BeamIntensityElement:SlInput;
 let BeamMASElement:SlInput;
 let BeamAngleElement:SlInput;
 let BeamHarmonicsElement:SlCheckbox;
-let BeamSpotSize:SlInput;
+let BeamSpotSizeElement:SlInput;
 
 let BeamMaterialElement:SlInput;
 
@@ -138,7 +138,7 @@ export function setupBeam(): boolean {
 	BeamIntensityElement = intensity_element as SlInput;
 	BeamMASElement = mas_element as SlInput;
 	BeamAngleElement = angle_element as SlInput;
-	BeamSpotSize = spot_size as SlInput;
+	BeamSpotSizeElement = spot_size as SlInput;
 	BeamMaterialElement = beam_material_element as SlInput;
 	BeamHarmonicsElement = harmonics_element as SlCheckbox;
 
@@ -203,6 +203,12 @@ export function setupBeam(): boolean {
 		validateFilter(FilterSizeElement);
 	});
 
+	BeamSpotSizeElement.addEventListener("sl-input", () => {
+		validateSpotSize(BeamSpotSizeElement)
+	})
+	BeamSpotSizeElement.addEventListener("sl-change", () => {
+		validateSpotSize(BeamSpotSizeElement)
+	})
 
 	SpectraCanvas = spectra_canvas as HTMLCanvasElement;
 
@@ -348,7 +354,7 @@ export function getBeamParms():BeamProperties {
 			parseFloat(BeamVoltageElement.value as string),
 			parseFloat(BeamExposureElement.value as string),
 			parseFloat(BeamIntensityElement.value as string),
-			parseFloat(BeamSpotSize.value as string),
+			parseFloat(BeamSpotSizeElement.value as string),
 			parseInt(BeamMaterialElement.value as string),
 			BeamGeneratorElement.value as BeamGenerator,
 			parseFloat(BeamAngleElement.value as string),
@@ -364,7 +370,7 @@ export function getBeamParms():BeamProperties {
 		beam = new MedBeam(
 			parseFloat(BeamVoltageElement.value as string),
 			parseFloat(BeamMASElement.value as string),
-			parseFloat(BeamSpotSize.value as string),
+			parseFloat(BeamSpotSizeElement.value as string),
 			parseInt(BeamMaterialElement.value as string),
 			BeamGeneratorElement.value as BeamGenerator,
 			parseFloat(BeamAngleElement.value as string),
@@ -407,7 +413,7 @@ export function setBeamParams(beam:BeamProperties) {
 		BeamAngleElement.value = params.anodeAngle+"";
 		BeamGeneratorElement.value = params.generator;
 		BeamMaterialElement.value = params.material+"";
-		BeamSpotSize.value = params.spotSize+"";
+		BeamSpotSizeElement.value = params.spotSize+"";
 		break;
 	case "med":
 		params = beam as MedBeam;
@@ -416,7 +422,7 @@ export function setBeamParams(beam:BeamProperties) {
 		BeamGeneratorElement.value = params.generator;
 		BeamAngleElement.value = params.anodeAngle+"";
 		BeamMaterialElement.value = params.material+"";
-		BeamSpotSize.value = params.spotSize+"";
+		BeamSpotSizeElement.value = params.spotSize+"";
 		BeamVoltageElement.value = params.voltage+"";
 		break;
 	case "synch":

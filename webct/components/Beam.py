@@ -66,6 +66,7 @@ class BeamParameters:
 	method: str
 	filters: Tuple[Filter, ...]
 	projection: PROJECTION
+	spotSize:float
 
 
 	def to_json(self) -> dict:
@@ -76,8 +77,9 @@ class BeamParameters:
 		method = str(json["method"])
 		filters = parseFilters(json["filters"])
 		projection = PROJECTION(json["projection"])
+		spotSize = float(json["spotSize"])
 
-		return BeamParameters(method, filters, projection)
+		return BeamParameters(method, filters, projection, spotSize)
 
 	def getSpectra(self) -> Tuple[Spectra, Spectra]:
 		raise NotImplementedError("Cannot create a beam spectra from BeamParamaters.")
@@ -85,7 +87,6 @@ class BeamParameters:
 @dataclass(frozen=True)
 class TubeBeam():
 	voltage: float
-	spotSize: float
 	anodeAngle: float
 	generator: BEAM_GENERATOR
 	material: Element
@@ -196,7 +197,8 @@ class SynchBeam(BeamParameters):
 		energy=energy,
 		exposure=exposure,
 		intensity=intensity,
-		harmonics=harmonics)
+		harmonics=harmonics,
+		spotSize=0)
 
 	def getSpectra(self) -> Tuple[Spectra, Spectra]:
 		return generateSpectra(self)

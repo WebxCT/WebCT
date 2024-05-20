@@ -60,6 +60,16 @@ const FilterValidator: Validator = {
 };
 
 /**
+ * Spot Size validator.
+ */
+const SpotSizeValidator: Validator = {
+	min: 0,
+	max: 10000,
+	type: "number",
+	message: "Focal Spot Size cannot be negative."
+};
+
+/**
  * Validate Voltage input of X-Ray Tube.
  * @param VoltageElement - Tube Voltage Input to validate.
  * @param material - Material of X-Ray Tube.
@@ -91,4 +101,13 @@ export function validateAngle(AngleElement: SlInput): boolean {
  */
 export function validateFilter(FilterElement: SlInput): boolean {
 	return validateInput(FilterElement, FilterValidator);
+}
+
+/**
+ * Validate Spot Size Thickness text input.
+ * @param SpotSizeElement - Spot Size Thickness input to validate.
+ * @returns True if input is valid, false otherwise. Side effect: Passed element will have help-text displaying the validation failure reason.
+ */
+export function validateSpotSize(SpotSizeElement: SlInput): boolean {
+	return validateInput(SpotSizeElement, SpotSizeValidator);
 }
