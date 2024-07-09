@@ -31,8 +31,15 @@ function bindGroupButtons() {
 				const button = div.childNodes[index];
 				if (button instanceof HTMLButtonElement) {
 					// Button inside group div
+
+					// set dropdown arrow (makes the html easier)
+					button.innerHTML = "<sl-icon name=\"chevron-compact-down\"></sl-icon>";
 					button.onclick = () => {
 						div.toggleAttribute("active");
+						button.innerHTML = "<sl-icon name=\"chevron-compact-down\"></sl-icon>";
+						if (div.attributes.getNamedItem("active")) {;
+							button.innerHTML = "<sl-icon name=\"chevron-compact-up\"></sl-icon>";
+						}
 					};
 				}
 			}
