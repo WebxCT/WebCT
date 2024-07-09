@@ -25,6 +25,6 @@
 	},
 	"scripts": {
 		"build": "npx tsc && npx rollup -c && sass ./webct/blueprints/app/static/scss/app.scss ./webct/blueprints/app/static/css/app.css -s compressed --no-source-map",
-		"serve": "npm run build && flask run"
+		"serve": "npm run build && python app.py"
 	}
 }
