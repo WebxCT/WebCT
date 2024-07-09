@@ -1,8 +1,8 @@
-from typing import List, Tuple
+from typing import List, Tuple, cast
 from gvxrPython3 import gvxr
 import numpy as np
 
-from webct.components.Beam import PROJECTION, Beam
+from webct.components.Beam import PROJECTION, Beam, LabBeam
 from webct.components.Capture import CaptureParameters
 from webct.components.Detector import DetectorParameters
 from webct.components.Material import (
@@ -104,11 +104,25 @@ class GVXRSimulator(Simulator):
 			gvxr.useParallelBeam()
 		else:
 			raise NotImplementedError("Only parallel or point sources are supported.")
+
+		# setup spectra
 		gvxr.resetBeamSpectrum()
 		for i in range(0, len(value.spectra.energies)):
 			gvxr.addEnergyBinToSpectrum(
 				value.spectra.energies[i], "keV", value.spectra.photons[i]
 			)
+
+		# setup noise
+		if self.capture is not None:
+			if isinstance(value.params, LabBeam):
+				gvxr.enablePoissonNoise()
+				lab = cast(LabBeam, value.params)
+				mAs = (lab.intensity / 1000) * lab.exposure
+
+				electron_charge = 1.602e-19  # [C]
+				photon_count = mAs * (1.0e-3 / electron_charge) * (1 / ((self.capture.SDD * 10) ** 2))
+
+				gvxr.setNumberOfPhotonsPerCM2(photon_count)
 		self._beam = value
 
 	@property

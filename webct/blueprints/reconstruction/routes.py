@@ -14,9 +14,7 @@ def setReconParams() -> Response:
 		return Response(None, 400)
 
 	simdata = Sim(session)
-	print(data)
 	simdata.recon = ReconstructionFromJson(data)
-	print(simdata.recon)
 	return Response(None, 200)
 
 
@@ -34,11 +32,9 @@ def createSliceVideo(array: np.ndarray) -> str:
 	np.copyto(arr, ((array - array.min()) / (array.max() - array.min()) * 255).astype("uint8"))
 
 	arr = arr[..., None]
-	print(arr.shape)
 
 	# Broadcast grayscale to rbg
 	arr = np.concatenate((arr, arr, arr), axis=3)
-	print(arr.shape)
 
 	# For each frame, add a red line moving vertically downwards
 	for i in range(array.shape[0]):

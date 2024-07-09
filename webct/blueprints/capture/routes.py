@@ -12,9 +12,7 @@ def setCapture() -> Response:
 		return Response(None, 400)
 
 	simdata = Sim(session)
-	print(data)
 	simdata.capture = CaptureParameters.from_json(data)
-	print(simdata.capture)
 	return Response(None, 200)
 
 

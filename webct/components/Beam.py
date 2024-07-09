@@ -95,8 +95,8 @@ class TubeBeam():
 class LabBeam(BeamParameters, TubeBeam):
 	method = "lab"
 	projection = PROJECTION.POINT
-	exposure: float # uA
-	intensity: float
+	exposure: float # s
+	intensity: float # uA
 
 	@property
 	def mas(self)->float:

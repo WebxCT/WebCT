@@ -1,3 +1,7 @@
+# conda environment
+.mamba/
+conda
+
 # Python compiled objects
 *.pyc
 __pycache__/

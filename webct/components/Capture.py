@@ -18,8 +18,12 @@ class CaptureParameters:
 		return angles * self.capture_angle
 
 	@property
-	def angle_delta(self) -> np.ndarray:
+	def angle_delta(self) -> float:
 		return self.capture_angle / self.projections
+
+	@property
+	def SDD(self) -> float:
+		return float(np.sqrt(np.sum((np.asarray(self.beam_position) - np.asarray(self.detector_position))**2)).mean())
 
 	@staticmethod
 	def from_json(json: dict):
