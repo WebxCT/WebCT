@@ -18,7 +18,6 @@ def setBeam() -> Response:
 
 	# try:
 	simdata = Sim(session)
-	print(data)
 	simdata.beam = BeamFromJson(data)
 	return Response(None, 200)
 
@@ -38,5 +37,4 @@ def getBeam() -> Response:
 	response = BeamResponse(
 		simdata.beam, simdata.spectra, simdata._unfiltered_beam_spectra
 	)
-	print(response)
 	return jsonify(response)

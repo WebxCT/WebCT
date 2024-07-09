@@ -102,7 +102,6 @@ class DownloadPrepper():
 			if resource.Resource == ResourceType.RECON_SLICE:
 				npy = sim.getReconstruction()
 				npy = npy[npy.shape[0]//2]
-				print(npy.nbytes)
 
 			elif resource.Resource == ResourceType.ALL_PROJECTION:
 				npy = sim.allProjections(quality=Quality.HIGH)
@@ -163,7 +162,6 @@ class DownloadPrepper():
 			with tempfile.TemporaryDirectory() as d:
 				tmpPath = Path(d)
 				zipPath = tmpPath / f"{name}.zip"
-				print(zipPath)
 				with ZipFile(zipPath, "w") as z:
 					for i in range(0, array.shape[0]):
 						projPath = tmpPath / f"{name}-{i:04}.tiff"
@@ -248,7 +246,6 @@ class DownloadManager:
 			print("[DMAN] - Packaging")
 
 			path = self.location(resource)
-			print(path)
 			makedirs(path.parent, exist_ok=True)
 
 			try:
