@@ -13,7 +13,7 @@ from typing import Any, Tuple
 import numpy as np
 from webct.components.Beam import Beam, BeamParameters, Spectra
 from webct.components.Capture import CaptureParameters
-from webct.components.Detector import DetectorParameters
+from webct.components.Detector import DetectorParameters, EnergyResponse
 from webct.components.Samples import RenderedSample
 from webct.components.sim.Quality import Quality
 from webct.components.sim.simulators.GVXRSimulator import GVXRSimulator
@@ -43,6 +43,10 @@ class STM_PROJECTION(STM):
 
 @dataclass(frozen=True)
 class STM_SCENE(STM):
+	pass
+
+@dataclass(frozen=True)
+class STM_DETECTOR_RESPONSE(STM):
 	pass
 
 @dataclass(frozen=True)
@@ -178,9 +182,16 @@ class SimClient(Process):
 			elif isinstance(input, STM_SCENE):
 				print(f"[SIM-{self.pid}] Creating scene preview")
 				self.conn_child.send(SimResponse.ACCEPTED)
-				scene = self._simulator.RenderScene()
+				energy_response = self._simulator.RenderScene()
 				self.conn_child.send(SimResponse.DONE)
-				self.conn_child.send(scene)
+				self.conn_child.send(energy_response)
+
+			elif isinstance(input, STM_DETECTOR_RESPONSE):
+				print(f"[SIM-{self.pid}] Generating Detector Energy Response")
+				self.conn_child.send(SimResponse.ACCEPTED)
+				energy_response = self._simulator.DetectorEnergyResponse()
+				self.conn_child.send(SimResponse.DONE)
+				self.conn_child.send(energy_response)
 
 			elif isinstance(input, STM_PROJECTION):
 				print(f"[SIM-{self.pid}] SimSingle with memory pool {input.result_sm}")
@@ -479,6 +490,24 @@ class SimClient(Process):
 			if not isinstance(scene, tuple):
 				raise SimThreadError(f"Unexpected scene type of '{type(scene)}', expected 'tuple'")
 			return np.asarray(scene)
+		else:
+			raise SimThreadError(
+				f"Unexpected response: {response}, wanted SimResponse.DONE"
+			)
+
+	def getEnergyResponse(self) -> EnergyResponse:
+		request = STM_DETECTOR_RESPONSE()
+		self.conn_parent.send(request)
+		self.check_confirm()
+		response = self.response(msg="sim timeout while generating energy response.")
+
+		if not isinstance(response, SimResponse):
+			raise SimThreadError(f"Expected a response, but got a {type(response)}")
+		elif response is SimResponse.DONE:
+			energy_response = self.response(msg="sim timeout while generating energy response.")
+			if not isinstance(energy_response, EnergyResponse):
+				raise SimThreadError(f"Unexpected energy response type of '{type(energy_response)}', expected 'np.ndarray'")
+			return energy_response
 		else:
 			raise SimThreadError(
 				f"Unexpected response: {response}, wanted SimResponse.DONE"

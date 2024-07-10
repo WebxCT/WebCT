@@ -4,7 +4,7 @@ import numpy as np
 
 from webct.components.Beam import PROJECTION, Beam, LabBeam
 from webct.components.Capture import CaptureParameters
-from webct.components.Detector import DetectorParameters
+from webct.components.Detector import SCINTILLATOR_MATERIAL, DetectorParameters, EnergyResponse
 from webct.components.Material import (
 	CompoundMaterial,
 	ElementMaterial,
@@ -85,6 +85,21 @@ class GVXRSimulator(Simulator):
 
 		return images_in_kev
 
+	def DetectorEnergyResponse(self) -> EnergyResponse:
+		if (self.detector.scintillator.material != SCINTILLATOR_MATERIAL.NONE):
+
+			# coerce tuple into energy response class
+			incident_output = gvxr.getEnergyResponse("keV")
+			response = EnergyResponse(
+				incident=tuple([x[0] for x in incident_output]),
+				output=tuple([x[1] for x in incident_output])
+				)
+
+			return response
+		else:
+			# Perfect linear response if no detector energy response
+			return EnergyResponse(tuple(np.arange(0, 300, dtype=float)), tuple(np.arange(0, 300, dtype=float)))
+
 	@property
 	def beam(self) -> Beam:
 		return self._beam
@@ -160,6 +175,11 @@ class GVXRSimulator(Simulator):
 			gvxr.setDetectorNumberOfPixels(*shape)
 			gvxr.setDetectorPixelSize(value.pixel_size * scale, value.pixel_size * scale, "mm")
 
+		if (value.scintillator.material is not SCINTILLATOR_MATERIAL.NONE) and (value.scintillator.material is not SCINTILLATOR_MATERIAL.CUSTOM):
+			gvxr.setScintillator(str(value.scintillator.material.value), value.scintillator.thickness, "mm")
+		else:
+			gvxr.clearDetectorEnergyResponse()
+
 		self._detector = value
 
 	@property
@@ -200,8 +220,6 @@ class GVXRSimulator(Simulator):
 			gvxr.setColour(label, *colour_from_string(label), 1)
 			gvxr.moveToCenter(label)
 
-
-
 	@property
 	def capture(self) -> CaptureParameters:
 		return self._capture
@@ -238,7 +256,6 @@ class GVXRSimulator(Simulator):
 		self._quality = value
 		# Update detector with new quality settings
 		self.detector = self._detector
-
 
 	def RenderScene(self) -> Tuple[Tuple[float]]:
 		gvxr.displayScene()

@@ -26,8 +26,30 @@ export interface DetectorProperties {
 	 */
 	pixelSize: number;
 
+	/**
+	 * Detector Scintillator for energy response
+	 */
+	scintillator:Scintillator;
+
+	/**
+	 * Line spread Function to replicate Optical Transfer Function of detector
+	 */
 	lsf:LSF;
 }
+
+export type ScintillatorMaterial = "" | "CUSTOM" | "CsI" | "NaI" | "Gadox" | "Gadox DRZ-Plus" | "Gd2O3" | "Gd3Ga5O12" | "YGO" | "CdWO4" | "Y2O3" | "La2HfO7" | "Y3Al5O12"
+
+export interface Scintillator {
+	/**
+	 * Scintillator crystal material
+	 */
+	material: ScintillatorMaterial;
+	/**
+	 * Scintillator Thickness [mm]
+	 */
+	thickness: number;
+}
+
 
 export class LSF {
 	pixels: Array<number>;
@@ -190,5 +212,135 @@ export class LSFDisplay {
 
 		this._chart.update();
 
+	}
+}
+
+/**
+ * Energy Response Curve
+ */
+export interface EnergyResponseData {
+	/**
+	 * Photon energies (mid-bin) [keV]
+	 */
+	incident: Array<number>;
+	/**
+	 * Photon energy spectrum [Normalised]
+	 */
+	output: Array<number>;
+}
+
+/**
+ * Spectra display class linked to spectra data and a canvas.
+ */
+export class EnergyResponseDisplay {
+	readonly energyResponse: EnergyResponseData
+	readonly canvas: HTMLCanvasElement
+	readonly detector: DetectorProperties
+	_chart?: Chart;
+
+	constructor(energyResponse: EnergyResponseData, detector: DetectorProperties, canvas: HTMLCanvasElement) {
+		this.energyResponse = energyResponse;
+		this.canvas = canvas;
+		this.detector = detector;
+
+		// Obtain a chart item if it already exists on the given canvas.
+		if (Chart.getChart(this.canvas) !== undefined) {
+			this._chart = Chart.getChart(this.canvas);
+		}
+	}
+
+	public displayEnergyResponse(): void {
+
+		let title = "Energy Response for " + (this.detector.scintillator.thickness * 1000) + "μm " + this.detector.scintillator.material;
+		let label = this.detector.scintillator.material + "";
+		let borderDash = undefined;
+
+		if (this.detector.scintillator.material == "") {
+			title = "Perfect Energy Response";
+			label = "Perfect Response";
+			borderDash = [10,5];
+		}
+
+		const chartOptions: ChartOptions = {
+			responsive: true,
+			maintainAspectRatio: false,
+			interaction: {
+				mode: "index",
+				intersect: false,
+			},
+			scales: {
+				x: {
+					axis: "x",
+					type: "linear",
+					display: true,
+					ticks: {
+						display: true,
+						precision: 0,
+					},
+					title: {
+						display: true,
+						text: "Incident Energy (keV)",
+					},
+					suggestedMin: 0,
+					max: 300
+				},
+				y: {
+					axis: "y",
+					type: "linear",
+					display: true,
+					suggestedMin: 0,
+					ticks: {
+						display: true,
+						precision: 0
+					},
+					title: {
+						display: true,
+						text: "Response Energy (keV)"
+					},
+				},
+			},
+			plugins: {
+				title: {
+					display: true,
+					text: title
+				},
+				tooltip: {
+					callbacks: {
+						label: (tooltipItem) => {
+							return tooltipItem.dataset.label + ": " + tooltipItem.parsed.y.toFixed(2) + "keV"
+						},
+						title: (tooltipItems) => {
+							return "Incident " + tooltipItems[0].parsed.x.toFixed(2) + "keV"
+						},
+					}
+				}
+			}
+		};
+
+		// ? Unknown type for dealing with chart.js dataset configurations
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const ResponseLineSettings: any = {
+			label: label,
+			backgroundColor: colors["blue-500"],
+			borderColor: colors["blue-500"],
+			cubicInterpolationMode: "monotone",
+			borderDash: borderDash,
+			fill: false,
+			radius: 0,
+			data: this.energyResponse.output,
+		};
+
+		this._chart?.destroy();
+
+		this._chart = new Chart(this.canvas, {
+			type: "line",
+			data: {
+				labels: this.energyResponse.incident,
+				datasets: [ResponseLineSettings],
+			},
+			options: chartOptions
+		});
+
+		this._chart.update();
 	}
 }

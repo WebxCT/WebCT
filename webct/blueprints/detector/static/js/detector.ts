@@ -3,12 +3,12 @@
  * @author Iwan Mitchell
  */
 
-import { SlButton, SlDialog, SlInput } from "@shoelace-style/shoelace";
+import { SlButton, SlDialog, SlInput, SlSelect } from "@shoelace-style/shoelace";
 import { AlertType, showAlert } from "../../../base/static/js/base";
 import { SetPreviewSize } from "../../../preview/static/js/sim/projection";
 import { DetectorResponseRegistry, prepareRequest, processResponse, requestDetectorData, sendDetectorData } from "./api";
 import { DetectorConfigError, DetectorRequestError, showError } from "./errors";
-import { DetectorProperties, LSF, LSFDisplay, LSFParseEnum } from "./types";
+import { DetectorProperties, EnergyResponseData, EnergyResponseDisplay, LSF, LSFDisplay, LSFParseEnum, ScintillatorMaterial } from "./types";
 import { validateHeight, validatePixel, validateWidth } from "./validation";
 
 // ====================================================== //
@@ -16,6 +16,9 @@ import { validateHeight, validatePixel, validateWidth } from "./validation";
 // ====================================================== //
 export let PaneWidthElement: SlInput;
 let PaneHeightElement: SlInput;
+let PaneWidthPxElement: SlInput;
+let PaneHeightPxElement: SlInput;
+
 export let PanePixelSizeElement: SlInput;
 let DetectorPreviewElement: HTMLDivElement;
 let DetectorHorizontalText: SVGTextElement;
@@ -29,12 +32,21 @@ let LSFDialog:SlDialog;
 let LSFCanvas: HTMLCanvasElement;
 let LSFDialogCanvas: HTMLCanvasElement;
 
+let ScintillatorSelectElement: SlSelect;
+let ScintillatorThicknessElement: SlInput;
+let EnergyResponseCanvas: HTMLCanvasElement;
+
 // ====================================================== //
 // ======================= Globals ====================== //
 // ====================================================== //
 
 let CurrentLSF: LSF;
 let NewLSF: LSF;
+
+let LastPanelChange = "width";
+
+let ResponseDisplay: EnergyResponseDisplay;
+
 
 // ====================================================== //
 // ======================== Setup ======================= //
@@ -50,6 +62,10 @@ export function setupDetector(): boolean {
 	const pane_width_element = document.getElementById("inputPaneWidth");
 	const pane_height_element = document.getElementById("inputPaneHeight");
 	const pane_pixel_size_element = document.getElementById("inputPanePixelSize");
+
+	const pane_width_px_element = document.getElementById("inputPaneWidthPx")
+	const pane_height_px_element = document.getElementById("inputPaneHeightPx")
+
 	const detector_preview_element = document.getElementById("divDetectorPreview");
 	const text_detector_horizontal = document.getElementById("textDetectorHorizontal");
 	const text_detector_vertical = document.getElementById("textDetectorVertical");
@@ -62,9 +78,16 @@ export function setupDetector(): boolean {
 	const canvas_lsf = document.getElementById("canvasLSF");
 	const canvas_lsf_dialog = document.getElementById("canvasLSFDialog");
 
+	const scintillator_select_element = document.getElementById("selectScintillator");
+	const scintillator_thickness_element = document.getElementById("inputScintillatorThickness");
+	const energy_response_canvas = document.getElementById("canvasEnergyResponse");
+
+
 	if (pane_width_element == null ||
 		pane_height_element == null ||
 		pane_pixel_size_element == null ||
+		pane_width_px_element == null ||
+		pane_height_px_element == null ||
 		detector_preview_element == null ||
 		text_detector_horizontal == null ||
 		text_detector_vertical == null ||
@@ -75,7 +98,11 @@ export function setupDetector(): boolean {
 		button_lsf_submit == null ||
 		button_lsf_close == null ||
 		canvas_lsf == null ||
-		canvas_lsf_dialog == null) {
+		canvas_lsf_dialog == null ||
+
+		scintillator_select_element == null ||
+		scintillator_thickness_element == null ||
+		energy_response_canvas == null) {
 
 		console.log(pane_width_element);
 		console.log(pane_height_element);
@@ -92,6 +119,9 @@ export function setupDetector(): boolean {
 		console.log(canvas_lsf);
 		console.log(canvas_lsf_dialog);
 
+		console.log(scintillator_select_element);
+		console.log(scintillator_thickness_element);
+		console.log(energy_response_canvas);
 
 		showAlert("Detector setup failure", AlertType.ERROR);
 		return false;
@@ -99,14 +129,30 @@ export function setupDetector(): boolean {
 
 	PaneWidthElement = pane_width_element as SlInput;
 	PaneWidthElement.addEventListener("sl-change", () => {
+		LastPanelChange = "width"
 		validateWidth(PaneWidthElement);
 		previewDetector();
 	});
 
 	PaneHeightElement = pane_height_element as SlInput;
 	PaneHeightElement.addEventListener("sl-change", () => {
+		LastPanelChange = "width"
 		validateHeight(PaneHeightElement);
 		previewDetector();
+	});
+
+	PaneWidthPxElement = pane_width_px_element as SlInput;
+	PaneWidthPxElement.addEventListener("sl-change", () => {
+		LastPanelChange = "px"
+		previewDetector();
+		validateWidth(PaneWidthElement);
+	});
+
+	PaneHeightPxElement = pane_height_px_element as SlInput;
+	PaneHeightPxElement.addEventListener("sl-change", () => {
+		LastPanelChange = "px"
+		previewDetector();
+		validateHeight(PaneHeightElement);
 	});
 
 	PanePixelSizeElement = pane_pixel_size_element as SlInput;
@@ -114,8 +160,8 @@ export function setupDetector(): boolean {
 		validatePixel(PanePixelSizeElement);
 		previewDetector();
 	});
-	DetectorPreviewElement = detector_preview_element as HTMLDivElement;
 
+	DetectorPreviewElement = detector_preview_element as HTMLDivElement;
 	DetectorHorizontalText = text_detector_horizontal as unknown as SVGTextElement;
 	DetectorVerticalText = text_detector_vertical as unknown as SVGTextElement;
 
@@ -168,6 +214,15 @@ export function setupDetector(): boolean {
 
 	});
 
+	ScintillatorSelectElement = scintillator_select_element as SlSelect;
+	ScintillatorThicknessElement = scintillator_thickness_element as SlInput;
+
+	ScintillatorSelectElement.addEventListener("sl-change", () => {
+		ScintillatorThicknessElement.disabled = (ScintillatorSelectElement.value == "")
+	});
+
+	EnergyResponseCanvas = energy_response_canvas as HTMLCanvasElement;
+
 	previewDetector();
 	return true;
 }
@@ -190,6 +245,23 @@ function updateDialog(): void {
 }
 
 function previewDetector(): void {
+
+	// Update px or mm inputs to match size (we never change pixel pitch)
+	if (LastPanelChange == "px") {
+		// update width
+		PaneWidthElement.value = parseFloat(PaneWidthPxElement.value) * (parseFloat(PanePixelSizeElement.value) / 1000) + ""
+		PaneHeightElement.value = parseFloat(PaneHeightPxElement.value) * (parseFloat(PanePixelSizeElement.value) / 1000) + ""
+		console.log(PaneWidthElement);
+		console.log(PaneHeightElement);
+
+	} else {
+		// update px
+		PaneWidthPxElement.value = (parseFloat(PaneWidthElement.value) / (parseFloat(PanePixelSizeElement.value) / 1000)).toFixed(0) + ""
+		PaneHeightPxElement.value = (parseFloat(PaneHeightElement.value) / (parseFloat(PanePixelSizeElement.value) / 1000)).toFixed(0) + ""
+		console.log(PaneWidthPxElement);
+		console.log(PaneHeightPxElement);
+	}
+
 	if (!validateDetector()) {
 		return;
 	}
@@ -248,8 +320,11 @@ export function UpdateDetector(): Promise<void> {
 
 		result.then((result: unknown) => {
 
-			const properties = processResponse(result as DetectorResponseRegistry["detectorResponse"]);
+			const [properties, scintillatorEnergyResponse] = processResponse(result as DetectorResponseRegistry["detectorResponse"]);
 			setDetectorParams(properties);
+
+			ResponseDisplay = new EnergyResponseDisplay(scintillatorEnergyResponse, properties, EnergyResponseCanvas);
+			ResponseDisplay.displayEnergyResponse()
 
 		}).catch(() => {
 			showError(DetectorRequestError.RESPONSE_DECODE);
@@ -284,11 +359,17 @@ function setDetector(): Promise<void> {
 }
 
 export function setDetectorParams(properties:DetectorProperties) {
+	console.log(properties);
+
 	// update local values
 	// no implicit cast from number to string, really js?
 	PaneHeightElement.value = properties.paneHeight + "";
 	PaneWidthElement.value = properties.paneWidth + "";
 	PanePixelSizeElement.value = properties.pixelSize * 1000 + "";
+
+	// Update Scintillator
+	ScintillatorSelectElement.value = properties.scintillator.material;
+	ScintillatorThicknessElement.value = properties.scintillator.thickness * 1000 + "";
 
 	// Update LSF
 	CurrentLSF = properties.lsf;
@@ -303,6 +384,10 @@ export function getDetectorParams():DetectorProperties {
 		paneHeight: parseFloat(PaneHeightElement.value),
 		paneWidth: parseFloat(PaneWidthElement.value),
 		pixelSize: parseFloat(PanePixelSizeElement.value) / 1000,
+		scintillator: {
+			thickness: parseFloat(ScintillatorThicknessElement.value) / 1000,
+			material: ScintillatorSelectElement.value as ScintillatorMaterial
+		},
 		lsf: CurrentLSF
 	};
 }

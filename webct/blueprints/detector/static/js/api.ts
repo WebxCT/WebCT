@@ -2,7 +2,7 @@
  * api.ts : API functions for communicating between the client and server.
  * @author Iwan Mitchell
  */
-import { DetectorProperties, LSF } from "./types";
+import { DetectorProperties, EnergyResponseData, LSF, ScintillatorMaterial } from "./types";
 
 // ====================================================== //
 // ====================== Endpoints ===================== //
@@ -14,7 +14,6 @@ import { DetectorProperties, LSF } from "./types";
 const Endpoint = {
 	getDetectorData: "detector/get",
 	setDetectorData: "detector/set",
-	getLSFData: "detector/lsf/get"
 };
 
 // ====================================================== //
@@ -38,8 +37,16 @@ export interface DetectorResponseRegistry {
 			pane_width: number;
 			pane_height: number;
 			pixel_size: number;
+			scintillator: {
+				thickness:number,
+				material:string,
+			};
 			lsf: Array<number>;
 		},
+		energyResponse: {
+			incident: Array<number>;
+			output: Array<number>;
+		}
 	};
 }
 
@@ -59,7 +66,8 @@ export interface DetectorRequestRegistry {
 		pane_width: number;
 		pane_height: number;
 		pixel_size: number;
-		lsf:Array<number>;
+		scintillator: object;
+		lsf: Array<number>;
 	}
 }
 
@@ -99,15 +107,25 @@ export async function sendDetectorData(data: DetectorRequestRegistry["detectorRe
  * @param data - unconverted objects created from a getDetector request.
  * @returns Detector Properties, Unfiltered spectra data, and filtered spectra data.
  */
-export function processResponse(data: DetectorResponseRegistry["detectorResponse"]): DetectorProperties {
+export function processResponse(data: DetectorResponseRegistry["detectorResponse"]): [DetectorProperties, EnergyResponseData] {
+	console.log(data);
 	const detector: DetectorProperties = {
 		paneHeight: data.params.pane_height,
 		paneWidth: data.params.pane_width,
 		pixelSize: data.params.pixel_size,
+		scintillator: {
+			material: data.params.scintillator.material as ScintillatorMaterial,
+			thickness: data.params.scintillator.thickness
+		},
 		lsf: new LSF(data.params.lsf)
 	};
 
-	return detector;
+	const energyResponse: EnergyResponseData = {
+		incident: data.energyResponse.incident,
+		output: data.energyResponse.output,
+	}
+
+	return [detector, energyResponse];
 }
 
 /**
@@ -119,6 +137,7 @@ export function prepareRequest(data: DetectorProperties): DetectorRequestRegistr
 		pane_height:data.paneHeight,
 		pane_width:data.paneWidth,
 		pixel_size:data.pixelSize,
-		lsf: data.lsf.values,
+		scintillator: data.scintillator,
+		lsf: data.lsf.values
 	};
 }

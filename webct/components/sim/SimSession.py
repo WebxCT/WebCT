@@ -14,7 +14,7 @@ from PIL import Image
 from webct import Element
 from webct.components.Beam import (BEAM_GENERATOR, PROJECTION, BeamParameters, Filter, LabBeam, Spectra, generateSpectra)
 from webct.components.Capture import CaptureParameters
-from webct.components.Detector import DEFAULT_LSF, DetectorParameters
+from webct.components.Detector import DEFAULT_LSF, SCINTILLATOR_MATERIAL, DetectorParameters, EnergyResponse, Scintillator
 from webct.components.Reconstruction import (FDKParam, ReconParameters, reconstruct)
 from webct.components.Samples import RenderedSample, Sample
 from webct.components.sim.Download import DownloadManager
@@ -78,7 +78,7 @@ class SimSession:
 			generator=BEAM_GENERATOR.SPEKPY,
 			material=Element.W
 		)
-		self.detector = DetectorParameters(250, 250, 0.5, DEFAULT_LSF, None)
+		self.detector = DetectorParameters(250, 250, 0.5, DEFAULT_LSF, Scintillator(SCINTILLATOR_MATERIAL.GADOX, 136.55 / 1000))
 		self.samples = (
 			Sample(
 				"Dragon Model",
@@ -247,6 +247,16 @@ class SimSession:
 			self._scene = self._simClient.getScene()
 			return self._scene
 
+	def energyResponse(self) -> EnergyResponse:
+		with self._lock:
+			if not self._dirty[0] and hasattr(self, "_energy_response") and self._energy_response is not None:
+				print("Using cached energy response")
+				return self._energy_response
+			self._counter += 1
+			print(f"[SC-{self._sid}-{self._simClient.pid}]-Lock-{self._counter}-EnergyResponse")
+
+			self._energy_response = self._simClient.getEnergyResponse()
+			return self._energy_response
 
 	def allProjections(self, quality=Quality.MEDIUM, corrected=True) -> np.ndarray:
 		with self._lock:

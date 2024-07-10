@@ -1,5 +1,6 @@
 import { ElementSymbols } from "../../../../base/static/js/elements";
 import { BeamProperties, Filter, LabBeam, SynchBeam, TubeBeam } from "../../../../beam/static/js/types";
+import { ScintillatorMaterial } from "../../../../detector/static/js/types";
 import { MaterialLib } from "../../../../samples/static/js/samples";
 import { Material, SampleProperties } from "../../../../samples/static/js/types";
 import { configFull, configSubset } from "../types";
@@ -20,6 +21,11 @@ interface detectorConfig {
 	NumberOfPixels: [number, number],
 	Spacing: [number, number, string],
 	LSF: number[],
+	Scintillator: {
+		Material: string,
+		Thickness: number,
+		Unit: string
+	},
 }
 
 type ParallelBeam = "ParallelBeam" | "Parallel"
@@ -81,7 +87,7 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 
 	constructor(detector:detectorConfig, source:sourceConfig, samples:sampleConfig[]){
 		this.Detector = detector;
-		this.Source=  source;
+		this.Source = source;
 		this.Samples = samples;
 	}
 
@@ -93,9 +99,13 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 			Position: [...data.capture.beamPosition, "mm" as DistanceUnit],
 			Spacing: [data.detector.pixelSize, data.detector?.pixelSize, "mm" as DistanceUnit],
 			NumberOfPixels: [data.detector.paneWidth / (data.detector.pixelSize), data.detector.paneHeight / (data.detector.pixelSize)],
-			LSF: data.detector.lsf.values
+			LSF: data.detector.lsf.values,
+			Scintillator: {
+				Material: data.detector.scintillator.material,
+				Thickness: data.detector.scintillator.thickness,
+				Unit: "mm"
+			}
 		};
-		console.log(detector);
 
 		let beam:BeamSource;
 		if (data.beam.method == "synch") {
@@ -168,6 +178,7 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 			});
 		}
 
+
 		return new GVXRConfig(detector, source, samples);
 	}
 
@@ -184,6 +195,15 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 		if (detector.LSF === undefined) {
 			console.log("Undefined lsf");
 			detector.LSF = [0,1,0];
+		}
+
+		if (detector.Scintillator === undefined) {
+			console.log("Undefined Scintillator")
+			detector.Scintillator = {
+				Material: "",
+				Thickness: 0,
+				Unit: "mm"
+			}
 		}
 
 		return new GVXRConfig(detector, source, samples);
@@ -271,12 +291,33 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 			}
 		}
 
+		// Scintillator
+		let scintillatorMaterial = this.Detector.Scintillator.Material as ScintillatorMaterial;
+
+		let scintillatorThickness = this.Detector.Scintillator.Thickness;
+		if (this.Detector.Scintillator.Unit !== "mm") {
+			switch (this.Detector.Scintillator.Unit) {
+			case "cm":
+				scintillatorThickness = scintillatorThickness * 10;
+				break;
+			case "um":
+				scintillatorThickness = scintillatorThickness * 0.001;
+				break;
+			default:
+				break;
+			}
+		}
+
 		return {
 			detector: {
 				paneHeight: paneHeight,
 				paneWidth: paneWidth,
 				pixelSize: pixelSize,
-				lsf: {pixels:Array.from(this.Detector.LSF, (e,i)=>i-Math.floor(this.Detector.LSF.length/2)), values:this.Detector.LSF}
+				lsf: {pixels:Array.from(this.Detector.LSF, (e,i)=>i-Math.floor(this.Detector.LSF.length/2)), values:this.Detector.LSF},
+				scintillator: {
+					material: scintillatorMaterial,
+					thickness: scintillatorThickness
+				}
 			},
 			beam: beam,
 			samples: samples
