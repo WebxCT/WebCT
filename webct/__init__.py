@@ -1,3 +1,9 @@
+# Print debug info first-thing before importing any other libraries
+from .version import version, debug, base
+print(f"Welcome to WebCT v{version}", end="")
+if debug:
+	print(f" (Development build based on v{base})")
+
 import os
 import sys
 from flask import Flask
