@@ -111,7 +111,7 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 		if (data.beam.method == "synch") {
 			console.log("beamsynch");
 			const synchBeam:SynchBeam = data.beam as never;
-			const totalCount = synchBeam.exposure * synchBeam.intensity;
+			const totalCount = synchBeam.exposure * synchBeam.flux * 10e10;
 			beam = [{
 				Unit:"keV" as EnergyUnit,
 				Energy: synchBeam.energy,

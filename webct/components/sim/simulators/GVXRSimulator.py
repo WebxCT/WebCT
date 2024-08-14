@@ -2,7 +2,7 @@ from typing import List, Tuple, cast
 from gvxrPython3 import gvxr
 import numpy as np
 
-from webct.components.Beam import PROJECTION, Beam, LabBeam
+from webct.components.Beam import PROJECTION, Beam, LabBeam, SynchBeam
 from webct.components.Capture import CaptureParameters
 from webct.components.Detector import SCINTILLATOR_MATERIAL, DetectorParameters
 from webct.components.Material import (
@@ -121,8 +121,17 @@ class GVXRSimulator(Simulator):
 
 				electron_charge = 1.602e-19  # [C]
 				photon_count = mAs * (1.0e-3 / electron_charge) * (1 / ((self.capture.SDD * 10) ** 2))
-
 				gvxr.setNumberOfPhotonsPerCM2(photon_count)
+			elif isinstance(value.params, SynchBeam):
+				gvxr.enablePoissonNoise()
+				synch = cast(SynchBeam, value.params)
+
+				# flux is x10^10
+				flux = synch.flux * synch.exposure
+				gvxr.setNumberOfPhotonsPerCM2(flux * 10e10)
+			else:
+				gvxr.disablePoissonNoise()
+
 		self._beam = value
 
 	@property

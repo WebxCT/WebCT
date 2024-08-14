@@ -23,6 +23,7 @@ let BeamEnergyElement: SlInput;
 let BeamExposureElement:SlInput;
 let BeamVoltageElement:SlInput;
 let BeamIntensityElement:SlInput;
+let BeamFluxElement:SlInput;
 let BeamMASElement:SlInput;
 let BeamAngleElement:SlInput;
 let BeamHarmonicsElement:SlCheckbox;
@@ -67,6 +68,7 @@ export function setupBeam(): boolean {
 	const exposure_element = document.getElementById("inputBeamExposure");
 	const voltage_element = document.getElementById("inputBeamVoltage");
 	const intensity_element = document.getElementById("inputBeamIntensity");
+	const flux_element = document.getElementById("inputBeamFlux");
 	const mas_element = document.getElementById("inputBeamMAS");
 	const angle_element = document.getElementById("inputBeamAngle");
 	const spot_size = document.getElementById("inputBeamSpotSize");
@@ -92,6 +94,7 @@ export function setupBeam(): boolean {
 		exposure_element == null ||
 		voltage_element == null ||
 		intensity_element == null ||
+		flux_element == null ||
 		mas_element == null ||
 		angle_element == null ||
 		spot_size == null ||
@@ -112,6 +115,7 @@ export function setupBeam(): boolean {
 		console.log(exposure_element);
 		console.log(voltage_element);
 		console.log(intensity_element);
+		console.log(flux_element);
 		console.log(mas_element);
 		console.log(angle_element);
 		console.log(spot_size);
@@ -136,6 +140,7 @@ export function setupBeam(): boolean {
 	BeamExposureElement = exposure_element as SlInput;
 	BeamVoltageElement = voltage_element as SlInput;
 	BeamIntensityElement = intensity_element as SlInput;
+	BeamFluxElement = flux_element as SlInput;
 	BeamMASElement = mas_element as SlInput;
 	BeamAngleElement = angle_element as SlInput;
 	BeamSpotSizeElement = spot_size as SlInput;
@@ -149,6 +154,7 @@ export function setupBeam(): boolean {
 		BeamExposureElement.classList.add("hidden");
 		BeamVoltageElement.classList.add("hidden");
 		BeamIntensityElement.classList.add("hidden");
+		BeamFluxElement.classList.add("hidden");
 		BeamMASElement.classList.add("hidden");
 		BeamHarmonicsElement.classList.add("hidden");
 		FilterSettings.classList.add("hidden");
@@ -180,7 +186,7 @@ export function setupBeam(): boolean {
 		case "synch":
 			BeamEnergyElement.classList.remove("hidden");
 			BeamExposureElement.classList.remove("hidden");
-			BeamIntensityElement.classList.remove("hidden");
+			BeamFluxElement.classList.remove("hidden");
 			BeamHarmonicsElement.classList.remove("hidden");
 
 			if (AlgElement.value == "FDK") {
@@ -386,7 +392,7 @@ export function getBeamParms():BeamProperties {
 		beam = new SynchBeam(
 			parseFloat(BeamEnergyElement.value as string),
 			parseFloat(BeamExposureElement.value as string),
-			parseFloat(BeamIntensityElement.value as string),
+			parseFloat(BeamFluxElement.value as string),
 			BeamHarmonicsElement.checked,
 			[
 				{
@@ -429,7 +435,7 @@ export function setBeamParams(beam:BeamProperties) {
 		params = beam as SynchBeam;
 		BeamEnergyElement.value = params.energy+"";
 		BeamExposureElement.value = params.exposure+"";
-		BeamIntensityElement.value = params.intensity+"";
+		BeamFluxElement.value = params.flux+"";
 		break;
 	}
 

@@ -175,7 +175,7 @@ class SynchBeam(BeamParameters):
 	projection = PROJECTION.PARALLEL
 	energy: float
 	exposure: float
-	intensity: float
+	flux: float
 	harmonics: bool
 
 	def to_json(self) -> dict:
@@ -185,7 +185,7 @@ class SynchBeam(BeamParameters):
 	def from_json(json:dict):
 		energy = float(json["energy"])
 		exposure = float(json["exposure"])
-		intensity = float(json["intensity"])
+		flux = float(json["flux"])
 		harmonics = bool(json["harmonics"])
 
 		filters = parseFilters(json["filters"])
@@ -196,7 +196,7 @@ class SynchBeam(BeamParameters):
 		filters=filters,
 		energy=energy,
 		exposure=exposure,
-		intensity=intensity,
+		flux=flux,
 		harmonics=harmonics,
 		spotSize=0)
 
@@ -226,16 +226,17 @@ def generateSpectra(beam: BeamParameters) -> Tuple[Spectra, Spectra]:
 		params = cast(SynchBeam, beam)
 		# harmonics are two higher order;
 		total_range = int(params.energy * 3 + 10)
+		flux = params.flux * 10e10
 
 		energies = np.arange(0, total_range, dtype=int)
 		photons = np.zeros(total_range)
 		base_energy = int(params.energy)
-		photons[base_energy] = 1000
+		photons[base_energy] = flux
 		if params.harmonics:
 			# Add higher-order harmonics
 			photons[base_energy*3] = photons[base_energy] * 0.01
 			photons[base_energy*2] = photons[base_energy] * 0.03
-			photons[base_energy] = 1000 * 0.96
+			photons[base_energy] = flux * 0.96
 
 		return (Spectra(
 			tuple(energies.astype(float)),
