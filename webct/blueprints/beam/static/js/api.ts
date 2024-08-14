@@ -40,6 +40,7 @@ export interface BeamResponseRegistry {
 			energy?: number;
 			exposure?:number;
 			intensity?:number;
+			flux?:number;
 			spotSize?:number;
 			material?:number;
 			anodeAngle?:number;
@@ -160,7 +161,7 @@ export function processResponse(data: BeamResponseRegistry["beamResponse"]): [Be
 		beamProperties = new SynchBeam(
 			data.params.energy as number,
 			data.params.exposure as number,
-			data.params.intensity as number,
+			data.params.flux as number,
 			data.params.harmonics as boolean,
 			filters,
 		);

@@ -105,14 +105,14 @@ export class SynchBeam implements BeamProperties {
 	method = "synch" as const
 	energy: number
 	exposure: number
-	intensity: number
+	flux: number
 	harmonics:boolean
 	filters: Array<Filter>
 
-	constructor(energy:number, exposure:number, intensity:number, harmonics:boolean, filters:Array<Filter>) {
+	constructor(energy:number, exposure:number, flux:number, harmonics:boolean, filters:Array<Filter>) {
 		this.energy = energy;
 		this.exposure = exposure,
-		this.intensity = intensity;
+		this.flux = flux;
 		this.harmonics = harmonics;
 		this.filters = filters;
 	}
@@ -211,7 +211,7 @@ export class SpectraDisplay {
 			break;
 		case "synch":
 			prop = this.beam as SynchBeam;
-			title = prop.energy + "keV beam @ " + prop.intensity + "mA";
+			title = prop.energy + "keV synchrotron beam @ " + prop.flux + "x10¹⁰ photons/s/cm²";
 			break;
 		}
 
