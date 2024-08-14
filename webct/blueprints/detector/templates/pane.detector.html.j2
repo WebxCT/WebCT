@@ -1,30 +1,29 @@
-<div class="detectorpane">
+<sl-split-panel horizontal snap="20% 50% 80%">
+	<sl-icon slot="handle" name="grip-vertical"></sl-icon>
+	<section class="half-pane" slot="start">
+		<canvas id="canvasEnergyResponse"></canvas>
 
-</div>
-<div class="pane">
-	<svg xmlns="http://www.w3.org/2000/svg" height="100%" width="100%" id="divDetectorPreview">
-		<!-- Diagonals -->
-		<line x1="0" x2="100%" y1="0" y2="100%" style="stroke:var(--sl-color-neutral-500);stroke-width:1.5;stroke-dasharray:7,7;" />
-		<line x1="0" x2="100%" y1="100%" y2="0" style="stroke:var(--sl-color-neutral-500);stroke-width:1.5;stroke-dasharray:7,7;" />
+	</section>
+	<section class="half-pane" slot="end">
+		<svg xmlns="http://www.w3.org/2000/svg" height="100%" width="100%" id="divDetectorPreview">
+			<!-- Diagonals -->
+			<line x1="0" x2="100%" y1="0" y2="100%" style="stroke:var(--sl-color-neutral-500);stroke-width:1.5;stroke-dasharray:7,7;" />
+			<line x1="0" x2="100%" y1="100%" y2="0" style="stroke:var(--sl-color-neutral-500);stroke-width:1.5;stroke-dasharray:7,7;" />
 
-		<!-- Horizontal -->
-		<line x1="0" x2="100%" y1="7%" y2="7%" style="stroke:var(--sl-color-neutral-800);stroke-width:1.5;"></line>
-		<!-- <line x1="0%" x2="0%" y1="2%" y2="12%" style="stroke:var(--sl-color-neutral-800);stroke-width:1.5;"></line>
-		<line x1="100%" x2="100%" y1="2%" y2="12%" style="stroke:var(--sl-color-neutral-800);stroke-width:1.5;"></line> -->
-		<text x="50%" y="12%" text-anchor="middle" id="textDetectorHorizontal">250mm (500px)</text>
+			<!-- Horizontal -->
+			<line x1="0" x2="100%" y1="7%" y2="7%" style="stroke:var(--sl-color-neutral-800);stroke-width:1.5;"></line>
+			<!-- <line x1="0%" x2="0%" y1="2%" y2="12%" style="stroke:var(--sl-color-neutral-800);stroke-width:1.5;"></line>
+			<line x1="100%" x2="100%" y1="2%" y2="12%" style="stroke:var(--sl-color-neutral-800);stroke-width:1.5;"></line> -->
+			<text x="50%" y="12%" text-anchor="middle" id="textDetectorHorizontal">250mm (500px)</text>
 
-		<!-- Vertical -->
-		<line x1="7%" x2="7%" y1="0%" y2="100%" style="stroke:var(--sl-color-neutral-800);stroke-width:1.5;"></line>
-		<!-- <line x1="0%" x2="0%" y1="2%" y2="12%" style="stroke:var(--sl-color-neutral-800);stroke-width:1.5;"></line>
-		<line x1="100%" x2="100%" y1="2%" y2="12%" style="stroke:var(--sl-color-neutral-800);stroke-width:1.5;"></line> -->
-		<text x="12%" y="50%" writing-mode="tb" text-anchor="middle" glyph-orientation-vertical="0" id="textDetectorVertical">250mm (500px)</text>
-	</svg>
-</div>
-
-<sl-divider></sl-divider>
-
-<div class="pane">
-</div>
+			<!-- Vertical -->
+			<line x1="7%" x2="7%" y1="0%" y2="100%" style="stroke:var(--sl-color-neutral-800);stroke-width:1.5;"></line>
+			<!-- <line x1="0%" x2="0%" y1="2%" y2="12%" style="stroke:var(--sl-color-neutral-800);stroke-width:1.5;"></line>
+			<line x1="100%" x2="100%" y1="2%" y2="12%" style="stroke:var(--sl-color-neutral-800);stroke-width:1.5;"></line> -->
+			<text x="12%" y="50%" writing-mode="tb" text-anchor="middle" glyph-orientation-vertical="0" id="textDetectorVertical">250mm (500px)</text>
+		</svg>
+	</section>
+</sl-split-panel>
 
 <sl-dialog label="LSF Editor" id="dialogueLSF">
 	<div>

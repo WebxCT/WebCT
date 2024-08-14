@@ -1,8 +1,9 @@
+import numpy as np
 from dataclasses import dataclass
 from flask import jsonify, session, request
 from flask.wrappers import Response
 from webct.blueprints.detector import bp
-from webct.components.Detector import DetectorParameters
+from webct.components.Detector import DetectorParameters, EnergyResponse
 from webct.components.sim.SimSession import Sim
 
 
@@ -20,11 +21,13 @@ def setDetector() -> Response:
 @dataclass(frozen=True)
 class DetectorResponse:
 	params: DetectorParameters
+	energyResponse: EnergyResponse
 
 
 @bp.route("/detector/get")
-def getBeam() -> Response:
+def getDetector() -> Response:
 
 	simdata = Sim(session)
-	response = DetectorResponse(simdata.detector)
+	response = DetectorResponse(simdata.detector, simdata.detector.scintillator.response)
+
 	return jsonify(response)

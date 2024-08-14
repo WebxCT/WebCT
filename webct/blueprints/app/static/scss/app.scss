@@ -118,7 +118,7 @@ section.tab:not([active]) {
 }
 
 
-sl-split-panel {
+main > section.content > sl-split-panel {
 	--divider-width: 0.25rem;
 	overflow: hidden;
 	position: fixed;
@@ -196,6 +196,11 @@ aside#imagebar > sl-tooltip > sl-button > sl-icon {
 section #webgl {
 	background-color: var(--sl-color-primary-50);
 	overflow-y: hidden;
+}
+
+// only supported on updated browsers, but cleans up the dividers
+main > section > sl-split-panel > .half-pane:has([type="detector"][active]) {
+	padding: 0rem;
 }
 
 .half-pane {

@@ -87,5 +87,4 @@ div.group:not([active]) > div > *[advanced]  * {
 div.group[active] > div > [advanced] {
 	opacity: 100;
 	transition: all 0.25s;
-	height: auto;
 }

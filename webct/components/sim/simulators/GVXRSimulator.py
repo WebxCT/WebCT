@@ -4,7 +4,7 @@ import numpy as np
 
 from webct.components.Beam import PROJECTION, Beam, LabBeam
 from webct.components.Capture import CaptureParameters
-from webct.components.Detector import DetectorParameters
+from webct.components.Detector import SCINTILLATOR_MATERIAL, DetectorParameters
 from webct.components.Material import (
 	CompoundMaterial,
 	ElementMaterial,
@@ -160,6 +160,13 @@ class GVXRSimulator(Simulator):
 			gvxr.setDetectorNumberOfPixels(*shape)
 			gvxr.setDetectorPixelSize(value.pixel_size * scale, value.pixel_size * scale, "mm")
 
+		if value.scintillator.material == SCINTILLATOR_MATERIAL.NONE:
+			gvxr.clearDetectorEnergyResponse()
+		elif value.scintillator.material == SCINTILLATOR_MATERIAL.CUSTOM:
+			gvxr.setDetectorEnergyResponse(value.scintillator.response.asTuple, "keV")
+		else:
+			gvxr.setScintillator(value.scintillator.material.value, value.scintillator.thickness, "mm")
+
 		self._detector = value
 
 	@property
@@ -200,8 +207,6 @@ class GVXRSimulator(Simulator):
 			gvxr.setColour(label, *colour_from_string(label), 1)
 			gvxr.moveToCenter(label)
 
-
-
 	@property
 	def capture(self) -> CaptureParameters:
 		return self._capture
@@ -238,7 +243,6 @@ class GVXRSimulator(Simulator):
 		self._quality = value
 		# Update detector with new quality settings
 		self.detector = self._detector
-
 
 	def RenderScene(self) -> Tuple[Tuple[float]]:
 		gvxr.displayScene()

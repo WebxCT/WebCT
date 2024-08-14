@@ -71,28 +71,27 @@ WebCT
 			<sl-progress-bar indeterminate id="barLoading"></sl-progress-bar>
 			<sl-split-panel vertical snap="20% 50% 80%">
 				<sl-icon slot="handle" name="grip-horizontal"></sl-icon>
-			<section class="half-pane" slot="start">
-				<section class="pane" type="beam" active>
-					{% include "pane.beam.html.j2" %}
+				<section class="half-pane" slot="start">
+					<section class="pane" type="beam" active>
+						{% include "pane.beam.html.j2" %}
+					</section>
+					<section class="pane" type="detector">
+						{% include "pane.detector.html.j2" %}
+					</section>
+					<section class="pane" type="samples">
+						{% include "pane.samples.html.j2" %}
+					</section>
+					<section class="pane" type="capture">
+						{% include "pane.capture.html.j2" %}
+					</section>
+					<section class="pane" type="reconstruction">
+						{% include "pane.reconstruction.html.j2" %}
+					</section>
 				</section>
-				<section class="pane" type="detector">
-					{% include "pane.detector.html.j2" %}
+				<section class="half-pane" id="webgl" slot="end">
+					{% include "preview.pane.html.j2" %}
 				</section>
-				<section class="pane" type="samples">
-					{% include "pane.samples.html.j2" %}
-				</section>
-				<section class="pane" type="capture">
-					{% include "pane.capture.html.j2" %}
-				</section>
-				<section class="pane" type="reconstruction">
-					{% include "pane.reconstruction.html.j2" %}
-				</section>
-			</section>
-			<section class="half-pane" id="webgl" slot="end">
-				{# <img src="img/test.svg" alt=""> #}
-				{% include "preview.pane.html.j2" %}
-			</section>
-		</sl-split-panel>
+			</sl-split-panel>
 		</section>
 
 		<div id="appIcons">

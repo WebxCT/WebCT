@@ -178,9 +178,9 @@ class SimClient(Process):
 			elif isinstance(input, STM_SCENE):
 				print(f"[SIM-{self.pid}] Creating scene preview")
 				self.conn_child.send(SimResponse.ACCEPTED)
-				scene = self._simulator.RenderScene()
+				energy_response = self._simulator.RenderScene()
 				self.conn_child.send(SimResponse.DONE)
-				self.conn_child.send(scene)
+				self.conn_child.send(energy_response)
 
 			elif isinstance(input, STM_PROJECTION):
 				print(f"[SIM-{self.pid}] SimSingle with memory pool {input.result_sm}")
