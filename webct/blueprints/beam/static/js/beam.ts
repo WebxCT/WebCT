@@ -147,6 +147,8 @@ export function setupBeam(): boolean {
 	BeamMaterialElement = beam_material_element as SlInput;
 	BeamHarmonicsElement = harmonics_element as SlCheckbox;
 
+	BeamGeneratorElement = beam_generator_element as SlSelect;
+
 	BeamSourceSelectElement = source_select_element as SlSelect;
 	BeamSourceSelectElement.addEventListener("sl-change", () => {
 		TubeSettings.classList.add("hidden");
@@ -158,6 +160,7 @@ export function setupBeam(): boolean {
 		BeamMASElement.classList.add("hidden");
 		BeamHarmonicsElement.classList.add("hidden");
 		FilterSettings.classList.add("hidden");
+		BeamGeneratorElement.classList.add("hidden");
 
 		switch (BeamSourceSelectElement.value as SourceType) {
 		case "lab":
@@ -166,6 +169,7 @@ export function setupBeam(): boolean {
 			BeamIntensityElement.classList.remove("hidden");
 			TubeSettings.classList.remove("hidden");
 			FilterSettings.classList.remove("hidden");
+			BeamGeneratorElement.classList.remove("hidden");
 
 			if (AlgElement.value == "FBP") {
 				AlgElement.value = "FDK";
@@ -177,6 +181,7 @@ export function setupBeam(): boolean {
 			BeamMASElement.classList.remove("hidden");
 			TubeSettings.classList.remove("hidden");
 			FilterSettings.classList.remove("hidden");
+			BeamGeneratorElement.classList.remove("hidden");
 
 			if (AlgElement.value == "FBP") {
 				AlgElement.value = "FDK";
@@ -198,7 +203,6 @@ export function setupBeam(): boolean {
 	});
 	BeamSourceSelectElement.handleValueChange();
 
-	BeamGeneratorElement = beam_generator_element as SlSelect;
 
 	FilterMaterialElement = filter_material_element as SlSelect;
 	FilterSizeElement = filter_size_element as SlInput;
