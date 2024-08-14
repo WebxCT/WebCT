@@ -6,11 +6,18 @@ from typing import List, Optional, Tuple
 import numpy as np
 from scipy import ndimage
 
+# gvxr is only used in this context for scintillator properties.
+# Do not initialize the simulator in this context.
+from gvxrPython3 import gvxr
+
 @dataclass(frozen=True)
 class EnergyResponse():
 	incident: tuple  # Input energies into scintillator [keV]
 	output: tuple    # Output energies from scintillator [keV]
 
+	@property
+	def asTuple(self):
+		return tuple(zip(self.incident, self.output))
 
 @dataclass(frozen=True)
 class Spectra:
@@ -46,6 +53,18 @@ class Scintillator:
 	@property
 	def isCustom(self) -> bool:
 		return self.material == SCINTILLATOR_MATERIAL.CUSTOM
+
+	@property
+	def response(self) -> EnergyResponse:
+		if self.material != SCINTILLATOR_MATERIAL.NONE:
+			incident_output = gvxr.getEnergyResponse(self.material.value, self.thickness, "mm", "keV")
+			return EnergyResponse(
+				incident=tuple([x[0] for x in incident_output]),
+				output=tuple([x[1] for x in incident_output])
+				)
+		else:
+			# Perfect linear response if no detector energy response
+			return EnergyResponse(tuple(np.arange(0, 300, dtype=float)), tuple(np.arange(0, 300, dtype=float)))
 
 	@staticmethod
 	def from_json(json: dict):

@@ -28,6 +28,6 @@ class DetectorResponse:
 def getDetector() -> Response:
 
 	simdata = Sim(session)
-	response = DetectorResponse(simdata.detector, simdata.energyResponse())
+	response = DetectorResponse(simdata.detector, simdata.detector.scintillator.response)
 
 	return jsonify(response)

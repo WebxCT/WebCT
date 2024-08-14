@@ -4,7 +4,7 @@ import numpy as np
 
 from webct.components.Beam import Beam
 from webct.components.Capture import CaptureParameters
-from webct.components.Detector import DetectorParameters, EnergyResponse
+from webct.components.Detector import DetectorParameters
 from webct.components.Samples import RenderedSample
 from webct.components.sim.Quality import Quality
 
@@ -38,10 +38,6 @@ class Simulator(metaclass=ABCMeta):
 	def SimAllProjections(self) -> np.ndarray:
 		"""Generate all projections of a scene."""
 		raise NotImplementedError()
-
-	@property
-	def DetectorEnergyResponse(self) -> EnergyResponse:
-		...
 
 	@property
 	def beam(self) -> Beam:

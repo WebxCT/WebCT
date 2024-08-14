@@ -247,17 +247,6 @@ class SimSession:
 			self._scene = self._simClient.getScene()
 			return self._scene
 
-	def energyResponse(self) -> EnergyResponse:
-		with self._lock:
-			if not self._dirty[0] and hasattr(self, "_energy_response") and self._energy_response is not None:
-				print("Using cached energy response")
-				return self._energy_response
-			self._counter += 1
-			print(f"[SC-{self._sid}-{self._simClient.pid}]-Lock-{self._counter}-EnergyResponse")
-
-			self._energy_response = self._simClient.getEnergyResponse()
-			return self._energy_response
-
 	def allProjections(self, quality=Quality.MEDIUM, corrected=True) -> np.ndarray:
 		with self._lock:
 			if not self._dirty[1] and hasattr(self, "_projections") and quality in self._projections:
