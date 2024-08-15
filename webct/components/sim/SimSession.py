@@ -78,7 +78,7 @@ class SimSession:
 			generator=BEAM_GENERATOR.SPEKPY,
 			material=Element.W
 		)
-		self.detector = DetectorParameters(250, 250, 0.5, DEFAULT_LSF, Scintillator(SCINTILLATOR_MATERIAL.GADOX, 136.55 / 1000))
+		self.detector = DetectorParameters(300, 250, 0.5, DEFAULT_LSF, Scintillator(SCINTILLATOR_MATERIAL.GADOX, 136.55 / 1000))
 		self.samples = (
 			Sample(
 				"Dragon Model",
@@ -106,7 +106,6 @@ class SimSession:
 			self._beam_param = value
 			self._beam_spectra, self._unfiltered_beam_spectra = generateSpectra(value)
 			self._simClient.setBeam(value, self._beam_spectra)
-			self._setupFields()
 
 	@property
 	def spectra(self) -> Spectra:
@@ -177,50 +176,12 @@ class SimSession:
 			)
 			self._detector_param = value
 			self._simClient.setDetector(value)
-			self._setupFields()
-
-	def _setupFields(self) -> None:
-		print("setupfield")
-		if not hasattr(self, "_detector_param") or not hasattr(self, "_beam_param") or self._detector_param is None or self._beam_param is None:
-			# Missing detector or beam params, do nothing.
-			return
-
-		# construct fields from detector shape
-		self._darkfield: np.ndarray = np.zeros(self._detector_param.shape)
-		flatfield = np.ones(self._detector_param.shape)
-		# count total energy
-		flatfield *= np.sum(np.array(self._beam_spectra.energies) * np.array(self._beam_spectra.photons))
-		self._flatfield: np.ndarray = flatfield
-		print(self.flatfield.mean())
-		print(self.darkfield.mean())
-
-	def _corrected(self, projection, correction=ProjCorrection.FLATFIELD):
-		if correction==ProjCorrection.NONE:
-			# Perform no correction
-			return projection
-
-		# resize fields to patch the image
-		if (projection.shape[-2:] != self.flatfield.shape):
-			print(projection.shape)
-			print(projection.shape[-2:])
-			# Resize fields
-
-			flatfield = np.array(Image.fromarray(self.flatfield).resize(projection.shape[-2:]))
-			darkfield = np.array(Image.fromarray(self.darkfield).resize(projection.shape[-2:]))
-			proj = (projection - darkfield) / (flatfield - darkfield)
-		else:
-			# Don't need to resize
-			proj = (projection - self.darkfield) / (self.flatfield - self.darkfield)
-
-		if correction == ProjCorrection.FLATFIELD:
-			return proj
-		raise NotImplementedError(f"Projection Correction {correction} is not implemented.")
 
 	def projection(self, quality=Quality.MEDIUM, corrected=True) -> np.ndarray:
 		with self._lock:
 			if self._dirty[0] and not self._dirty[1] and quality in self._projections:
 				# Just nick first proj from allprojections
-				return self._corrected(self._projections[quality][0]) if corrected else self._projections[quality][0]
+				return self._projections[quality][0]
 			if not self._dirty[0] and hasattr(self, "_projection") and quality in self._projection:
 				print("Using cached projection")
 				return self._projection[quality]
@@ -234,7 +195,7 @@ class SimSession:
 				self._scene = None
 
 			self._projection[quality] = self._simClient.getProjection(quality)
-			return self._corrected(self._projection[quality]) if corrected else self._projection[quality]
+			return self._projection[quality]
 
 	def scene(self) -> np.ndarray:
 		with self._lock:
@@ -251,7 +212,7 @@ class SimSession:
 		with self._lock:
 			if not self._dirty[1] and hasattr(self, "_projections") and quality in self._projections:
 				print("Using cached projections")
-				return self._corrected(self._projections[quality]) if corrected else self._projections[quality]
+				return self._projections[quality]
 			self._counter += 1
 			print(
 				f"[SC-{self._sid}-{self._simClient.pid}]-Lock-{self._counter}-All-Projections-{quality.name}"
@@ -261,7 +222,7 @@ class SimSession:
 				self._dirty[1] = False
 
 			self._projections[quality] = self._simClient.getAllProjections(quality)
-			return self._corrected(self._projections[quality]) if corrected else self._projections[quality]
+			return self._projections[quality]
 
 	def layout(self) -> np.ndarray:
 		geo: Optional[AcquisitionGeometry] = None
@@ -320,8 +281,6 @@ class SimSession:
 			self._lock.release()
 			projections = self.allProjections(quality=quality, corrected=False)
 			self._lock.acquire()
-
-			projections = self._corrected(projections)
 
 			self._reconstruction[quality] = reconstruct(projections, self._capture_param, self._beam_param, self._detector_param, self._recon_param)
 			return self._reconstruction[quality]

@@ -61,12 +61,7 @@ class GVXRSimulator(Simulator):
 
 	def SimSingleProjection(self) -> np.ndarray:
 		image = np.array(gvxr.computeXRayImage())
-
-		image_in_kev = image / gvxr.getUnitOfEnergy("keV")
-
-		# Do not perform normalisation in simulator, that is done futher up the
-		# chain.
-		# return (image - dark) / (white - dark)
+		image_in_kev = image / np.asarray(gvxr.getWhiteImage())
 
 		return image_in_kev
 
@@ -81,7 +76,7 @@ class GVXRSimulator(Simulator):
 		# Currently removed from gvxr; pending a rewrite
 		# images = np.asarray(gvxr.computeProjectionSet(0, 0, 0, "mm", self.capture.projections, self.capture.angle_delta))
 
-		images_in_kev = images / gvxr.getUnitOfEnergy("keV")
+		images_in_kev = images / np.asarray(gvxr.getWhiteImage())
 
 		return images_in_kev
 
