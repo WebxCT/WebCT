@@ -11,49 +11,49 @@ def file_version_info_cfg(release:bool, version:str, commit:str) -> None:
 	# For more details about fixed file info 'ffi' see:
 	# http://msdn.microsoft.com/en-us/library/ms646997.aspx
 	with open("file_version_info.cfg", "w", encoding="utf-8") as f:
-			f.write(f'''Generated {datetime.now()} by version.py
-	VSVersionInfo(
-		ffi=FixedFileInfo(
-			# filevers and prodvers should be always a tuple with four items: (1, 2, 3, 4)
-			# Set not needed items to zero 0.
-			filevers=({', '.join(version.split('.'))}),
-			prodvers=({', '.join(version.split('.'))}),
-			# Contains a bitmask that specifies the valid bits 'flags'r
-			mask=0x3f,
-			# Contains a bitmask that specifies the Boolean attributes of the file.
-			flags=0x2,
-			# The operating system for which this file was designed.
-			# 0x4 - NT and there is no need to change it.
-			OS=0x4,
-			# The general type of file.
-			# 0x1 - the file is an application.
-			fileType=0x1,
-			# The function of the file.
-			# 0x0 - the function is not defined for this fileType
-			subtype=0x0,
-			# Creation date and time stamp.
-			date=(0, 0)
-		),
-		kids=[
-			StringFileInfo([
-				StringTable('000004b0',[
-					StringStruct('Comments', '{'Development build of the ' if not release else ''}WebCT Server for X-ray Computed Tomography.'),
-					StringStruct('LegalCopyright', '© Iwan Mitchell {int(datetime.now().year)}'),
-					StringStruct('CompanyName', 'Iwan Mitchell'),
-					StringStruct('FileDescription', 'WebCT Server for X-ray Computed Tomography.'),
-					StringStruct('FileVersion', '{ver}'),
-					StringStruct('ProductVersion', '{ver}'),
-					StringStruct('InternalName', 'webct'),
-					# StringStruct('LegalTrademarks', ''),
-					StringStruct('OriginalFilename', 'WebCT.exe'),
-					StringStruct('ProductName', 'WebCT Server'),
-					StringStruct('BuildID', '')
-				])
-			]),
-			VarFileInfo([VarStruct('Translation', [0, 1200])])
-		]
-	)
-	''')
+			f.write(f'''# Generated {datetime.now()} by version.py
+VSVersionInfo(
+	ffi=FixedFileInfo(
+		# filevers and prodvers should be always a tuple with four items: (1, 2, 3, 4)
+		# Set not needed items to zero 0.
+		filevers=({', '.join(version.split('.'))}),
+		prodvers=({', '.join(version.split('.'))}),
+		# Contains a bitmask that specifies the valid bits 'flags'r
+		mask=0x3f,
+		# Contains a bitmask that specifies the Boolean attributes of the file.
+		flags=0x2,
+		# The operating system for which this file was designed.
+		# 0x4 - NT and there is no need to change it.
+		OS=0x4,
+		# The general type of file.
+		# 0x1 - the file is an application.
+		fileType=0x1,
+		# The function of the file.
+		# 0x0 - the function is not defined for this fileType
+		subtype=0x0,
+		# Creation date and time stamp.
+		date=(0, 0)
+	),
+	kids=[
+		StringFileInfo([
+			StringTable('000004b0',[
+				StringStruct('Comments', '{'Development build of the ' if not release else ''}WebCT Server for X-ray Computed Tomography.'),
+				StringStruct('LegalCopyright', '© Iwan Mitchell {int(datetime.now().year)}'),
+				StringStruct('CompanyName', 'Iwan Mitchell'),
+				StringStruct('FileDescription', 'WebCT Server for X-ray Computed Tomography.'),
+				StringStruct('FileVersion', '{ver}'),
+				StringStruct('ProductVersion', '{ver}'),
+				StringStruct('InternalName', 'webct'),
+				# StringStruct('LegalTrademarks', ''),
+				StringStruct('OriginalFilename', 'WebCT.exe'),
+				StringStruct('ProductName', 'WebCT Server'),
+				StringStruct('BuildID', '')
+			])
+		]),
+		VarFileInfo([VarStruct('Translation', [0, 1200])])
+	]
+)
+''')
 
 def version_py(release:bool, version:str, commit:str) -> None:
 	ver = version if release else commit
