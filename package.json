@@ -24,7 +24,9 @@
 		"uglify-js": "^3.13.10"
 	},
 	"scripts": {
-		"build": "npx tsc && npx rollup -c && sass ./webct/blueprints/app/static/scss/app.scss ./webct/blueprints/app/static/css/app.css -s compressed --no-source-map",
-		"serve": "npm run build && python app.py"
+		"write-version": "python version.py",
+		"build": "npm run write-version && npx tsc && npx rollup -c && sass ./webct/blueprints/app/static/scss/app.scss ./webct/blueprints/app/static/css/app.css -s compressed --no-source-map",
+		"serve": "npm run build && python app.py",
+		"package": "npm run build && del dist /F /S /Q && xcopy data dist\\data\\ /S && pyinstaller webct.spec"
 	}
 }
