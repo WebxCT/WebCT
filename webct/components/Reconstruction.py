@@ -121,8 +121,8 @@ def reconstruct(projections: np.ndarray, capture: CaptureParameters, beam: BeamP
 	# Acquisition geometry
 
 	# Panel is height x width
-	geo.set_panel(projections.shape[1:][::-1], detector.pixel_size)
-	geo.set_angles(capture.angles)
+	geo.set_panel(projections.shape[1:][::-1], detector.pixel_size, origin="top-left")
+	geo.set_angles(capture.angles[::-1])
 	geo.set_labels(["angle", "vertical", "horizontal"])
 
 	# Acquisition data
@@ -216,7 +216,8 @@ def reconstruct(projections: np.ndarray, capture: CaptureParameters, beam: BeamP
 		raise NotImplementedError(f"Reconstruction method {method_name} is not implemented.")
 
 	assert rec is not None
-	return rec.as_array().astype(np.float32)
+	# flip reconstruction
+	return np.flipud(rec.as_array())
 
 def asSinogram(projections: np.ndarray, capture: CaptureParameters, beam: BeamParameters, detector: DetectorParameters) -> np.ndarray:
 	geo: Optional[AcquisitionGeometry] = None
