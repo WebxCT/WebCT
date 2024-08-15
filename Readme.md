@@ -19,7 +19,7 @@ WebCT is a feature-rich environment for previewing and simulating X-ray scans on
 ## What WebCT *isn't*
 
 Although webCT aims to provide an all-in-one solution for simulation and
-reconstruction, a few aspects that WebCT is not:
+reconstruction, a few aspects that WebCT does not cover:
 
 - Data analysis tool - *Export data from WebCT*
 - Batch processor - *Export configs & use gVirtualXRay*
@@ -30,20 +30,34 @@ WebCT does however, aim to facilitate the above with config and dataset exportin
 
 ## Installing WebCT
 
-Currently WebCT is still in alpha, and does not have any official release
-builds, [take a look at the v1.0.0 roadmap](https://github.com/WebxCT/WebCT/milestone/1)
-or [the project dashboard](https://github.com/orgs/WebxCT/projects/1) for
+[**Windows versions of WebCT are available here on github.**](https://github.com/WebxCT/WebCT/releases)
+Download and extract the folder, double-click WebCT.exe to launch!
+
+Packaged version for Linux users are not available, it's recommended to [follow the Development setup](#developing-webct) to compile webct.
+
+> [!NOTE]
+> ⚠ Currently WebCT is still in alpha, [take a look at the v1.0.0 roadmap](https://github.com/WebxCT/WebCT/milestone/1) or [the project dashboard](https://github.com/orgs/WebxCT/projects/1) for
 current project status. A written paper is currently in the works.
+
+## Quickstart Video
+
+<!-- Stripped by github (why?)-->
+<video controls src="doc/videos/WebCT-Quick%20Introduction.mp4"></video>
+
+<!-- Workaround for github;- display hyper-compressed video -->
+https://github.com/user-attachments/assets/915f300f-aa59-42ff-bb4b-5e89871ff650
+
+*Music: [Turning Along - The Flashbulb](https://theflashbulb.bandcamp.com/album/piety-of-ashes) (please support the artist!)*
+
 
 ## Developing WebCT
 
 1. Pull the repository from github however you like
 2. Install the conda environment with `conda env create`
-3. Install [npm by downloading node.js](https://nodejs.org/en/)
-	- Alternatively use a [node version manager for Windows](https://github.com/coreybutler/nvm-windows) or [MacOS/Linux](https://github.com/nvm-sh/nvm)
+3. Install [npm by downloading node.js with fnm](https://nodejs.org/en/download/package-manager)
 4. Install js packages with `npm install`
 5. Build and host webserver with `npm run serve`
 	- If flask fails to start, ensure the webct environment is activated with `conda activate webct`
-6. Visit the local url in a browser!
+6. Visit the local url in a browser! (This should open automatically)
 
 Any issues with installing? [Please feel free to open an issue!](https://github.com/WebxCT/WebCT/issues)
