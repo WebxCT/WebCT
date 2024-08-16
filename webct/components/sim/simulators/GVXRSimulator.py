@@ -66,19 +66,11 @@ class GVXRSimulator(Simulator):
 		return image_in_kev
 
 	def SimAllProjections(self) -> np.ndarray:
-		img1 = np.array(gvxr.computeXRayImage())
-		images = np.empty((self.capture.projections, *img1.shape))
+		gvxr.computeCTAcquisition("", "", self.capture.projections, 0, False, self.capture.angles[-1], 1, 0, 0, 0, "mm", 0, 0, 1, True, 1)
 
-		for i in trange(0, self.capture.angles.shape[0]):
-			images[i] = gvxr.computeXRayImage()
-			gvxr.rotateNode("root", self.capture.angle_delta, 0, 0, 1)
+		images = np.asarray(gvxr.getLastProjectionSet())
 
-		# Currently removed from gvxr; pending a rewrite
-		# images = np.asarray(gvxr.computeProjectionSet(0, 0, 0, "mm", self.capture.projections, self.capture.angle_delta))
-
-		images_in_kev = images / np.asarray(gvxr.getWhiteImage())
-
-		return images_in_kev
+		return images
 
 	@property
 	def beam(self) -> Beam:
