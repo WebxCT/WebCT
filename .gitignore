@@ -1,3 +1,6 @@
+# logs
+logs/
+
 # generated version information
 file_version_info.cfg
 webct/blueprints/base/templates/version.html.j2

@@ -5,18 +5,15 @@ from flask.wrappers import Response
 from webct.blueprints.beam import bp
 from webct.components.Beam import BeamFromJson, BeamParameters, Spectra
 from webct.components.sim.SimSession import Sim
-
+import logging as log
 
 @bp.route("/beam/set", methods=["PUT"])
 def setBeam() -> Response:
 	"""Set beam Spectra."""
-
-	# try:
 	data = request.get_json()
 	if data is None:
 		return Response(None, 400)
 
-	# try:
 	simdata = Sim(session)
 	simdata.beam = BeamFromJson(data)
 	return Response(None, 200)

@@ -103,8 +103,6 @@ def reconstruct(projections: np.ndarray, capture: CaptureParameters, beam: BeamP
 	# Get reconstruction method
 	method_name = params.method.upper()
 
-	print(f"Reconstructing with {str(params)} Paramaters")
-
 	if method_name not in ReconMethods:
 		raise NotImplementedError("Method is not supported.")
 	method = ReconMethods[method_name]

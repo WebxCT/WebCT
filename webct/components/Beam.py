@@ -9,6 +9,7 @@ from enum import unique
 import spekpy as sp
 import xpecgen.xpecgen as xp
 import numpy as np
+import logging as log
 
 # Type aliases
 KeV = float
@@ -215,6 +216,7 @@ def BeamFromJson(json:dict) -> BeamParameters:
 		return SynchBeam.from_json(json)
 	else:
 		raise NotImplementedError(f"Method '{json['method']}' is not implemented")
+
 @dataclass(frozen=True)
 class Beam:
 	params: BeamParameters
@@ -223,6 +225,7 @@ class Beam:
 @cache
 def generateSpectra(beam: BeamParameters) -> Tuple[Spectra, Spectra]:
 	if beam.method == "synch":
+		log.info(f"Generating Synchrotron beam spectra")
 		params = cast(SynchBeam, beam)
 		# harmonics are two higher order;
 		total_range = int(params.energy * 3 + 10)
@@ -256,6 +259,7 @@ def generateSpectra(beam: BeamParameters) -> Tuple[Spectra, Spectra]:
 
 	elif beam.method == "lab" or beam.method == "med":
 		params = cast(LabBeam, beam) if beam.method == "lab" else cast(MedBeam, beam)
+		log.info(f"Generating Tube beam spectra with {params.generator}")
 
 		if params.generator == BEAM_GENERATOR.SPEKPY:
 			spec = sp.Spek(

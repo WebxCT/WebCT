@@ -3,12 +3,15 @@
 # todo: split update functions into separate calls
 
 import sys
+from time import monotonic
 from dataclasses import dataclass
 from enum import Enum
 from multiprocessing import Pipe, Process, shared_memory
 from multiprocessing.connection import Connection
 from random import Random
 from typing import Any, Tuple
+import logging
+log = logging.getLogger("Simulator")
 
 import numpy as np
 from webct.components.Beam import Beam, BeamParameters, Spectra
@@ -120,8 +123,12 @@ class SimClient(Process):
 	# process variables
 	_simulator: GVXRSimulator
 
-	def __init__(self):
+	def __init__(self, sid:str):
 		super(SimClient, self).__init__()
+		log.info(f"[{sid}] Initializing Simulator Child")
+
+		# Session ID is used to relate the simulator client and session
+		self._sid = sid
 
 		self.conn_parent, self.conn_child = Pipe()
 
@@ -134,9 +141,10 @@ class SimClient(Process):
 	# ======================================================== #
 
 	def _run(self) -> None:
+		log.info(f"({self.pid}) Client Thread Initialized!")
 		end_thread = False
 		# init
-		self._simulator = GVXRSimulator()
+		self._simulator = GVXRSimulator(sid=self._sid, pid=self.pid)
 		sys.stdout = sys.__stdout__
 		sys.stderr = sys.__stdout__
 
@@ -144,46 +152,50 @@ class SimClient(Process):
 			input = self.conn_child.recv()
 			if not isinstance(input, STM):
 				# Not an expected message, ignore.
+				log.info(f"({self.pid}) Got non-STM response from parent?")
 				self.conn_child.send(SimResponse.REJECTED)
 				continue
 
 			elif isinstance(input, STM_BEAM):
-				print(f"[SIM-{self.pid}] Setting beam parameters")
+				log.info(f"({self.pid}) Parent asking for new beam")
 				self.conn_child.send(SimResponse.ACCEPTED)
 				self._simulator.beam = input.beam
 				self.conn_child.send(SimResponse.DONE)
 				continue
 
 			elif isinstance(input, STM_DETECTOR):
-				print(f"[SIM-{self.pid}] Setting detector parameters")
+				log.info(f"({self.pid}) Parent asking for new detector")
 				self.conn_child.send(SimResponse.ACCEPTED)
 				self._simulator.detector = input.detector
 				self.conn_child.send(SimResponse.DONE)
 				continue
 
 			elif isinstance(input, STM_CAPTURE):
-				print(f"[SIM-{self.pid}] Setting capture parameters")
+				log.info(f"({self.pid}) Parent asking for new capture")
 				self.conn_child.send(SimResponse.ACCEPTED)
 				self._simulator.capture = input.capture
 				self.conn_child.send(SimResponse.DONE)
 				continue
 
 			elif isinstance(input, STM_SAMPLES):
-				print(f"[SIM-{self.pid}] Setting samples")
+				log.info(f"({self.pid}) Parent asking for new samples")
 				self.conn_child.send(SimResponse.ACCEPTED)
+				for i, value in enumerate(input.samples):
+					log.info(f"({self.pid}) Sample {i}: {value.label} - {value.modelPath} - {value.material.label} - {value.material.density}")
 				self._simulator.samples = list(input.samples)
 				self.conn_child.send(SimResponse.DONE)
 				continue
 
 			elif isinstance(input, STM_SCENE):
-				print(f"[SIM-{self.pid}] Creating scene preview")
+				log.info(f"({self.pid}) Parent asking for rendered scene")
 				self.conn_child.send(SimResponse.ACCEPTED)
 				energy_response = self._simulator.RenderScene()
 				self.conn_child.send(SimResponse.DONE)
 				self.conn_child.send(energy_response)
 
 			elif isinstance(input, STM_PROJECTION):
-				print(f"[SIM-{self.pid}] SimSingle with memory pool {input.result_sm}")
+				log.info(f"({self.pid}) Parent asking for single rendered projection")
+				log.info(f"({self.pid}) Using shared memory instance [[{input.result_sm}]] : {input.result_arr_shape}")
 				mem = shared_memory.SharedMemory(name=input.result_sm)
 				# Wrap shared memory as np array
 				sm_arr: np.ndarray = np.ndarray(
@@ -197,9 +209,12 @@ class SimClient(Process):
 
 				# Set quality of simulator
 				self._simulator.quality = input.quality
-
+				
 				# copy values into shared memory
+				tik = monotonic()
+				log.info(f"({self.pid}) Filling [[{input.result_sm}]] with a single projection")
 				np.copyto(sm_arr, self._simulator.SimSingleProjection())
+				log.info(f"({self.pid}) [[{input.result_sm}]] Filled with a single projection in {monotonic() - tik:.2f}s")
 
 				# ? Would normally close memory, but causes issues on windows
 				# ? due to python bugs (plz merge the fix python comittiee <3)
@@ -207,12 +222,12 @@ class SimClient(Process):
 				# mem.close()
 
 				# Respond with completed.
-				print(f"[SIM-{self.pid}] Completed, sending SimResponse.DONE")
 				self.conn_child.send(SimResponse.DONE)
 				continue
 
 			elif isinstance(input, STM_ALL_PROJECTION):
-				print(f"[SIM-{self.pid}] SimAll with memory pool {input.result_sm}")
+				log.info(f"({self.pid}) Parent asking for all rendered projection")
+				log.info(f"({self.pid}) Using shared memory instance [[{input.result_sm}]] : {input.result_arr_shape}")
 				mem = shared_memory.SharedMemory(name=input.result_sm)
 				# Wrap shared memory as np array
 				sm_arr: np.ndarray = np.ndarray(
@@ -228,7 +243,10 @@ class SimClient(Process):
 				self._simulator.quality = input.quality
 
 				# copy values into shared memory
+				tik = monotonic()
+				log.info(f"({self.pid}) Filling [[{input.result_sm}]] with all projections")
 				np.copyto(sm_arr, self._simulator.SimAllProjections())
+				log.info(f"({self.pid}) [[{input.result_sm}]] Filled with all projections in {monotonic() - tik:.2f}s")
 
 				# ? Would normally close memory, but causes issues on windows
 				# ? due to python bugs (plz merge the fix python comittiee <3)
@@ -236,7 +254,6 @@ class SimClient(Process):
 				# mem.close()
 
 				# Respond with completed.
-				print(f"[SIM-{self.pid}] Completed, sending SimResponse.DONE")
 				self.conn_child.send(SimResponse.DONE)
 				continue
 
@@ -346,9 +363,7 @@ class SimClient(Process):
 		elif response is SimResponse.DONE:
 			return
 		else:
-			raise SimThreadError(
-				f"Unexpected response: {response}, wanted SimResponse.DONE"
-			)
+			raise SimThreadError(f"Unexpected response: {response}, wanted SimResponse.DONE")
 
 	def getProjection(self, quality=Quality.MEDIUM) -> np.ndarray:
 		if self.detector is None:
@@ -400,7 +415,6 @@ class SimClient(Process):
 			mem.unlink()
 
 			# return result
-			print("Simulation completed.")
 			return result.astype(np.float32)
 		else:
 			raise SimThreadError(
@@ -408,6 +422,7 @@ class SimClient(Process):
 			)
 
 	def getAllProjections(self, quality=Quality.MEDIUM) -> np.ndarray:
+		log.info(f"[{self._sid}] Generating {self.capture.projections} projections")
 		if self.detector is None:
 			raise AssertionError("Detector parameters were not set before calling getProjections")
 
@@ -443,8 +458,12 @@ class SimClient(Process):
 		# Check for confirmation
 		self.check_confirm()
 
+		# set timeout to number of projections, this is a worst-case scenario for most systems.
+		timeout = self.capture.projections
+		log.info(f"[{self._sid}] Child ({self.pid}) has {timeout}s to generate {self.capture.projections} projections, or they will be killed.")
+
 		# Response accepted, wait for done signal
-		response = self.response(timeout=120, msg="Sim timeout while simulating.")
+		response = self.response(timeout=timeout, msg="Sim timeout while simulating.")
 
 		# Parse simulation response
 		if not isinstance(response, SimResponse):
@@ -459,7 +478,6 @@ class SimClient(Process):
 			mem.unlink()
 
 			# return result
-			print("Simulation completed.")
 			return result.astype(np.float32)
 		else:
 			raise SimThreadError(

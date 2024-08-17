@@ -20,7 +20,9 @@ class Simulator(metaclass=ABCMeta):
 	overriding parameter setting methods.
 	"""
 
-	def __init__(self) -> None:
+	def __init__(self, sid:str, pid:int) -> None:
+		self._pid = pid
+		self._sid = sid
 		self._beam: Beam = None
 		self._detector: DetectorParameters = None
 		self._samples: List[RenderedSample] = None

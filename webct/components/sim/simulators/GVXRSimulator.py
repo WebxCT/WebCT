@@ -1,6 +1,8 @@
+from datetime import datetime
 from typing import List, Tuple, cast
 from gvxrPython3 import gvxr
 import numpy as np
+import os
 
 from webct.components.Beam import PROJECTION, Beam, LabBeam, SynchBeam
 from webct.components.Capture import CaptureParameters
@@ -20,7 +22,6 @@ from webct.components.sim.simulators.Simulator import Simulator
 from webct import model_folder
 from matplotlib.colors import hsv_to_rgb
 from zlib import crc32
-from tqdm import trange
 
 def colour_from_string(string:str) -> Tuple[float,float,float]:
 	"""Deterministically Creates a rgb colour from a given string.
@@ -40,9 +41,11 @@ class GVXRSimulator(Simulator):
 	X-Ray simulator implemented using gvirtualxray.
 	"""
 
-	def __init__(self):
-		super().__init__()
+	def __init__(self, sid:str, pid:int):
+		super().__init__(sid=sid, pid=pid)
 		self.firstSetup = False
+		os.makedirs(f"logs/{datetime.now().strftime('%Y-%m-%d')}/", exist_ok=True)
+		gvxr.useLogFile(f"logs/{datetime.now().strftime('%Y-%m-%d')}/GVXR-{datetime.now().strftime('%H-%M')}-{self._sid}-{self._pid}.log")
 		self._initRenderer()
 
 	def _initRenderer(self):
@@ -78,7 +81,6 @@ class GVXRSimulator(Simulator):
 
 	@beam.setter
 	def beam(self, value: Beam) -> None:
-		print(value)
 		if value.params.projection == PROJECTION.POINT:
 			gvxr.usePointSource()
 			if value.params.spotSize != 0:
@@ -209,7 +211,6 @@ class GVXRSimulator(Simulator):
 
 	@capture.setter
 	def capture(self, value: CaptureParameters) -> None:
-		print(value)
 		gvxr.setDetectorPosition(*value.detector_position, "mm")
 		if self.beam.params.spotSize == 0.0:
 			# if using a spot size, the focal point is handled in beam settings
