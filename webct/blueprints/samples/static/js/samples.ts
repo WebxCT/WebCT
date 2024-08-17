@@ -11,6 +11,7 @@ import { DetectorRequestError, showError } from "./errors";
 import { getSelectedMaterial, MixtureInputList, setSelectedMaterial, updateMaterialDialog } from "./materialDialogue";
 
 import { EventNewCategory, Material, MaterialLibrary, SampleProperties, SamplePropertiesID } from "./types";
+import { markValid } from "../../../base/static/js/validation";
 
 // ====================================================== //
 // ================== Document Elements ================= //
@@ -161,6 +162,9 @@ export function setupSamples(): boolean {
 	SampleDialog = dialogue_sample_element as SlDialog;
 	SampleDialogSelect = sample_upload_select as SlSelect;
 	SampleDialogInput = sample_upload_label as SlInput;
+	SampleDialogInput.addEventListener("sl-change", () => {
+		updateDialog();
+	});
 	MaterialDialog = dialogue_material_library as SlDialog;
 	MaterialViewButton = button_material_open as SlButton;
 	MaterialViewButton.onclick = () => { showMaterialLibrary(false); };
@@ -369,12 +373,17 @@ function resetUpload(): void {
 function updateDialog(): void {
 	if (SampleDialogRadio1.checked) {
 		SampleDialogSubmit.textContent = "Add Sample";
+		
 		let exists = false;
-		for (let index = 0; index < AvailableModels.length; index++) {
-			const model = AvailableModels[index];
-			if (SampleDialogSelect.value === model) {
-				exists = true;
-				break;
+		markValid(SampleDialogInput, SampleDialogInput.value != "");
+
+		if (SampleDialogInput.value != "") {
+			for (let index = 0; index < AvailableModels.length; index++) {
+				const model = AvailableModels[index];
+				if (SampleDialogSelect.value === model) {
+					exists = true;
+					break;
+				}
 			}
 		}
 
@@ -387,6 +396,11 @@ function updateDialog(): void {
 		}
 
 		SampleDialogSubmit.onclick = () => {
+			if (SampleDialogInput.value == "") {
+				// if no sample label, don't do anything!
+				return
+			}
+
 			// value is a valid model!
 			// We want to add it to the existing material list
 			SessionSamples.push({

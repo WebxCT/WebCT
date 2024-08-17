@@ -5,7 +5,7 @@ from webct.blueprints.reconstruction import bp
 from webct.components.Reconstruction import ReconstructionFromJson, asSinogram
 from webct.components.imgutils import asPngStr, asMp4Str
 from webct.components.sim.SimSession import Sim
-
+import logging as log
 
 @bp.route("/recon/set", methods=["PUT"])
 def setReconParams() -> Response:
@@ -45,21 +45,21 @@ def createSliceVideo(array: np.ndarray) -> str:
 
 @bp.route("/recon/preview/get")
 def getReconstruction() -> dict:
-	simdata = Sim(session)
-	recon = simdata.getReconstruction()
+	sim = Sim(session)
+	recon = sim.getReconstruction()
 
+	log.info(f"[{sim._sid}] Encoding reconstruction video")
 	reconVideo = asMp4Str(recon)
-	proj = simdata.projection()
+	proj = sim.projection()
+	log.info(f"[{sim._sid}] Encoding slice video")
 	sliceVideo = createSliceVideo(proj)
-	sino = asSinogram(simdata.allProjections(), simdata.capture, simdata.beam, simdata.detector)
+	log.info(f"[{sim._sid}] Encoding sinogram video")
+	sino = asSinogram(sim.allProjections(), sim.capture, sim.beam, sim.detector)
 	sinoVideo = asMp4Str(sino)
 
 	reconSlice = recon[recon.shape[0]//2]
+	log.info(f"[{sim._sid}] Encoding central reconstruction slice")
 	reconSliceStr = asPngStr(reconSlice)
-
-	print(f"Created {reconVideo.__sizeof__()/1024:.2f}kb recon video.")
-	print(f"Created {sliceVideo.__sizeof__()/1024:.2f}kb slice video.")
-	print(f"Created {sinoVideo.__sizeof__()/1024:.2f}kb sinogram video.")
 
 	return {
 		"recon": {

@@ -12,6 +12,7 @@ from PIL import Image
 from zipfile import ZipFile
 import shutil
 from datetime import datetime
+import logging as log
 
 # Circular import, so we can't do typing unless we refactor SimSession...
 # from webct.components.sim.SimSession import SimSession
@@ -63,7 +64,6 @@ class DownloadPrepper():
 
 	@staticmethod
 	def simulate(sim, resource:DownloadResource) -> bool:
-		print("[DPREP] - Simulating")
 		if not DownloadPrepper.checkCompat(resource):
 			return False
 
@@ -84,7 +84,6 @@ class DownloadPrepper():
 
 	@staticmethod
 	def package(sim, resource:DownloadResource, location:Path) -> bool:
-		print("[DPREP] - Packaging")
 		if not DownloadPrepper.checkCompat(resource):
 			return False
 
@@ -167,8 +166,8 @@ class DownloadPrepper():
 						projPath = tmpPath / f"{name}-{i:04}.tiff"
 						tf.imwrite(projPath, array[i])
 						z.write(projPath, f"{name}-{i:04}.tiff")
-						if (i % (array.shape[0] // 10)) == 0:
-							print(f"Processed slice [{i: 4} / {array.shape[0]: 4}] ({i/array.shape[0]:.2%})")
+						# if (i % (array.shape[0] // 10)) == 0:
+						# 	log.info(f"Processed slice [{i: 4} / {array.shape[0]: 4}] ({i/array.shape[0]:.2%})")
 				shutil.move(zipPath, location.parent)
 			return True
 
@@ -226,24 +225,20 @@ class DownloadManager:
 
 			# Simulate requested data
 			self._status = DownloadStatus.SIMULATING
-			print("[DMAN] - Simulating")
 
 			self._working = True
 			try:
 				simmed = DownloadPrepper.simulate(self._session, self._resource)
 			except Exception as e:
-				print(f"[DMAN] - Simulation fail: {e}")
 				simmed = False
 
 			if not simmed:
 				self._working = False
 				self._status = DownloadStatus.WAITING
-				print("[DMAN] - Waiting")
 				return False
 
 			# Package requested data
 			self._status = DownloadStatus.PACKAGING
-			print("[DMAN] - Packaging")
 
 			path = self.location(resource)
 			makedirs(path.parent, exist_ok=True)
@@ -251,18 +246,15 @@ class DownloadManager:
 			try:
 				prepped = DownloadPrepper.package(self._session, self._resource, path)
 			except Exception as e:
-				print(f"[DMAN] - Package fail: {e}")
 				prepped = False
 			if not prepped:
 				self._working = False
 				self._status = DownloadStatus.WAITING
-				print("[DMAN] - Waiting")
 
 				return False
 
 			# Done
 			self._status = DownloadStatus.DONE
-			print("[DMAN] - Done!")
 			self._working = False
 
 			return True

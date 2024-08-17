@@ -5,6 +5,7 @@ import io
 import tempfile
 from pathlib import Path
 from PIL import Image
+import logging as log
 
 def asPngStr(array: np.ndarray) -> str:
 	array = (array - array.min()) / (array.max() - array.min())
@@ -18,9 +19,7 @@ def asPngStr(array: np.ndarray) -> str:
 
 
 def asMp4Str(array: np.ndarray) -> str:
-	print("Generating files from array")
 	# First, compress capture to be 0-255
-	print("normalising array")
 	array = ((array - array.min()) / (array.max() - array.min()) * 255).astype("uint8")
 
 	# Expand dimensions to all be even

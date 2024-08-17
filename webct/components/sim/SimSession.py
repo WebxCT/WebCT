@@ -2,6 +2,8 @@ from enum import Enum
 from random import Random
 from threading import Semaphore
 from typing import List, Optional, Tuple
+import logging
+log = logging.getLogger("SimSession")
 
 import numpy as np
 from cil.framework import AcquisitionGeometry
@@ -14,11 +16,11 @@ from PIL import Image
 from webct import Element
 from webct.components.Beam import (BEAM_GENERATOR, PROJECTION, BeamParameters, Filter, LabBeam, Spectra, generateSpectra)
 from webct.components.Capture import CaptureParameters
-from webct.components.Detector import DEFAULT_LSF, SCINTILLATOR_MATERIAL, DetectorParameters, EnergyResponse, Scintillator
+from webct.components.Detector import DEFAULT_LSF, SCINTILLATOR_MATERIAL, DetectorParameters, Scintillator
 from webct.components.Reconstruction import (FDKParam, ReconParameters, reconstruct)
 from webct.components.Samples import RenderedSample, Sample
 from webct.components.sim.Download import DownloadManager
-from webct.components.sim.clients.SimClient import SimClient
+from webct.components.sim.clients.SimClient import SimClient, SimThreadError, SimTimeoutError
 from webct.components.sim.Quality import Quality
 from webct.components.sim.SimManager import getClient
 
@@ -62,11 +64,14 @@ class SimSession:
 	_lock: Semaphore
 
 	def __init__(self, sid: int) -> None:
-		self._simClient = getClient(session)
+		log.info(f"Initializing Simulation Session [{sid}]")
 		self._lock = Semaphore(1)
 		self._sid = sid
+		self._simClient = getClient(session, sid)
 		self.download = DownloadManager(self)
+		self.init_default_parameters()
 
+	def init_default_parameters(self) -> None:
 		# Instantiate default values
 		self.beam = LabBeam(method="lab", projection=PROJECTION.POINT,
 			filters=(Filter(Element.Cu,2),),
@@ -100,12 +105,19 @@ class SimSession:
 		with self._lock:
 			if hasattr(self, "_beam_param") and value == self._beam_param:
 				return
+			log.info(f"[{self._sid}] Updating beam")
 			self._dirty = [True, True, True]
 			self._counter += 1
-			print(f"[SC-{self._sid}-{self._simClient.pid}]-Lock-{self._counter}-beam")
 			self._beam_param = value
 			self._beam_spectra, self._unfiltered_beam_spectra = generateSpectra(value)
-			self._simClient.setBeam(value, self._beam_spectra)
+			try:
+				self._simClient.setBeam(value, self._beam_spectra)
+			except SimThreadError as e:
+				log.error("Thread Error while setting beam parameters! Forcefully killing Client...")
+				self._simClient.kill()
+				log.error("Replacing Simulator Child with a new one...")
+				self._simClient = SimClient(self._sid)
+				raise e
 
 	@property
 	def spectra(self) -> Spectra:
@@ -127,25 +139,30 @@ class SimSession:
 		with self._lock:
 			if hasattr(self, "_samples") and value == self._samples:
 				return
+			log.info(f"[{self._sid}] Updating samples")
 			self._dirty = [True, True, True]
 			self._counter += 1
-			print(
-				f"[SC-{self._sid}-{self._simClient.pid}]-Lock-{self._counter}-samples"
-			)
 
 			# rendering samples may call a value error, let this propagate upwards
 			self._samples_rendered = tuple([sample.render() for sample in value])
 
 			self._samples = value
-			print(f"Samples now {value}")
 
 			# We only send rendered samples to the simulation client.
 			# Only reason we store both unrendered and rendered, are for `self.update()`
-			self._simClient.setSamples(self._samples_rendered)
+			try:
+				self._simClient.setSamples(self._samples_rendered)
+			except SimThreadError as e:
+				log.error("Thread Error while setting samples! Forcefully killing Client...")
+				self._simClient.kill()
+				log.error("Replacing Simulator Child with a new one...")
+				self._simClient = SimClient(self._sid)
+				raise e
 
 	def update(self) -> None:
 		"""Re-render sample properties to propagate material changes to the simulator."""
 		with self._lock:
+			log.info(f"[{self._sid}] Rendering sample properties")
 			# rendering samples may call a value error, let this propagate upwards
 			new_samples = tuple([sample.render() for sample in self._samples])
 
@@ -155,9 +172,15 @@ class SimSession:
 
 			# Sample materials have changed, update client.
 			self._counter += 1
-			print(f"[SC-{self._sid}-{self._simClient.pid}]-Lock-{self._counter}-samples-update")
 			self._samples_rendered = new_samples
-			self._simClient.setSamples(self._samples_rendered)
+			try:
+				self._simClient.setSamples(self._samples_rendered)
+			except SimThreadError as e:
+				log.error("Thread Error while re-rendering samples! Forcefully killing Client...")
+				self._simClient.kill()
+				log.error("Replacing Simulator Child with a new one...")
+				self._simClient = SimClient(self._sid)
+				raise e
 
 	@property
 	def detector(self) -> DetectorParameters:
@@ -169,13 +192,18 @@ class SimSession:
 		with self._lock:
 			if hasattr(self, "_detector_param") and value == self._detector_param:
 				return
+			log.info(f"[{self._sid}] Updating Detector")
 			self._dirty = [True, True, True]
 			self._counter += 1
-			print(
-				f"[SC-{self._sid}-{self._simClient.pid}]-Lock-{self._counter}-detector"
-			)
 			self._detector_param = value
-			self._simClient.setDetector(value)
+			try:
+				self._simClient.setDetector(value)
+			except SimThreadError as e:
+				log.error("Thread Error while setting detector parameters! Forcefully killing Client...")
+				self._simClient.kill()
+				log.error("Replacing Simulator Child with a new one...")
+				self._simClient = SimClient(self._sid)
+				raise e
 
 	def projection(self, quality=Quality.MEDIUM, corrected=True) -> np.ndarray:
 		with self._lock:
@@ -183,45 +211,58 @@ class SimSession:
 				# Just nick first proj from allprojections
 				return self._projections[quality][0]
 			if not self._dirty[0] and hasattr(self, "_projection") and quality in self._projection:
-				print("Using cached projection")
 				return self._projection[quality]
 			self._counter += 1
-			print(
-				f"[SC-{self._sid}-{self._simClient.pid}]-Lock-{self._counter}-Projection-{quality.name}"
-			)
 			if self._dirty[0]:
 				self._projection = {}
 				self._dirty[0] = False
 				self._scene = None
 
-			self._projection[quality] = self._simClient.getProjection(quality)
+			try:
+				self._projection[quality] = self._simClient.getProjection(quality)
+			except SimThreadError as e:
+				log.error("Thread Error while simulating one projection! Forcefully killing Client...")
+				self._simClient.kill()
+				log.error("Replacing Simulator Child with a new one...")
+				self._simClient = SimClient(self._sid)
+				raise e
 			return self._projection[quality]
 
 	def scene(self) -> np.ndarray:
 		with self._lock:
 			if not self._dirty[0] and hasattr(self, "_scene") and self._scene is not None:
-				print("Using cached scene")
 				return self._scene
 			self._counter += 1
-			print(f"[SC-{self._sid}-{self._simClient.pid}]-Lock-{self._counter}-Scene")
 
-			self._scene = self._simClient.getScene()
+			try:
+				self._scene = self._simClient.getScene()
+			except SimThreadError as e:
+				log.error("Thread Error while rendering scene! Forcefully killing Client...")
+				self._simClient.kill()
+				log.error("Replacing Simulator Child with a new one...")
+				self._simClient = SimClient(self._sid)
+				raise e
 			return self._scene
 
 	def allProjections(self, quality=Quality.MEDIUM, corrected=True) -> np.ndarray:
 		with self._lock:
 			if not self._dirty[1] and hasattr(self, "_projections") and quality in self._projections:
-				print("Using cached projections")
 				return self._projections[quality]
 			self._counter += 1
-			print(
-				f"[SC-{self._sid}-{self._simClient.pid}]-Lock-{self._counter}-All-Projections-{quality.name}"
-			)
 			if self._dirty[1]:
 				self._projections = {}
 				self._dirty[1] = False
-
-			self._projections[quality] = self._simClient.getAllProjections(quality)
+			try:
+				self._projections[quality] = self._simClient.getAllProjections(quality)
+			except SimThreadError as e:
+				if isinstance(e, SimTimeoutError):
+					log.error("Waited too long (>1s per projection) to render all projections. Unsure if simulator crashed since it's not responding. Forcefully killing Client...")
+				else:
+					log.error("Thread Error while simulating all projections! Forcefully killing Client...")
+				self._simClient.kill()
+				log.error("Replacing Simulator Child with a new one...")
+				self._simClient = SimClient(self._sid)
+				raise e
 			return self._projections[quality]
 
 	def layout(self) -> np.ndarray:
@@ -257,21 +298,17 @@ class SimSession:
 		with self._lock:
 			if hasattr(self, "_recon_param") and value == self._recon_param:
 				return
+			log.info(f"[{self._sid}] Updating Reconstruction")
 			self._dirty[2] = True
 			self._counter += 1
-			print(f"[SC-{self._sid}-{self._simClient.pid}]-Lock-{self._counter}-ReconParams")
 			self._recon_param = value
 
 	def getReconstruction(self) -> np.ndarray:
 		quality = self._recon_param.quality
 		with self._lock:
 			if not self._dirty[2] and hasattr(self, "_reconstruction") and quality in self._reconstruction:
-				print("Using cached reconstruction")
 				return self._reconstruction[quality]
 			self._counter += 1
-			print(
-				f"[SC-{self._sid}-{self._simClient.pid}]-Lock-{self._counter}-Reconstruction-{quality.name}"
-			)
 			if self._dirty[2]:
 				self._reconstruction = {}
 				self._dirty[2] = False
@@ -282,6 +319,7 @@ class SimSession:
 			projections = self.allProjections(quality=quality, corrected=False)
 			self._lock.acquire()
 
+			log.info(f"[{self._sid}] Reconstructing")
 			self._reconstruction[quality] = reconstruct(projections, self._capture_param, self._beam_param, self._detector_param, self._recon_param)
 			return self._reconstruction[quality]
 
@@ -295,13 +333,18 @@ class SimSession:
 		with self._lock:
 			if hasattr(self, "_capture_param") and value == self._capture_param:
 				return
+			log.info(f"[{self._sid}] Updating Capture")
 			self._dirty = [True, True, True]
 			self._counter += 1
-			print(
-				f"[SC-{self._sid}-{self._simClient.pid}]-Lock-{self._counter}-capture"
-			)
 			self._capture_param = value
-			self._simClient.setCapture(value)
+			try:
+				self._simClient.setCapture(value)
+			except SimThreadError as e:
+				log.error("Thread Error while setting capture parameters! Forcefully killing Client...")
+				self._simClient.kill()
+				log.error("Replacing Simulator Child with a new one...")
+				self._simClient = SimClient(self._sid)
+				raise e
 
 	@property
 	def flatfield(self) -> np.ndarray:
@@ -335,6 +378,6 @@ def Sim(sesh) -> SimSession:
 		if sid in stored_sessions:
 			return stored_sessions[sid]
 		else:
-			print("sid is not in stored_sessions, creating a new one")
+			log.info(f"Creating new Simulator Session [{sid}]")
 			stored_sessions[sid] = SimSession(sid)
 			return stored_sessions[sid]

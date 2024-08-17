@@ -4,6 +4,7 @@ from webct.blueprints.capture import bp
 from webct.components.Capture import CaptureParameters
 from webct.components.imgutils import asMp4Str
 from webct.components.sim.SimSession import Sim
+import logging as log
 
 @bp.route("/capture/set", methods=["PUT"])
 def setCapture() -> Response:
@@ -26,14 +27,14 @@ def getCapture() -> Response:
 @bp.route("/capture/preview/get")
 def getPreview() -> dict:
 	sim = Sim(session)
+	log.info(f"[{sim._sid}] Requesting animated scan")
 	projections = sim.allProjections()
-	print(f"{projections.nbytes/1000/1000}=")
 
 	# Sending the animation as gifs are too large, and therefore don't work properly.
 	# Instead, we will create a video file in-memory and use flask to serve it.
 	video = asMp4Str(projections)
 
-	print(f"Created {video.__sizeof__()/1024:.2f}kb capture video.")
+	log.info(f"Created {video.__sizeof__()/1024:.2f}kb animated scan preview video.")
 	return {
 		"height": projections[0].shape[0],
 		"width": projections[0].shape[1],

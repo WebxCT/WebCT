@@ -10,6 +10,7 @@ from webct.components.Material import MaterialEncoder, MaterialFromJson, MATERIA
 from webct.components.Samples import Sample
 
 from webct.components.sim.SimSession import Sim
+import logging as log
 
 from webct import model_folder, material_folder
 
@@ -26,12 +27,10 @@ def add_material_file(category: str, file: Path) -> Optional[str]:
 				if category not in MATERIALS:
 					# We may be called without the category existing.
 					MATERIALS[category] = {}
-				print(f"Imported {category}/{file.name[:-5]}")
 				MATERIALS[category][file.name[:-5]] = mat
 				return file.name[:-5]
 			except Exception as e:
 				traceback.print_exception(type(e), e, e.__traceback__)
-				print(f"fail to import: {file.name}: {type(e)}: {e}")
 				return
 
 
@@ -56,10 +55,14 @@ def preloadMaterials() -> None:
 	if not folder.exists():
 		folder.mkdir()
 
+	log.info(f"Recursively Loading materials from '{folder}'")
 	add_folder(folder)
 
-	# Enumerate contents in data folder
-	print(f"Loaded {len(MATERIALS)} materials categories.")
+	i = 0
+	for key, value in MATERIALS.items():
+		i += len(value.keys())
+
+	log.info(f"Collated and parsed {i} materials in {len(MATERIALS.keys())} categorys.")
 
 
 @bp.route("/samples/list", methods=["GET"])
@@ -119,12 +122,15 @@ def uploadModel() -> Response:
 	if file.filename is None or file.filename == "":
 		# no file?
 		return Response(None, 400)
+	
 	if file and file.filename.split(".")[-1] == "stl":
 		filename = secure_filename(file.filename)
 		path = Path(model_folder + filename)
 		if path.exists():
 			# don't allow overwriting for now...
+			log.warning(f"Unable to upload '{path}'; model already exists.")
 			return Response(None, 400)
+		log.info(f"Uploading new model to '{path}'")
 		file.save(path)
 		return Response(None, 200)
 	return Response(None, 400)
@@ -173,14 +179,15 @@ def setMaterial() -> Response:
 			if not nPath.parent.exists():
 				nPath.parent.mkdir()
 			nPath.touch()
+			log.info(f"Created new material file at '{nPath}")
 		else:
+			# material file out of bounds; ignore.
 			return Response(None, 400)
 
 	with nPath.open("w") as f:
 		json.dump(material.to_json(), f, indent="\t")
 
 	matID = add_material_file(str(cat), nPath)
-	print(f"New Material ID: {cat}/{matID}")
 
 	return jsonify({"catID":str(cat),"matID":str(matID)})
 
@@ -198,7 +205,10 @@ def deleteMaterial() -> Response:
 	matID = data["materialID"]
 
 	if (catID not in MATERIALS) or (matID not in MATERIALS[catID]):
+		# Material ID does not exist; so it's deleted.
 		return Response(None, 200)
+
+	log.info(f"Deleting material {catID}/{matID}")
 
 	mat = MATERIALS[catID][matID]
 

@@ -1,18 +1,55 @@
-# Print debug info first-thing before importing any other libraries
-from .version import version, debug, base
-print(f"Welcome to WebCT v{version}", end="")
-if debug:
-	print(f" (Development build based on v{base})")
-
+from datetime import datetime
 import os
 import sys
 from flask import Flask
 from enum import IntEnum
-import logging
-from pathlib import Path
-
 import matplotlib
+matplotlib.use("Agg") # Enforce backend to avoid QT crashes
+from pathlib import Path
+from .version import version, base, debug
 
+# - Load and setup logging - #
+
+import logging
+from logging.config import dictConfig
+logFolder = Path(f"logs/{datetime.now().strftime('%Y-%m-%d')}")
+logFolder.mkdir(parents=True, exist_ok=True)
+logPath = logFolder / f"WEB-{datetime.now().strftime('%H-%M')}.log"
+dictConfig({
+	"version": 1,
+	"disable_existing_loggers": True,
+	"formatters": { 
+		"standard": { 
+			"format": "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+		},
+	},
+	"handlers": {
+		"stdout": {
+			"level": "INFO",
+			"formatter": "standard",
+			"class": "logging.StreamHandler",
+			"stream": "ext://sys.stdout",
+		},
+		"file": {
+			"level": "INFO",
+			"formatter": "standard",
+			"class": "logging.FileHandler",
+			"filename": str(logPath),
+			"mode": "a",
+		}
+	},
+	"loggers": { 
+		"": {
+			"handlers": ["stdout", "file"],
+			"level": "DEBUG",
+			"propagate": True
+		},
+	} 
+})
+
+logging.info(f"Welcome to WebCT {version}")
+if debug:
+	logging.warning(f"Development Version based on v{base}")
 
 # todo: move / replace
 class Element(IntEnum):
@@ -136,6 +173,8 @@ class Element(IntEnum):
 	Og = 118
 
 
+# - Prepare template, blueprint, and data folder - #
+
 if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
 	# use template and static folders from
 	template_folder = os.path.join(sys._MEIPASS, 'templates') # pylint: disable=no-member
@@ -146,27 +185,19 @@ else:
 
 app.secret_key = os.urandom(24)
 
-# Enforce backend to avoid QT crashes
-matplotlib.use("Agg")
-
-# Setup logging hooks
-logger = logging.getLogger("werkzeug")
-# Steam to std.err / std.out
-logger.addHandler(logging.StreamHandler())
-
 # Although these should be paths, they need to be string constants for
 # multiprocess communication.
 model_folder = "./data/models/"
 material_folder = "./data/materials/"
 
-# technically folders could be created, but if they don't
+# Technically folders could be created, but if they don't
 # exist then the default configuration would also fail.
-# ideally we should fail earlier with an error message
+# This checks to ensure they've not forgotten the data folder.
 if not Path(model_folder).parent.exists():
-	logger.error(f"Unable to locate existing data folder, did you remember to copy it? Could not find {Path(model_folder).parent}\nThis folder contains required defaults used by WebCT during initialisation.")
+	logging.error(f"Unable to locate existing data folder, did you remember to copy it? Could not find {Path(model_folder).parent}\nThis folder contains required defaults used by WebCT during initialisation.")
 	try:
-		# in windows, display an alert box, otherwise the console will close abruptly
-		# force close splash screen if it exists, since the messagebox can get stuck underneath it
+		# In windows, display an alert box, otherwise the console will close abruptly.
+		# Force close splash screen if it exists, since the messagebox can get stuck underneath it.
 		try:
 			import pyi_splash as splash
 			splash.close()
@@ -176,21 +207,7 @@ if not Path(model_folder).parent.exists():
 		ctypes.windll.user32.MessageBoxW(0, "WebCT failed to start because of a missing data folder. Please ensure the data folder exists in the same location as this executable.", "Failed to start WebCT", 0x0+0x10+0x1000+0x10000 )
 	except:
 		pass
-# os.makedirs(Path(model_folder), exist_ok=True)
-# os.makedirs(Path(material_folder), exist_ok=True)
 
-# ! Unfortunately, redirecting logging to files doesn't actually work correctly
-# try:
-# 	os.mkdir("logs")
-# 	logger.addHandler(logging.FileHandler(f"logs/{datetime.now().strftime('%b-%d-%Y-%H-%M-%S')}.log"))
-# except OSError as exc:
-# 	if exc.errno == errno.EEXIST:
-# 		# Folder already existed, add log
-# 		logger.addHandler(logging.FileHandler(f"logs/{datetime.now().strftime('%b-%d-%Y-%H-%M-%S')}.log"))
-# 	else:
-# 		# We had other issues trying to make a folder, don't bother trying to
-# 		# save logs...
-# 		logger.error("Unable to make log directory, will not log to files!")
 
 # - Blueprint registration - #
 
