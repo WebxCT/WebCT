@@ -1,7 +1,7 @@
 import { SlButton, SlCheckbox, SlRadio } from "@shoelace-style/shoelace";
 import { processResponse, requestProjection, SimResponseRegistry } from "./api";
 import { ProjectionRequestError, showError } from "./errors";
-import { PreviewData } from "./types";
+import { PreviewData, TransmissionDisplay } from "./types";
 // import type { Buffer } from "buffer";
 
 // ====================================================== //
@@ -11,10 +11,13 @@ import { PreviewData } from "./types";
 let ButtonPreviewProjection: SlButton;
 let ButtonPreviewLayout: SlButton;
 let PreviewPane: HTMLDivElement;
+let TransmissionCanvas: HTMLCanvasElement;
 
 let SettingRawElement: SlRadio;
 let SettingLogElement: SlRadio;
+let SettingTransmissionElement:SlRadio;
 let SettingInvertElement: SlCheckbox;
+
 
 // ====================================================== //
 // ====================================================== //
@@ -26,6 +29,8 @@ let LayoutImages: NodeListOf<HTMLImageElement>;
 let SceneImages: NodeListOf<HTMLImageElement>;
 let PreviewData: PreviewData;
 let PreviewPaneImage: HTMLImageElement;
+
+let TransmissionChart: TransmissionDisplay;
 
 export function MarkLoading(): void {
 	for (let index = 0; index < PreviewImages.length; index++) {
@@ -61,6 +66,7 @@ export function updateProjection(): Promise<void> {
 
 		result.then((result: unknown) => {
 			PreviewData = processResponse(result as SimResponseRegistry["simResponse"]);
+			console.log(PreviewData);
 			updateImageDisplay();
 
 			for (let index = 0; index < PreviewImages.length; index++) {
@@ -81,9 +87,12 @@ export function updateProjection(): Promise<void> {
 }
 
 function updateImageDisplay(): void {
+	TransmissionChart = new TransmissionDisplay(PreviewData, TransmissionCanvas)
+	TransmissionChart.displayTransmission();
+
 	for (let index = 0; index < PreviewImages.length; index++) {
 		const image = PreviewImages[index];
-		image.src = "data:image/png;base64," + PreviewData.projection.image;
+		// image.src = "data:image/png;base64," + PreviewData.projection.image;
 
 		if (SettingInvertElement.checked) {
 			window.dispatchEvent(new CustomEvent("invertOn",{bubbles:true, cancelable:false}));
@@ -91,19 +100,17 @@ function updateImageDisplay(): void {
 			window.dispatchEvent(new CustomEvent("invertOff",{bubbles:true, cancelable:false}));
 		}
 
-		// if (!SettingInvertElement.checked) {
-		// 	if (SettingLogElement.checked) {
-		// 		image.style.backgroundImage = "url('" + "data:image/png;base64," + Images.imagelog.substring(2, Images.imagelog.length - 1) + "')";
-		// 	} else {
-		// 		image.style.backgroundImage = "url('" + "data:image/png;base64," + Images.image.substring(2, Images.image.length - 1) + "')";
-		// 	}
-		// } else {
-		// 	if (SettingLogElement.checked) {
-		// 		image.style.backgroundImage = "url('" + "data:image/png;base64," + Images.imageloginv.substring(2, Images.imageloginv.length - 1) + "')";
-		// 	} else {
-		// 		image.style.backgroundImage = "url('" + "data:image/png;base64," + Images.imageinv.substring(2, Images.imageinv.length - 1) + "')";
-		// 	}
-		// }
+		if (SettingRawElement.checked) {
+			image.src = "data:image/png;base64," + PreviewData.projection.image.raw;
+		} else if (SettingLogElement.checked) {
+			image.src = "data:image/png;base64," + PreviewData.projection.image.log;
+		}
+
+		if (SettingTransmissionElement.checked) {
+			image.src = "data:image/png;base64," + PreviewData.projection.transmission.image;
+		} else if (SettingTransmissionElement.checked) {
+			image.src = "data:image/png;base64," + PreviewData.projection.transmission.image;
+		}
 	}
 	for (let index = 0; index < LayoutImages.length; index++) {
 		const image = LayoutImages[index];
@@ -120,6 +127,7 @@ export function setupPreview(): void {
 	PreviewImages = document.querySelectorAll("img.image-projection") as NodeListOf<HTMLImageElement>;
 	LayoutImages = document.querySelectorAll("img.image-layout") as NodeListOf<HTMLImageElement>;
 	SceneImages = document.querySelectorAll("img.image-scene") as NodeListOf<HTMLImageElement>;
+	TransmissionCanvas = document.getElementById("previewTransmissionGraph") as HTMLCanvasElement;
 
 	// Projection image of the preview pane. Supports live updates when changing detector sizes.
 	PreviewPaneImage = document.querySelector("#previewImage>img.image-projection") as HTMLImageElement;
@@ -132,12 +140,14 @@ export function setupPreview(): void {
 		ButtonPreviewProjection.variant = "default";
 		PreviewPane.setAttribute("selected", "layout");
 		SettingsDiv.setAttribute("selected", "layout");
+		TransmissionCanvas.parentElement?.setAttribute("selected", "layout");
 	};
 	ButtonPreviewProjection.onclick = () => {
 		ButtonPreviewLayout.variant = "default";
 		ButtonPreviewProjection.variant = "primary";
 		PreviewPane.setAttribute("selected", "projection");
 		SettingsDiv.setAttribute("selected", "projection");
+		TransmissionCanvas.parentElement?.setAttribute("selected", "projection");
 	};
 
 	const SettingsDiv = document.getElementById("settingsPane") as HTMLDivElement;
@@ -153,12 +163,19 @@ export function setupPreview(): void {
 	SettingLogElement.onclick = () => {
 		updateImageDisplay();
 	};
+	SettingTransmissionElement = document.getElementById("radioTransmissionProjectionSetting") as SlRadio;
+	SettingTransmissionElement.onclick = () => {
+		updateImageDisplay();
+	};
 
 	console.log(SettingsDiv);
 
 	const PreviewSettingsButton = document.querySelector("#settingsPane > button") as HTMLButtonElement;
 	PreviewSettingsButton.onclick = () => {
 		SettingsDiv.toggleAttribute("active");
+
+		// ! workaround for chart resize issues inside flexboxes with chart.js
+		updateImageDisplay();
 	};
 
 	for (let index = 0; index < PreviewImages.length; index++) {

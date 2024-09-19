@@ -42,6 +42,10 @@ img.error {
 	height: 100%;
 	width: 100%;
 	box-sizing: border-box;
+	
+	// sidebar pushes content 100% down, so move image back up.
+	// Can't use fixed positioning on sidebar due to resizing elements.
+	transform: translate(0, -100%);
 }
 
 .previewContainer {
@@ -86,12 +90,35 @@ img.image-layout {
 	display: none;
 }
 
-#webgl > #previewSettings {
+#previewSettings {
 	height: 0;
+	z-index: 11;
+	position: relative;
 }
 
 #settingsPane:not([selected=projection]) {
 	display: none;
+}
+
+#previewGraphContainer:not([selected=projection]) {
+	display: none;
+}
+
+#previewSidebar {
+	// overlap image preview
+	z-index: 1;
+	width: 14rem;
+	position: relative;
+	height: inherit;
+	display: flex;
+	flex-direction: column;
+}
+
+#previewGraphContainer {
+	height: 100%;
+	width: 100%;
+	flex-grow: 1;
+	flex-shrink: 1;
 }
 
 #previewSettings > sl-button-group > sl-button {
@@ -143,13 +170,14 @@ img.image-layout {
 	height: auto;
 	padding-top: 0.5rem;
 	width: 14rem;
-	position: fixed;
 	border-radius: 0.9rem;
 	background-color: var(--sl-color-primary-50);
 	border-color: var(--sl-color-primary-500);
 	border-style: groove;
 	border-width: 1px;
 	box-sizing: border-box;
+	flex-shrink: 0;
+	flex-grow: 1;
 }
 
 #settingsPane > button {
