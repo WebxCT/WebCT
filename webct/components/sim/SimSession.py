@@ -205,6 +205,21 @@ class SimSession:
 				self._simClient = SimClient(self._sid)
 				raise e
 
+	def transmission_histogram(self, quality=Quality.MEDIUM) -> Tuple[List[float], List[float]]:
+		projection = self.projection(quality)
+
+		hist, bins = np.histogram(projection, 100, (0, 1))
+
+		# normalize hist to be a percentage
+		hist = hist / hist.max()
+
+		# Remove last bin (99% + 100%) due to it oversaturating the histogram by a wide margin
+		# This is because it represents air, which is always 100% transmission, so just drop it.
+		hist = hist[:-1]
+		bins = bins[:-1]
+
+		return hist.astype(float).tolist(), bins.astype(float).tolist()
+
 	def projection(self, quality=Quality.MEDIUM, corrected=True) -> np.ndarray:
 		with self._lock:
 			if self._dirty[0] and not self._dirty[1] and quality in self._projections:
