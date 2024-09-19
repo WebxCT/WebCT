@@ -5,18 +5,27 @@
 	</sl-button-group>
 </div>
 
-<div id="settingsPane">
-	<div>
-		<sl-radio-group>
-			<sl-radio value="1" checked id="radioRawProjectionSetting">Raw Projection</sl-radio>
-			<sl-radio value="2" id="radioLogProjectionSetting">Log Projection</sl-radio>
-			<sl-radio value="3" disabled>Gamma Projection</sl-radio>
-			<sl-range disabled min="0" max="1" step="0.1" label="Gamma Value"></sl-range>
-		</sl-radio-group>
-		<sl-checkbox id="checkboxInvertSetting">Invert Colours</sl-checkbox>
+<div id="previewSidebar">
+	<div id="settingsPane">
+		<div>
+			<sl-radio-group>
+				<sl-radio value="1" checked id="radioRawProjectionSetting">Raw Projection</sl-radio>
+				<sl-radio value="2" id="radioLogProjectionSetting">Log Projection</sl-radio>
+				<sl-radio value="3" id="radioTransmissionProjectionSetting">Transmission Hotspot</sl-radio>
+			</sl-radio-group>
+			<sl-checkbox id="checkboxInvertSetting">Invert Colours</sl-checkbox>
+		</div>
+		<!-- id is a workaround for chart.js bugs -->
+		<button id="previewSettingsButton"></button>
+	
 	</div>
-	<button></button>
+	
+	<div id="previewGraphContainer">
+		<canvas id="previewTransmissionGraph"></canvas>
+	</div>
 </div>
+
+
 
 <div id="previewPane" class="previewContainer" selected="projection">
 

@@ -35,9 +35,16 @@ export interface SimResponseRegistry {
 	simResponse: {
 		time:number,
 		projection: {
-			image:string,
+			image: {
+				raw:string,
+				log:string,
+			},
 			height:number,
-			width:number
+			width:number,
+			transmission: {
+				hist:number[],
+				image:string,
+			}
 		},
 		layout: {
 			image:string,
@@ -74,9 +81,16 @@ export function processResponse(data: SimResponseRegistry["simResponse"]): Previ
 	const preview: PreviewData = {
 		time: data.time,
 		projection: {
-			image: data.projection.image,
+			image: {
+				raw: data.projection.image.raw,
+				log: data.projection.image.log
+			},
 			height: data.projection.height,
 			width: data.projection.width,
+			transmission: {
+				hist: data.projection.transmission.hist,
+				image: data.projection.transmission.image
+			},
 		},
 		layout: {
 			image: data.layout.image,

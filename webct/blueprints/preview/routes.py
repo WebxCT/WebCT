@@ -1,4 +1,6 @@
+from base64 import b64encode
 from datetime import datetime
+import io
 from typing import List
 import logging as log
 
@@ -24,6 +26,26 @@ def saveGif(array: np.ndarray) -> None:
 
 	images[0].save("projections.gif", "GIF", append_images=images[1:], duration=10, loop=0)
 
+def getHistImage(array:np.ndarray, bins:List[float]) -> str:
+	# create a mask of pixels < bin[5]
+	# 0 - 1 - 2 - 3 - 4 - 5 - 6
+	mask = array < bins[5]
+
+	# create rgb image
+	array = (array - array.min()) / (array.max() - array.min())
+	array = (array * 255).astype("uint8")
+	array = np.stack([array, array, array], axis=2)
+	# set red channel of mask to 255, other channels to 0
+	array[mask, 0] = 255
+	array[mask, 1] = 0
+	array[mask, 2] = 0
+
+	# create png and base64 via bytestream
+	byteStream = io.BytesIO()
+	img = Image.fromarray(array, mode="RGB")
+	img.save(byteStream, "PNG")
+	byteStream.seek(0)
+	return str(b64encode(byteStream.read()))[2:-1]
 
 @bp.route("/sim/preview/get")
 def getPreviews() -> Response:
@@ -31,8 +53,14 @@ def getPreviews() -> Response:
 	sim = Sim(session)
 
 	projection = sim.projection(Quality.MEDIUM)
+	log_projection = np.log(projection)
+
+	hist, bins = sim.transmission_histogram()
+	histimgstr = getHistImage(projection, bins)
+
 	log.info(f"[{sim._sid}] Encoding projection preview")
 	projectionstr = asPngStr(projection)
+	log_projectionstr = asPngStr(log_projection)
 
 	layout = sim.layout()
 	log.info(f"[{sim._sid}] Encoding layout preview")
@@ -46,9 +74,16 @@ def getPreviews() -> Response:
 		{
 			"time": f"{(then-datetime.now()).total_seconds()}",
 			"projection": {
-				"image": projectionstr,
+				"image": {
+					"raw": projectionstr,
+					"log": log_projectionstr,
+				},
 				"height": projection.shape[0],
 				"width": projection.shape[1],
+				"transmission": {
+					"hist": hist,
+					"image": histimgstr,
+				}
 			},
 			"layout": {
 				"image": layoutstr,

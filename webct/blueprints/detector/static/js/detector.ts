@@ -8,7 +8,7 @@ import { AlertType, showAlert } from "../../../base/static/js/base";
 import { SetPreviewSize } from "../../../preview/static/js/sim/projection";
 import { DetectorResponseRegistry, prepareRequest, processResponse, requestDetectorData, sendDetectorData } from "./api";
 import { DetectorConfigError, DetectorRequestError, showError } from "./errors";
-import { DetectorProperties, EnergyResponseData, EnergyResponseDisplay, LSF, LSFDisplay, LSFParseEnum, ScintillatorMaterial } from "./types";
+import { DetectorProperties, EnergyResponseDisplay, LSF, LSFDisplay, LSFParseEnum, ScintillatorMaterial } from "./types";
 import { validateHeight, validatePixel, validateWidth } from "./validation";
 
 // ====================================================== //

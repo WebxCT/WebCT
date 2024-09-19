@@ -212,6 +212,14 @@ function setPageLoading(loading: boolean, type: LoadingType = "default", source:
 			button.setAttribute("loading", "true");
 		}
 
+		// special buttons that also update the page, but are not dedicated to that feature.
+		// e.g quick-fire sample rotate buttons
+		let miscButtons = document.getElementsByClassName("button-loadonupdate");
+		for (let index = 0; index < miscButtons.length; index++) {
+			const button = miscButtons[index];
+			button.setAttribute("loading", "true")
+		}
+
 		document.getElementsByTagName("body")[0].style.cursor = "wait";
 
 		LoadingBar.setAttribute("variant", type);
@@ -256,6 +264,14 @@ function setPageLoading(loading: boolean, type: LoadingType = "default", source:
 
 		for (let index = 0; index < ReconButtons.length; index++) {
 			const button = ReconButtons[index];
+			button.removeAttribute("loading");
+		}
+
+		// special buttons that also update the page, but are not dedicated to that feature.
+		// e.g quick-fire sample rotate buttons
+		let miscButtons = document.getElementsByClassName("button-loadonupdate");
+		for (let index = 0; index < miscButtons.length; index++) {
+			const button = miscButtons[index];
 			button.removeAttribute("loading");
 		}
 

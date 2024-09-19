@@ -3,13 +3,14 @@
  * @author Iwan Mitchell
  */
 
-import { SlDropdown, SlInput, SlRange, SlSelect } from "@shoelace-style/shoelace";
+import { SlButton, SlDropdown, SlInput, SlRange, SlSelect } from "@shoelace-style/shoelace";
 import { AlertType, showAlert } from "../../../base/static/js/base";
 import { PanePixelSizeElement, PaneWidthElement } from "../../../detector/static/js/detector";
 import { CaptureResponseRegistry, processResponse, requestCaptureData, sendCaptureData, prepareRequest, requestCapturePreview } from "./api";
 import { CaptureConfigError, CaptureRequestError, showError } from "./errors";
 import { CapturePreview, CaptureProperties } from "./types";
 import { validateProjections } from "./validation";
+import { UpdatePage } from "../../../app/static/js/app";
 
 // ====================================================== //
 // ================== Document Elements ================= //
@@ -26,6 +27,8 @@ let DetectorPosZElement: SlInput;
 let SampleRotateXElement: SlInput;
 let SampleRotateYElement: SlInput;
 let SampleRotateZElement: SlInput;
+let ButtonRotateClock45Element: SlButton;
+let ButtonRotateCounterClock45Element: SlButton;
 
 let PreviewImages: NodeListOf<HTMLImageElement>;
 let PreviewOverlays: NodeListOf<HTMLDivElement>;
@@ -65,6 +68,9 @@ export function setupCapture(): boolean {
 	const sample_rotatey_element = document.getElementById("inputSampleRotateY");
 	const sample_rotatez_element = document.getElementById("inputSampleRotateZ");
 
+	const sample_rotate_counter_clock_45_element = document.getElementById("buttonSampleRotateCounterClock45");
+	const sample_rotate_clock_45_element = document.getElementById("buttonSampleRotateClock45");
+
 	const range_nyquist = document.getElementById("rangeNyquist");
 
 	if (total_rotation_element == null ||
@@ -75,6 +81,8 @@ export function setupCapture(): boolean {
 		sample_rotatex_element == null ||
 		sample_rotatey_element == null ||
 		sample_rotatez_element == null ||
+		sample_rotate_counter_clock_45_element == null ||
+		sample_rotate_clock_45_element == null ||
 		detector_posx_element == null ||
 		detector_posy_element == null ||
 		detector_posz_element == null ||
@@ -94,6 +102,8 @@ export function setupCapture(): boolean {
 		console.log(sample_rotatex_element);
 		console.log(sample_rotatey_element);
 		console.log(sample_rotatez_element);
+		console.log(sample_rotate_clock_45_element);
+		console.log(sample_rotate_counter_clock_45_element);
 		console.log(range_nyquist);
 
 		showAlert("Capture setup failure", AlertType.ERROR);
@@ -116,6 +126,8 @@ export function setupCapture(): boolean {
 	SampleRotateXElement = sample_rotatex_element as SlInput;
 	SampleRotateYElement = sample_rotatey_element as SlInput;
 	SampleRotateZElement = sample_rotatez_element as SlInput;
+	ButtonRotateClock45Element = sample_rotate_clock_45_element as SlButton;
+	ButtonRotateCounterClock45Element = sample_rotate_counter_clock_45_element as SlButton;
 
 	// Workaround hack to deal with styling annoying shadowroot classes
 	Array.prototype.slice.call(document.getElementsByTagName("sl-dropdown")).forEach((dropdown: SlDropdown) => {
@@ -151,6 +163,17 @@ export function setupCapture(): boolean {
 			image.classList.remove("invert");
 		});
 	}
+
+	ButtonRotateClock45Element.onclick = () => {
+		SampleRotateZElement.value = (parseFloat(SampleRotateZElement.value) + 45) % 360 + "";
+		UpdatePage();
+	};
+	ButtonRotateCounterClock45Element.onclick = () => {
+		let rot = (parseFloat(SampleRotateZElement.value) - 45)
+		if (rot < 0) { rot += 360 }
+		SampleRotateZElement.value = rot + "";
+		UpdatePage();
+	};
 
 	validateCapture();
 	SetOverlaySize(300, 300);
