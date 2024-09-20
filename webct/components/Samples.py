@@ -1,5 +1,6 @@
 from dataclasses import dataclass
-from typing import Optional
+from random import sample
+from typing import List, Optional, Tuple
 
 from webct.components.Material import Material
 
@@ -15,7 +16,6 @@ class RenderedSample:
 	sizeUnit: str
 	materialID: str
 	material: Material
-
 
 @dataclass(frozen=True)
 class Sample:
@@ -99,3 +99,43 @@ class Sample:
 			raise ValueError("Unable to render sample: Material ID '"+self.materialID+"' cannot be found.")
 		sizeUnit = "mm" if self.sizeUnit is None else self.sizeUnit
 		return RenderedSample(self.label, self.modelPath, sizeUnit, self.materialID, mat)
+
+@dataclass(frozen=True)
+class RenderedSampleSettings:
+	scaling: float
+	samples: Tuple[RenderedSample]
+
+@dataclass(frozen=True)
+class SampleSettings:
+	scaling: float
+	samples: Tuple[Sample]
+
+	def render(self) -> RenderedSampleSettings:
+		print(self.__dict__)
+		return RenderedSampleSettings(
+			scaling = self.scaling,
+			samples = [sample.render() for sample in self.samples]
+		)
+
+	def to_json(self) -> dict:
+		json = self.__dict__.copy()
+		json["samples"] = list([sample.to_json() for sample in self.samples])
+		return json
+	
+	def from_json(json: dict):
+		if "scaling" not in json or "samples" not in json:
+			raise KeyError(f"Missing keys. {json.keys()}")
+		
+		float(json["scaling"])
+		list(json["samples"])
+
+		scaling = float(json["scaling"])
+		if scaling == 0:
+			raise ValueError("Scaling cannot be 0. Scaling must be positive or negative.")
+		
+		samples = []
+		for sample in json["samples"]:
+			samples.append(Sample.from_json(sample))
+
+		return SampleSettings(scaling=scaling, samples=tuple(samples))
+

@@ -26,6 +26,19 @@ export interface SampleProperties {
 	material?: Material;
 }
 
+
+export interface SampleSettings {
+	/**
+	 * Scaling factor for all models in the scene. 1.0 = 1mm.
+	 */
+	scaling:number
+
+	/**
+	 * List of Samples
+	 */
+	samples:SampleProperties[]
+}
+
 /**
  * A sample with a material defined as a reference
  */

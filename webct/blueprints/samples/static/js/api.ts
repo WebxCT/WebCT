@@ -3,7 +3,7 @@
  * @author Iwan Mitchell
  */
 
-import { MaterialLibrary, Material, SampleProperties, SamplePropertiesID } from "./types";
+import { MaterialLibrary, Material, SampleProperties, SamplePropertiesID, SampleSettings } from "./types";
 
 // ====================================================== //
 // ====================== Endpoints ===================== //
@@ -15,8 +15,8 @@ import { MaterialLibrary, Material, SampleProperties, SamplePropertiesID } from 
 const Endpoint = {
 	getSampleData: "samples/get",
 	setSampleData: "samples/set",
-	listSamples: "samples/list",
-	uploadSamples: "samples/upload",
+	listModels: "samples/list",
+	uploadModels: "samples/upload",
 	listMaterials: "material/list",
 	setMaterial: "material/set",
 	deleteMaterial: "material/delete",
@@ -46,6 +46,7 @@ export interface SamplesResponseRegistry {
 	 * Response given when retrieving samples data with the getSampleData Endpoint.
 	 */
 	sampleDataResponse: {
+		scaling: number,
 		samples:
 		{
 			label: string,
@@ -84,6 +85,7 @@ export interface SamplesRequestRegistry {
 	 * Request given when attempting to change samples parameters.
 	 */
 	sampleDataRequest: {
+		scaling: number,
 		samples:
 		{
 			label: string,
@@ -129,7 +131,7 @@ export async function requestSampleData(): Promise<Response> {
  * @returns Potentially raw data from the sample list endpoint.
  */
 export async function requestModelList(): Promise<Response> {
-	return await fetch(Endpoint.listSamples);
+	return await fetch(Endpoint.listModels);
 }
 
 /**
@@ -174,9 +176,9 @@ export async function sendMaterialData(data: SamplesRequestRegistry["materialDat
  * Prepare a XMLHttpRequest for use to uploading model data to the server.
  * @returns An XMLHttpRequest object configured an endpoint.
  */
-export function uploadSample(): XMLHttpRequest {
+export function uploadModel(): XMLHttpRequest {
 	const request = new XMLHttpRequest();
-	request.open("POST", Endpoint.uploadSamples);
+	request.open("POST", Endpoint.uploadModels);
 	return request;
 }
 
@@ -199,7 +201,7 @@ export async function deleteMaterialData(data: SamplesRequestRegistry["materialD
  * @param data - unconverted objects created from a getSamples request.
  * @returns Samples Properties, Unfiltered spectra data, and filtered spectra data.
  */
-export function processResponse(data: SamplesResponseRegistry[keyof SamplesResponseRegistry], type: keyof SamplesResponseRegistry): SampleProperties[] | string[] | MaterialLibrary {
+export function processResponse(data: SamplesResponseRegistry[keyof SamplesResponseRegistry], type: keyof SamplesResponseRegistry): SampleSettings | string[] | MaterialLibrary {
 	// can't declare variables in switch statements...
 	const samples: SampleProperties[] = [];
 	const files: string[] = [];
@@ -218,7 +220,10 @@ export function processResponse(data: SamplesResponseRegistry[keyof SamplesRespo
 				sizeUnit: sample.sizeUnit,
 			});
 		}
-		return samples;
+		return {
+			scaling: data.scaling,
+			samples: samples
+		};
 	case "sampleListResponse":
 		data = data as SamplesResponseRegistry["sampleListResponse"];
 		for (let index = 0; index < data.files.length; index++) {
@@ -263,9 +268,10 @@ export function processResponse(data: SamplesResponseRegistry[keyof SamplesRespo
  * Convert samples properties into structured API request data.
  * @param data - Sample properties to be sent to the server.
  */
-export function prepareSampleRequest(data: SamplePropertiesID[]): SamplesRequestRegistry["sampleDataRequest"] {
+export function prepareSampleRequest(data: SamplePropertiesID[], scaling:number): SamplesRequestRegistry["sampleDataRequest"] {
 	const samples: SamplesRequestRegistry["sampleDataRequest"] = {
-		samples: []
+		samples: [],
+		scaling: scaling
 	};
 
 	for (let index = 0; index < data.length; index++) {

@@ -16,7 +16,7 @@ from webct.components.Material import (
 	SpecialMaterial,
 	SpecialMaterialEnum,
 )
-from webct.components.Samples import RenderedSample
+from webct.components.Samples import RenderedSampleSettings
 from webct.components.sim.Quality import Quality
 from webct.components.sim.simulators.Simulator import Simulator
 from webct import model_folder
@@ -168,13 +168,19 @@ class GVXRSimulator(Simulator):
 		self._detector = value
 
 	@property
-	def samples(self) -> List[RenderedSample]:
+	def samples(self) -> RenderedSampleSettings:
 		return self._samples
 
 	@samples.setter
-	def samples(self, value: List[RenderedSample]) -> None:
+	def samples(self, value: RenderedSampleSettings) -> None:
 		gvxr.removePolygonMeshesFromSceneGraph()
-		for sample in value:
+
+		if self.samples is not None:
+			# revert scaling on scene node
+			corrective_scale = 1 / self.samples.scaling
+			gvxr.scaleScene(corrective_scale, corrective_scale, corrective_scale, "mm")
+
+		for sample in value.samples:
 			label = sample.label
 			mat: Material = sample.material
 
@@ -204,6 +210,10 @@ class GVXRSimulator(Simulator):
 
 			gvxr.setColour(label, *colour_from_string(label), 1)
 			gvxr.moveToCenter(label)
+
+		# Apply global sample properties
+		gvxr.scaleScene(value.scaling, value.scaling, value.scaling, "mm")
+		self._samples = value
 
 	@property
 	def capture(self) -> CaptureParameters:
