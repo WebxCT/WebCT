@@ -1,8 +1,9 @@
 import subprocess
 from datetime import datetime
+from time import monotonic
 """version.py : Update and write version information to files"""
 
-version = "0.0.1.1"
+version = "0.0.1.2"
 
 def file_version_info_cfg(release:bool, version:str, commit:str) -> None:
 	# developer version; use a commit reference instead of file version
@@ -70,6 +71,7 @@ def version_j2_html(release:bool, version:str, commit:str) -> None:
 
 
 if __name__ == "__main__":
+	tik = monotonic()
 	try:
 		commit = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode().strip()
 		tag = subprocess.check_output(['git', 'tag', '--points-at', 'HEAD']).decode().strip()
@@ -94,3 +96,4 @@ if __name__ == "__main__":
 	version_py(release, version, commit)
 	print("Creating version.j2.html for webct frontend...")
 	version_j2_html(release, version, commit)
+	print(f"Done! (in {monotonic()-tik:.2f}s)")
