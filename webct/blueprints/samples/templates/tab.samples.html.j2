@@ -5,6 +5,12 @@
 
 {% include "update-button.html.j2" %}
 
+<div class="group">
+	<div>
+		<sl-input type="number" max="1000" step="0.01" min="-1000" id="inputSampleScaling" label="Global Scaling"  help-text="Scaling factor for all samples. 1.00 = 1mm (default)">1.00<span slot="suffix">x</span></sl-input>
+	</div>
+</div>
+
 <div id="divSamples">
 <div class="model">
 	<div class="remove">

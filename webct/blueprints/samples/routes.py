@@ -7,7 +7,7 @@ from werkzeug.utils import secure_filename
 from webct.blueprints.samples import bp
 from pathlib import Path
 from webct.components.Material import MaterialEncoder, MaterialFromJson, MATERIALS
-from webct.components.Samples import Sample
+from webct.components.Samples import Sample, SampleSettings
 
 from webct.components.sim.SimSession import Sim
 import logging as log
@@ -66,7 +66,7 @@ def preloadMaterials() -> None:
 
 
 @bp.route("/samples/list", methods=["GET"])
-def getSampleList() -> Response:
+def getModelList() -> Response:
 	folder = Path(model_folder)
 	if not folder.exists():
 		folder.mkdir()
@@ -88,12 +88,7 @@ def getSample() -> Response:
 	# Get the currently loaded samples and their statistics
 
 	simdata = Sim(session)
-	samples = {}
-	samples["samples"] = []
-	for sample in simdata.samples:
-		samples["samples"].append(sample.to_json())
-
-	return jsonify(samples)
+	return jsonify(simdata.samples)
 
 
 @bp.route("/samples/set", methods=["PUT"])
@@ -105,11 +100,8 @@ def setSamples() -> Response:
 	simdata = Sim(session)
 
 	# Create a set of modelpaths so we can avoid re-adding models
-	samples: List[Sample] = []
-	for sample in data["samples"]:
-		samples.append(Sample.from_json(sample))
-
-	simdata.samples = tuple(samples)
+	samples = SampleSettings.from_json(data)
+	simdata.samples = samples
 	return Response(None, 200)
 
 

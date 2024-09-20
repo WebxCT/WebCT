@@ -5,7 +5,7 @@ import numpy as np
 from webct.components.Beam import Beam
 from webct.components.Capture import CaptureParameters
 from webct.components.Detector import DetectorParameters
-from webct.components.Samples import RenderedSample
+from webct.components.Samples import RenderedSampleSettings
 from webct.components.sim.Quality import Quality
 
 
@@ -25,7 +25,7 @@ class Simulator(metaclass=ABCMeta):
 		self._sid = sid
 		self._beam: Beam = None
 		self._detector: DetectorParameters = None
-		self._samples: List[RenderedSample] = None
+		self._samples: RenderedSampleSettings = None
 		self._simSettings: dict[str, str] = {}
 		self._capture: CaptureParameters = None
 		self._quality: Quality = Quality.PREVIEW
@@ -50,11 +50,11 @@ class Simulator(metaclass=ABCMeta):
 		self._beam = value
 
 	@property
-	def samples(self) -> List[RenderedSample]:
+	def samples(self) -> RenderedSampleSettings:
 		return self._samples
 
 	@samples.setter
-	def samples(self, value: List[RenderedSample]) -> None:
+	def samples(self, value: RenderedSampleSettings) -> None:
 		self._samples = value
 
 	@property

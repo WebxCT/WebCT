@@ -6,16 +6,18 @@
 import { SlButton, SlDialog, SlInput, SlProgressBar, SlRadio, SlSelect, SlTabGroup } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form";
 import { AlertType, showAlert } from "../../../base/static/js/base";
-import { prepareSampleRequest, processResponse, requestMaterialList, requestModelList, requestSampleData, SamplesResponseRegistry, sendMaterialData, sendSamplesData, uploadSample, SamplesRequestRegistry, deleteMaterialData } from "./api";
+import { prepareSampleRequest, processResponse, requestMaterialList, requestModelList, requestSampleData, SamplesResponseRegistry, sendMaterialData, sendSamplesData, uploadModel, SamplesRequestRegistry, deleteMaterialData } from "./api";
 import { DetectorRequestError, showError } from "./errors";
 import { getSelectedMaterial, MixtureInputList, setSelectedMaterial, updateMaterialDialog } from "./materialDialogue";
 
-import { EventNewCategory, Material, MaterialLibrary, SampleProperties, SamplePropertiesID } from "./types";
+import { EventNewCategory, Material, MaterialLibrary, SampleProperties, SamplePropertiesID, SampleSettings } from "./types";
 import { markValid } from "../../../base/static/js/validation";
 
 // ====================================================== //
 // ================== Document Elements ================= //
 // ====================================================== //
+let SampleScalingElement: SlInput;
+
 export let MaterialDialog: SlDialog;
 let MaterialCloseButton: SlButton;
 let MaterialViewButton: SlButton;
@@ -77,6 +79,8 @@ export function setupSamples(): boolean {
 
 	window.customElements.define("mixture-input-list", MixtureInputList, { extends: "ul" });
 
+	const sample_scaling_element = document.getElementById("inputSampleScaling");
+
 	const dialogue_complete_upload = document.getElementById("dialogueUploadComplete");
 	const button_complete_close = document.getElementById("buttonUploadClose");
 
@@ -105,7 +109,8 @@ export function setupSamples(): boolean {
 	const category_dialog_submit = document.getElementById("buttonCategorySubmit");
 	const category_dialog_close = document.getElementById("buttonCategoryClose");
 
-	if (tab_material == null ||
+	if (sample_scaling_element == null ||
+		tab_material == null ||
 		button_material_open == null ||
 		dialogue_material_library == null ||
 		button_material_close == null ||
@@ -129,6 +134,7 @@ export function setupSamples(): boolean {
 		category_dialog_submit == null ||
 		category_dialog_close == null) {
 
+		console.log(sample_scaling_element);
 		console.log(dialogue_material_library);
 		console.log(button_material_close);
 		console.log(button_material_open);
@@ -157,7 +163,7 @@ export function setupSamples(): boolean {
 	}
 
 	RecentMaterials = {"element/aluminium":1};
-
+	SampleScalingElement = sample_scaling_element as SlInput;
 	UploadCompleteDialog = dialogue_complete_upload as SlDialog;
 	SampleDialog = dialogue_sample_element as SlDialog;
 	SampleDialogSelect = sample_upload_select as SlSelect;
@@ -241,7 +247,7 @@ export function setupSamples(): boolean {
 
 		formdata.append("file", SampleUploadInput.files[0]);
 
-		const upload = uploadSample();
+		const upload = uploadModel();
 		upload.addEventListener("progress", (progress: ProgressEvent) => {
 			SampleUploadBar.value = Math.floor((progress.loaded / progress.total) * 100);
 			SampleUploadBar.textContent = SampleUploadBar.value + "%";
@@ -782,7 +788,7 @@ export function UpdateSamples(): Promise<void> {
 			const result = response.json();
 
 			result.then((result: unknown) => {
-				const properties = processResponse(result as SamplesResponseRegistry["sampleDataResponse"], "sampleDataResponse") as SampleProperties[];
+				const properties = processResponse(result as SamplesResponseRegistry["sampleDataResponse"], "sampleDataResponse") as SampleSettings;
 				setSampleParams(properties);
 			}).catch(() => {
 				return;
@@ -843,11 +849,11 @@ function setSamples(): Promise<void> {
 	console.log("setsamples");
 
 	// Ensure current samples are using IDs rather than materials
-	const sampleParams = getSampleParams();
+	const sampleParams = getSampleParams()
 	const newMaterials:Material[] = [];
 
-	for (let index = 0; index < sampleParams.length; index++) {
-		const sample = sampleParams[index];
+	for (let index = 0; index < sampleParams.samples.length; index++) {
+		const sample = sampleParams.samples[index];
 		if (sample.materialID === undefined && sample.material !== undefined) {
 			// Attempt to get material from current database
 			const perhapsMat = idFromMaterial(sample.material);
@@ -893,7 +899,9 @@ function setSamples(): Promise<void> {
 		});
 	}
 
-	const samples = prepareSampleRequest(sampleParams as SamplePropertiesID[]);
+	// re-cast sampleparams to IDs since they've been transformed.
+	// Unfortunately this requires a decomposition;- probably an easier way to compose types...
+	const samples = prepareSampleRequest(sampleParams.samples as SamplePropertiesID[], sampleParams.scaling);
 
 	return basePromise.then(()=>{
 
@@ -911,8 +919,11 @@ function setSamples(): Promise<void> {
 	});
 }
 
-export function setSampleParams(properties:SampleProperties[]) {
-	SessionSamples = properties;
+export function setSampleParams(properties:SampleSettings) {
+	SessionSamples = properties.samples;
+
+	SampleScalingElement.value = properties.scaling + "";
+
 	// Not really sure why, but there's a bug in updateSampleCards that vanishes
 	// when using a debugger. This is likely due to a race condition, but I
 	// don't for the life of my know what's causing it.
@@ -920,7 +931,10 @@ export function setSampleParams(properties:SampleProperties[]) {
 	setTimeout(updateSampleCards, 100);
 }
 
-export function getSampleParams():SampleProperties[] {
+export function getSampleParams():SampleSettings {
 	// Create a copy to ensure downstream changes are not propagated.
-	return structuredClone(SessionSamples);
+	return {
+		scaling: parseFloat(SampleScalingElement.value),
+		samples: structuredClone(SessionSamples),
+	}
 }

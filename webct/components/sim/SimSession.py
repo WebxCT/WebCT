@@ -18,7 +18,7 @@ from webct.components.Beam import (BEAM_GENERATOR, PROJECTION, BeamParameters, F
 from webct.components.Capture import CaptureParameters
 from webct.components.Detector import DEFAULT_LSF, SCINTILLATOR_MATERIAL, DetectorParameters, Scintillator
 from webct.components.Reconstruction import (FDKParam, ReconParameters, reconstruct)
-from webct.components.Samples import RenderedSample, Sample
+from webct.components.Samples import RenderedSampleSettings, Sample, SampleSettings
 from webct.components.sim.Download import DownloadManager
 from webct.components.sim.clients.SimClient import SimClient, SimThreadError, SimTimeoutError
 from webct.components.sim.Quality import Quality
@@ -44,8 +44,8 @@ class SimSession:
 	_beam_spectra: Spectra
 	_unfiltered_beam_spectra: Spectra
 	_simClient: SimClient
-	_samples: Tuple[Sample]
-	_samples_rendered: Tuple[RenderedSample]
+	_samples: SampleSettings
+	_samples_rendered: RenderedSampleSettings
 	_capture_param: CaptureParameters
 	_counter: int = 1
 
@@ -84,12 +84,10 @@ class SimSession:
 			material=Element.W
 		)
 		self.detector = DetectorParameters(300, 250, 0.5, DEFAULT_LSF, Scintillator(SCINTILLATOR_MATERIAL.GADOX, 136.55 / 1000))
-		self.samples = (
-			Sample(
-				"Dragon Model",
-				"welsh-dragon-small.stl",
-				"mm",
-				"element/aluminium",
+		self.samples = SampleSettings(
+			scaling = 1.0,
+			samples = (
+				Sample("Dragon Model", "welsh-dragon-small.stl", "mm", "element/aluminium"),
 			),
 		)
 		self.capture = CaptureParameters(360, 360, (0, 100, 0), (0, -400, 0), (0, 0, 90))
@@ -130,22 +128,21 @@ class SimSession:
 			return self._unfiltered_beam_spectra
 
 	@property
-	def samples(self) -> Tuple[Sample]:
+	def samples(self) -> SampleSettings:
 		with self._lock:
 			return self._samples
 
 	@samples.setter
-	def samples(self, value: Tuple[Sample]) -> None:
+	def samples(self, value:SampleSettings) -> None:
 		with self._lock:
 			if hasattr(self, "_samples") and value == self._samples:
 				return
-			log.info(f"[{self._sid}] Updating samples")
+			log.info(f"[{self._sid}] Updating Samples")
 			self._dirty = [True, True, True]
 			self._counter += 1
 
-			# rendering samples may call a value error, let this propagate upwards
-			self._samples_rendered = tuple([sample.render() for sample in value])
-
+			# rendering samples may call a value error, let this propagate upwards before we set samples.
+			self._samples_rendered = value.render()
 			self._samples = value
 
 			# We only send rendered samples to the simulation client.
@@ -164,13 +161,13 @@ class SimSession:
 		with self._lock:
 			log.info(f"[{self._sid}] Rendering sample properties")
 			# rendering samples may call a value error, let this propagate upwards
-			new_samples = tuple([sample.render() for sample in self._samples])
+			new_samples = self._samples.render()
 
 			if new_samples == self._samples_rendered:
 				# Don't update the client if there is nothing to change.
 				return
 
-			# Sample materials have changed, update client.
+			# sample materials have changed, update client.
 			self._counter += 1
 			self._samples_rendered = new_samples
 			try:

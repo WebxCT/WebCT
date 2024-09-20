@@ -7,13 +7,13 @@ import { DetectorProperties } from "../../../detector/static/js/types";
 import { getReconParams, setReconParams } from "../../../reconstruction/static/js/recon";
 import { ReconstructionParams } from "../../../reconstruction/static/js/types";
 import { getSampleParams, MaterialLib, setSampleParams } from "../../../samples/static/js/samples";
-import { SampleProperties } from "../../../samples/static/js/types";
+import { SampleProperties, SampleSettings } from "../../../samples/static/js/types";
 import { UpdatePage } from "./app";
 
 export interface configSubset {
 	beam?:BeamProperties;
 	detector?:DetectorProperties;
-	samples?:SampleProperties[]
+	samples?:SampleSettings
 	capture?:CaptureProperties;
 	recon?:ReconstructionParams;
 }
@@ -21,7 +21,7 @@ export interface configSubset {
 export interface configFull extends configSubset {
 	beam:BeamProperties;
 	detector:DetectorProperties;
-	samples:SampleProperties[]
+	samples:SampleSettings
 	capture:CaptureProperties;
 	recon:ReconstructionParams;
 }
@@ -74,8 +74,8 @@ export class WebCTConfig {
 			const sampleParams = getSampleParams();
 			if (optMatasID == false) {
 				// Resolve materials
-				for (let index = 0; index < sampleParams.length; index++) {
-					const sample:SampleProperties = sampleParams[index];
+				for (let index = 0; index < sampleParams.samples.length; index++) {
+					const sample:SampleProperties = sampleParams.samples[index];
 					const matsplit = sample.materialID?.split("/");
 					if (matsplit !== undefined) {
 						sample.material = structuredClone(MaterialLib[matsplit[0]][matsplit[1]]);
@@ -86,7 +86,7 @@ export class WebCTConfig {
 						delete s.material.weights;
 						delete s.material.elements;
 						delete s.material.compound;
-						sampleParams[index] = s;
+						sampleParams.samples[index] = s;
 					}
 				}
 			}

@@ -146,8 +146,8 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 		};
 
 		const samples:sampleConfig[] = [];
-		for (let index = 0; index < data.samples.length; index++) {
-			const sample = data.samples[index];
+		for (let index = 0; index < data.samples.samples.length; index++) {
+			const sample = data.samples.samples[index];
 
 			let material:GVXRMaterial;
 			if (sample.material == undefined) {
@@ -320,7 +320,11 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 				}
 			},
 			beam: beam,
-			samples: samples
+			samples: {
+				samples: samples,
+				// todo: support model scaling via gvxr json
+				scaling: 1.0
+			}
 		};
 	}
 

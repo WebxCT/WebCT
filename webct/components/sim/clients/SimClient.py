@@ -17,7 +17,7 @@ import numpy as np
 from webct.components.Beam import Beam, BeamParameters, Spectra
 from webct.components.Capture import CaptureParameters
 from webct.components.Detector import DetectorParameters
-from webct.components.Samples import RenderedSample
+from webct.components.Samples import RenderedSampleSettings
 from webct.components.sim.Quality import Quality
 from webct.components.sim.simulators.GVXRSimulator import GVXRSimulator
 
@@ -63,7 +63,7 @@ class STM_BEAM(STM):
 
 @dataclass(frozen=True)
 class STM_SAMPLES(STM):
-	samples: Tuple[RenderedSample]
+	samples: RenderedSampleSettings
 
 
 @dataclass(frozen=True)
@@ -180,9 +180,9 @@ class SimClient(Process):
 			elif isinstance(input, STM_SAMPLES):
 				log.info(f"({self.pid}) Parent asking for new samples")
 				self.conn_child.send(SimResponse.ACCEPTED)
-				for i, value in enumerate(input.samples):
+				for i, value in enumerate(input.samples.samples):
 					log.info(f"({self.pid}) Sample {i}: {value.label} - {value.modelPath} - {value.material.label} - {value.material.density}")
-				self._simulator.samples = list(input.samples)
+				self._simulator.samples = input.samples
 				self.conn_child.send(SimResponse.DONE)
 				continue
 
@@ -347,7 +347,7 @@ class SimClient(Process):
 				f"Unexpected response: {response}, wanted SimResponse.DONE"
 			)
 
-	def setSamples(self, samples: Tuple[RenderedSample]):
+	def setSamples(self, samples: RenderedSampleSettings):
 		request = STM_SAMPLES(samples)
 		self.conn_parent.send(request)
 
