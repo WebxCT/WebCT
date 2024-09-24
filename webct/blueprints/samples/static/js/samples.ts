@@ -177,6 +177,7 @@ export function setupSamples(): boolean {
 	MaterialCloseButton = button_material_close as SlButton;
 	MaterialTab = tab_material as SlTabGroup;
 	SampleDialogSelect.addEventListener("sl-change", () => {
+		SampleDialogRadio1.click()
 		updateDialog();
 	});
 	UploadCloseButton = button_complete_close as SlButton;
@@ -240,6 +241,9 @@ export function setupSamples(): boolean {
 
 	SampleUploadInput = sample_upload_input as HTMLInputElement;
 	SampleUploadInput.onchange = () => {
+		// auto-select sample upload. click() is used to trigger radio button behaviour.
+		SampleDialogRadio2.click()
+
 		const formdata = new FormData();
 		if (SampleUploadInput.files == null) {
 			return;
