@@ -126,7 +126,7 @@ main > section.content > sl-split-panel {
 	max-height: 100%;
 	--max: 80%;
 	--min: 20%;
-	padding-left: 1rem;
+	margin-left: 1rem;
 }
 sl-split-panel::part(divider) {
 	background-color: var(--sl-color-primary-500);
