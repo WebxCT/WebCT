@@ -50,15 +50,14 @@
 
 <div class="group" id="settingsTube">
 	<div>
-		<sl-select label="Anode Material" value="74" id="selectTubeMaterial">
-			{# <sl-menu-item value="29">Cu (Copper)</sl-menu-item> #}
+		<sl-input type="number" label="Focal Spot Size" step="0.01" value="0.0" id="inputBeamSpotSize">
+			{% include "./units/size.html.j2" %}
+		</sl-input>
+		<sl-select label="Anode Material" value="74" id="selectTubeMaterial" advanced>
 			<sl-menu-item value="74">W (Tungsten)</sl-menu-item>
 			<sl-menu-item value="42">Mo (Molydbenum)</sl-menu-item>
 			<sl-menu-item value="45">Rh (Rhodium)</sl-menu-item>
 		</sl-select>
-		<sl-input type="number" label="Focal Spot Size" step="0.01" value="0.0" id="inputBeamSpotSize">
-			{% include "./units/size.html.j2" %}
-		</sl-input>
 		<sl-input label="Anode Angle" type="number" step="0.1" value="12" id="inputBeamAngle" advanced >
 			{% include "./units/degree.html.j2" %}
 		</sl-input>
