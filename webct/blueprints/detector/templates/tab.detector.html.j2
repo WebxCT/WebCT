@@ -23,12 +23,8 @@
 		<sl-input type="number" label="Pixel Size" value="0.5" step="0.01" id="inputPanePixelSize">
 			<span slot="suffix">μm</span>
 		</sl-input>
-	</div>
-</div>
 
-<div class="group">
-	<div>
-		<sl-select label="Detector Scintillator" value="" id="selectScintillator">
+		<sl-select label="Detector Scintillator" value="" id="selectScintillator" advanced>
 			<sl-menu-item value="">Perfect Scintillator
 			</sl-menu-item>
 
@@ -84,7 +80,7 @@
 
 		</sl-select>
 
-		<sl-input type="number" label="Scintillator Thickness" value="200" id="inputScintillatorThickness">
+		<sl-input type="number" label="Scintillator Thickness" value="200" id="inputScintillatorThickness" advanced>
 			<span slot="suffix">μm</span>
 		</sl-input>
 
