@@ -1,0 +1,9 @@
+{
+	"label": "Printed ZrO2",
+	"description": "Printed ZrO2",
+	"density": 4.98,
+	"material": [
+		"compound",
+		"ZrO2"
+	]
+}
