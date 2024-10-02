@@ -217,29 +217,6 @@ def reconstruct(projections: np.ndarray, capture: CaptureParameters, beam: BeamP
 	# flip reconstruction
 	return np.flipud(rec.as_array())
 
-def asSinogram(projections: np.ndarray, capture: CaptureParameters, beam: BeamParameters, detector: DetectorParameters) -> np.ndarray:
-	geo: Optional[AcquisitionGeometry] = None
-	if beam.projection == PROJECTION.PARALLEL:
-		geo = AcquisitionGeometry.create_Parallel3D(detector_position=capture.detector_position)
-	elif beam.projection == PROJECTION.POINT:
-		geo = AcquisitionGeometry.create_Cone3D(source_position=capture.beam_position, detector_position=capture.detector_position)
-	assert geo is not None
-	# Panel is height x width
-	geo.set_labels(["angle", "vertical", "horizontal"])
-
-	# Panel is height x width
-	geo.set_panel(projections.shape[1:][::-1], detector.pixel_size)
-	geo.set_angles(capture.angles)
-	geo.set_labels(["angle", "vertical", "horizontal"])
-
-	acData: AcquisitionData = geo.allocate()
-	acData.fill(projections)
-	acData = TransmissionAbsorptionConverter(min_intensity=1e-10,white_level=1)(acData)
-	acData.reorder(("vertical", "angle", "horizontal"))
-
-	return acData.array
-
-
 def ReconstructionFromJson(json: dict) -> ReconParameters:
 	"""Select and create reconstruction parameters from a json dict."""
 	if "method" not in json:
