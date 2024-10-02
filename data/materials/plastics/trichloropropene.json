@@ -1,0 +1,9 @@
+{
+	"label": "Trichloropropene",
+	"description": "Plastic-like rubber",
+	"density": 1.6319,
+	"material": [
+		"compound",
+		"C3H3Cl3"
+	]
+}
