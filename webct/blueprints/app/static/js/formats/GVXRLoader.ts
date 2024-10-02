@@ -217,10 +217,11 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 			const configBeam = this.Source.Beam as BeamEnergy[];
 			beam = new SynchBeam(
 				configBeam[0].Energy,
+				true,
 				1,1,false,[]
 			);
 		} else {
-			// We only support kvp imports
+			// We only support kvp imports for point sources
 			const configBeam = this.Source.Beam as Tube;
 			let filters:Filter[] = [];
 			if (configBeam.filter !== undefined && configBeam.filter.length > 0) {
@@ -231,6 +232,7 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 			}
 			beam = new LabBeam(
 				configBeam.kvp,
+				true,
 				1,
 				1,
 				1,
@@ -317,7 +319,8 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 				scintillator: {
 					material: scintillatorMaterial,
 					thickness: scintillatorThickness
-				}
+				},
+				enableLSF: true,
 			},
 			beam: beam,
 			samples: {

@@ -76,6 +76,7 @@ class SimSession:
 		self.beam = LabBeam(method="lab", projection=PROJECTION.POINT,
 			filters=(Filter(Element.Cu,2),),
 			voltage=70,
+			enableNoise=True,
 			exposure=1,
 			intensity=120,
 			spotSize=0,
@@ -83,7 +84,13 @@ class SimSession:
 			generator=BEAM_GENERATOR.SPEKPY,
 			material=Element.W
 		)
-		self.detector = DetectorParameters(300, 250, 0.5, DEFAULT_LSF, Scintillator(SCINTILLATOR_MATERIAL.GADOX, 136.55 / 1000))
+		self.detector = DetectorParameters(
+			pane_height=300,
+			pane_width=250,
+			pixel_size=0.5,
+			lsf=DEFAULT_LSF,
+			enableLSF=True,
+			scintillator=Scintillator(SCINTILLATOR_MATERIAL.GADOX, 136.55 / 1000))
 		self.samples = SampleSettings(
 			scaling = 1.0,
 			samples = (

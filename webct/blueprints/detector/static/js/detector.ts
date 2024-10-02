@@ -3,7 +3,7 @@
  * @author Iwan Mitchell
  */
 
-import { SlButton, SlDialog, SlInput, SlSelect } from "@shoelace-style/shoelace";
+import { SlButton, SlCheckbox, SlDialog, SlInput, SlSelect } from "@shoelace-style/shoelace";
 import { AlertType, showAlert } from "../../../base/static/js/base";
 import { SetPreviewSize } from "../../../preview/static/js/sim/projection";
 import { DetectorResponseRegistry, prepareRequest, processResponse, requestDetectorData, sendDetectorData } from "./api";
@@ -29,6 +29,7 @@ let LSFDialogClose: SlButton;
 let LSFDialogInput: SlInput;
 let LSFDialogSubmit: SlButton;
 let LSFDialog:SlDialog;
+let LSFEnableCheckbox: SlCheckbox;
 let LSFCanvas: HTMLCanvasElement;
 let LSFDialogCanvas: HTMLCanvasElement;
 
@@ -70,6 +71,7 @@ export function setupDetector(): boolean {
 	const text_detector_horizontal = document.getElementById("textDetectorHorizontal");
 	const text_detector_vertical = document.getElementById("textDetectorVertical");
 
+	const checkbox_lsf_enable = document.getElementById("checkboxLSFEnable");
 	const dialog_lsf = document.getElementById("dialogueLSF");
 	const button_show_lsf = document.getElementById("buttonShowLSF");
 	const input_lsf = document.getElementById("inputLSF");
@@ -92,6 +94,7 @@ export function setupDetector(): boolean {
 		text_detector_horizontal == null ||
 		text_detector_vertical == null ||
 
+		checkbox_lsf_enable == null ||
 		dialog_lsf == null ||
 		button_show_lsf == null ||
 		input_lsf == null ||
@@ -111,6 +114,7 @@ export function setupDetector(): boolean {
 		console.log(text_detector_horizontal);
 		console.log(text_detector_vertical);
 
+		console.log(checkbox_lsf_enable);
 		console.log(dialog_lsf);
 		console.log(button_show_lsf);
 		console.log(input_lsf);
@@ -165,6 +169,7 @@ export function setupDetector(): boolean {
 	DetectorHorizontalText = text_detector_horizontal as unknown as SVGTextElement;
 	DetectorVerticalText = text_detector_vertical as unknown as SVGTextElement;
 
+	LSFEnableCheckbox = checkbox_lsf_enable as SlCheckbox;
 	LSFDialog = dialog_lsf as SlDialog;
 	LSFDialogButton = button_show_lsf as SlButton;
 	LSFDialogInput = input_lsf as SlInput;
@@ -376,6 +381,8 @@ export function setDetectorParams(properties:DetectorProperties) {
 	LSFDialogInput.value = CurrentLSF.values.join(", ");
 	new LSFDisplay(CurrentLSF, LSFDialogCanvas).displayLSF();
 
+	LSFEnableCheckbox.checked = properties.enableLSF;
+
 	previewDetector();
 }
 
@@ -388,6 +395,7 @@ export function getDetectorParams():DetectorProperties {
 			thickness: parseFloat(ScintillatorThicknessElement.value) / 1000,
 			material: ScintillatorSelectElement.value as ScintillatorMaterial
 		},
-		lsf: CurrentLSF
+		lsf: CurrentLSF,
+		enableLSF: LSFEnableCheckbox.checked,
 	};
 }

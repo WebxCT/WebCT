@@ -111,7 +111,8 @@ class DetectorParameters:
 	pane_width: float  # width of pane in mm
 	pane_height: float  # height of pane in mm
 	pixel_size: float  # size of pixels in mm
-	lsf: Optional[List[float]]  # Point spread function
+	lsf: List[float]  # Point spread function
+	enableLSF: bool # Enable LSF
 	scintillator: Scintillator # Scintillator
 
 	@property
@@ -155,7 +156,8 @@ class DetectorParameters:
 			raise ValueError("Pixel size cannot be 0 or less.")
 
 		# lsf/psf
-		lsf:List[float]= DEFAULT_LSF
+		enableLSF = bool(json["enableLSF"])
+		lsf:List[float] = [0, 1, 0]
 		if "lsf" in json:
 			lsf = list(np.asarray(json["lsf"], dtype=float))
 
@@ -167,6 +169,7 @@ class DetectorParameters:
 			pane_width=pane_width,
 			pixel_size=pixel_size,
 			lsf=lsf,
+			enableLSF=enableLSF,
 			scintillator=scintillator,
 		)
 

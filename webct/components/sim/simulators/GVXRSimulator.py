@@ -102,7 +102,7 @@ class GVXRSimulator(Simulator):
 			)
 
 		# setup noise
-		if self.capture is not None:
+		if value.params.enableNoise and self.capture is not None:
 			if isinstance(value.params, LabBeam):
 				gvxr.enablePoissonNoise()
 				lab = cast(LabBeam, value.params)
@@ -120,6 +120,8 @@ class GVXRSimulator(Simulator):
 				gvxr.setNumberOfPhotonsPerCM2(flux * 10e10)
 			else:
 				gvxr.disablePoissonNoise()
+		else:
+			gvxr.disablePoissonNoise()
 
 		self._beam = value
 
@@ -129,10 +131,10 @@ class GVXRSimulator(Simulator):
 
 	@detector.setter
 	def detector(self, value: DetectorParameters) -> None:
-		if value.lsf is not None:
+		if value.enableLSF and value.lsf is not None:
 			gvxr.setLSF(value.lsf)
 		else:
-			gvxr.setLSF([0,1,0])
+			gvxr.clearLSF()
 		if self.quality == Quality.MEDIUM or self.quality == Quality.HIGH:
 			gvxr.setDetectorNumberOfPixels(value.shape[1], value.shape[0])
 			gvxr.setDetectorPixelSize(value.pixel_size, value.pixel_size, "mm")

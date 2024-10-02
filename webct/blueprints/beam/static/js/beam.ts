@@ -20,6 +20,7 @@ let TubeSettings: HTMLDivElement;
 
 let BeamSourceSelectElement: SlSelect;
 let BeamEnergyElement: SlInput;
+let BeamNoiseElement:SlCheckbox;
 let BeamExposureElement:SlInput;
 let BeamVoltageElement:SlInput;
 let BeamIntensityElement:SlInput;
@@ -65,6 +66,8 @@ export function setupBeam(): boolean {
 
 	const source_select_element = document.getElementById("selectBeamSource");
 	const energy_element = document.getElementById("inputBeamEnergy");
+	const noise_element = document.getElementById("checkboxNoiseEnabled");
+
 	const exposure_element = document.getElementById("inputBeamExposure");
 	const voltage_element = document.getElementById("inputBeamVoltage");
 	const intensity_element = document.getElementById("inputBeamIntensity");
@@ -91,6 +94,7 @@ export function setupBeam(): boolean {
 	if (tube_settings_element == null ||
 		source_select_element == null ||
 		energy_element == null ||
+		noise_element == null ||
 		exposure_element == null ||
 		voltage_element == null ||
 		intensity_element == null ||
@@ -112,6 +116,7 @@ export function setupBeam(): boolean {
 		console.log(tube_settings_element);
 		console.log(source_select_element);
 		console.log(energy_element);
+		console.log(noise_element);
 		console.log(exposure_element);
 		console.log(voltage_element);
 		console.log(intensity_element);
@@ -137,6 +142,7 @@ export function setupBeam(): boolean {
 	FilterSettings = filter_settings_element as HTMLDivElement;
 
 	BeamEnergyElement = energy_element as SlInput;
+	BeamNoiseElement = noise_element as SlCheckbox;
 	BeamExposureElement = exposure_element as SlInput;
 	BeamVoltageElement = voltage_element as SlInput;
 	BeamIntensityElement = intensity_element as SlInput;
@@ -148,6 +154,13 @@ export function setupBeam(): boolean {
 	BeamHarmonicsElement = harmonics_element as SlCheckbox;
 
 	BeamGeneratorElement = beam_generator_element as SlSelect;
+
+	BeamNoiseElement.addEventListener("sl-change", () => {
+		BeamExposureElement.disabled = !BeamNoiseElement.checked;
+		BeamIntensityElement.disabled = !BeamNoiseElement.checked;
+		BeamFluxElement.disabled = !BeamNoiseElement.checked;
+		BeamMASElement.disabled = !BeamNoiseElement.checked;
+	});
 
 	BeamSourceSelectElement = source_select_element as SlSelect;
 	BeamSourceSelectElement.addEventListener("sl-change", () => {
@@ -362,6 +375,7 @@ export function getBeamParms():BeamProperties {
 	case "lab":
 		beam = new LabBeam(
 			parseFloat(BeamVoltageElement.value as string),
+			BeamNoiseElement.checked,
 			parseFloat(BeamExposureElement.value as string),
 			parseFloat(BeamIntensityElement.value as string),
 			parseFloat(BeamSpotSizeElement.value as string),
@@ -379,6 +393,7 @@ export function getBeamParms():BeamProperties {
 	case "med":
 		beam = new MedBeam(
 			parseFloat(BeamVoltageElement.value as string),
+			BeamNoiseElement.checked,
 			parseFloat(BeamMASElement.value as string),
 			parseFloat(BeamSpotSizeElement.value as string),
 			parseInt(BeamMaterialElement.value as string),
@@ -395,6 +410,7 @@ export function getBeamParms():BeamProperties {
 	case "synch":
 		beam = new SynchBeam(
 			parseFloat(BeamEnergyElement.value as string),
+			BeamNoiseElement.checked,
 			parseFloat(BeamExposureElement.value as string),
 			parseFloat(BeamFluxElement.value as string),
 			BeamHarmonicsElement.checked,
@@ -413,7 +429,8 @@ export function getBeamParms():BeamProperties {
 export function setBeamParams(beam:BeamProperties) {
 	let params;
 	BeamSourceSelectElement.value = beam.method;
-
+	BeamNoiseElement.checked = beam.enableNoise;
+	
 	switch (beam.method) {
 	case "lab":
 		params = beam as LabBeam;
