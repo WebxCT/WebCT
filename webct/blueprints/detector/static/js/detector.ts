@@ -37,6 +37,8 @@ let ScintillatorSelectElement: SlSelect;
 let ScintillatorThicknessElement: SlInput;
 let EnergyResponseCanvas: HTMLCanvasElement;
 
+let DetectorBinningElement: SlSelect;
+
 // ====================================================== //
 // ======================= Globals ====================== //
 // ====================================================== //
@@ -84,6 +86,8 @@ export function setupDetector(): boolean {
 	const scintillator_thickness_element = document.getElementById("inputScintillatorThickness");
 	const energy_response_canvas = document.getElementById("canvasEnergyResponse");
 
+	const select_detector_binning = document.getElementById("selectDetectorBinning");
+
 
 	if (pane_width_element == null ||
 		pane_height_element == null ||
@@ -105,7 +109,8 @@ export function setupDetector(): boolean {
 
 		scintillator_select_element == null ||
 		scintillator_thickness_element == null ||
-		energy_response_canvas == null) {
+		energy_response_canvas == null ||
+		select_detector_binning == null) {
 
 		console.log(pane_width_element);
 		console.log(pane_height_element);
@@ -126,6 +131,7 @@ export function setupDetector(): boolean {
 		console.log(scintillator_select_element);
 		console.log(scintillator_thickness_element);
 		console.log(energy_response_canvas);
+		console.log(select_detector_binning);
 
 		showAlert("Detector setup failure", AlertType.ERROR);
 		return false;
@@ -228,6 +234,16 @@ export function setupDetector(): boolean {
 
 	EnergyResponseCanvas = energy_response_canvas as HTMLCanvasElement;
 
+	DetectorBinningElement = select_detector_binning as SlSelect;
+	DetectorBinningElement.addEventListener("sl-change", () => {
+		let width = (parseFloat(PaneWidthPxElement.value) / parseFloat(DetectorBinningElement.value as string)).toFixed(0);
+		let height = (parseFloat(PaneHeightPxElement.value) / parseFloat(DetectorBinningElement.value as string)).toFixed(0);
+		DetectorBinningElement.helpText = PaneWidthPxElement.value + "x" + PaneHeightPxElement.value + " => " + width + "x" + height + " @ " + parseFloat(PanePixelSizeElement.value) * parseFloat(DetectorBinningElement.value as string) + "μm";
+
+		// resize preview to scale pixels
+		previewDetector();
+	});
+
 	previewDetector();
 	return true;
 }
@@ -271,7 +287,7 @@ function previewDetector(): void {
 		return;
 	}
 
-	const pixSize = parseFloat(PanePixelSizeElement.value) / 1000;
+	const pixSize = parseFloat(PanePixelSizeElement.value) / (1000 / parseFloat(DetectorBinningElement.value as string));
 	const height = Math.round(parseFloat(PaneHeightElement.value) / pixSize);
 	const width = Math.round(parseFloat(PaneWidthElement.value) / pixSize);
 	SetPreviewSize(height, width);
@@ -382,6 +398,7 @@ export function setDetectorParams(properties:DetectorProperties) {
 	new LSFDisplay(CurrentLSF, LSFDialogCanvas).displayLSF();
 
 	LSFEnableCheckbox.checked = properties.enableLSF;
+	DetectorBinningElement.value = properties.binning + "";
 
 	previewDetector();
 }
@@ -397,5 +414,6 @@ export function getDetectorParams():DetectorProperties {
 		},
 		lsf: CurrentLSF,
 		enableLSF: LSFEnableCheckbox.checked,
+		binning: parseInt(DetectorBinningElement.value as string),
 	};
 }

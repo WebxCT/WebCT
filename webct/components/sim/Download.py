@@ -4,8 +4,6 @@ from enum import Enum
 import os
 from pathlib import Path
 import tempfile
-from typing import Optional
-from webct.components.sim.Quality import Quality
 import numpy as np
 import tifffile as tf
 from PIL import Image
@@ -69,10 +67,10 @@ class DownloadPrepper():
 
 		# Simulate request
 		if resource.Resource == ResourceType.ALL_PROJECTION:
-			sim.allProjections(quality=Quality.HIGH)
+			sim.allProjections()
 
 		elif resource.Resource == ResourceType.PROJECTION:
-			sim.projection(quality=Quality.HIGH)
+			sim.projection()
 
 		elif resource.Resource == ResourceType.RECON_SLICE:
 			sim.getReconstruction()
@@ -103,14 +101,14 @@ class DownloadPrepper():
 				npy = npy[npy.shape[0]//2]
 
 			elif resource.Resource == ResourceType.ALL_PROJECTION:
-				npy = sim.allProjections(quality=Quality.HIGH)
+				npy = sim.allProjections()
 
 			elif resource.Resource == ResourceType.RECONSTRUCTION:
 				npy = sim.getReconstruction()
 
 			else:
 			# elif resource.Resource == ResourceType.PROJECTION:
-				npy = sim.projection(quality=Quality.HIGH)
+				npy = sim.projection()
 
 			np.save(location, npy)
 			return True
@@ -121,10 +119,10 @@ class DownloadPrepper():
 				tf.imwrite(location, recon[recon.shape[0]//2])
 
 			elif resource.Resource == ResourceType.PROJECTION:
-				tf.imwrite(location, sim.projection(quality=Quality.HIGH))
+				tf.imwrite(location, sim.projection())
 
 			elif resource.Resource == ResourceType.ALL_PROJECTION:
-				tf.imwrite(location, sim.allProjections(quality=Quality.HIGH))
+				tf.imwrite(location, sim.allProjections())
 
 			elif resource.Resource == ResourceType.RECONSTRUCTION:
 				tf.imwrite(location, sim.getReconstruction(),imagej=True)
@@ -142,7 +140,7 @@ class DownloadPrepper():
 
 			# elif resource.Resource == ResourceType.PROJECTION:
 			else:
-				array = sim.projection(quality=Quality.HIGH)
+				array = sim.projection()
 
 			array = (array - array.min()) / (array.max() - array.min())
 			array = (array * 255).astype(np.uint8)
@@ -154,7 +152,7 @@ class DownloadPrepper():
 			if resource.Resource == ResourceType.RECONSTRUCTION:
 				array = sim.getReconstruction()
 			else:
-				array = sim.allProjections(quality=Quality.HIGH)
+				array = sim.allProjections()
 
 			name = location.with_suffix("").name
 			# For each slice, create a tiff image within a temporary folder, and write to a zip file

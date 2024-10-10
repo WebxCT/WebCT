@@ -97,3 +97,15 @@
 	</div>
 	<button></button>
 </div>
+
+<div class="group">
+	<div>
+		<sl-select label = "Detector Binning" value="1" id="selectDetectorBinning" help="2030x2030 => 200x200">
+			<sl-menu-item value="1">1x1 <span>1:1</span></sl-menu-item>
+			<sl-menu-item value="2">3x3 <span>1:9</span></sl-menu-item>
+			<sl-menu-item value="3">5x5 <span>1:25</span></sl-menu-item>
+			<sl-menu-item value="4">7x7 <span>1:49</span></sl-menu-item>
+		</sl-select>
+		<p>Pixel binning reduces the effective resolution of the detector, in exchange for pixel averaging.<br/> It is recommended on weaker systems</p>
+	</div>
+</div>

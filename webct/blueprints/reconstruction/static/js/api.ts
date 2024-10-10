@@ -2,7 +2,7 @@
  * api.ts : API functions for communicating between the client and server.
  * @author Iwan Mitchell
  */
-import { BoxProximal, CGLSParams, Proximal, Differentiable, FBPParams, FDKParams, FGPTVProximal, FISTAParams, LeastSquaresDiff, ReconMethod, ReconQuality, ReconstructionParams, ReconstructionPreview, SIRTParams, TGVProximal, TikhonovRegulariser, TVProximal } from "./types";
+import { BoxProximal, CGLSParams, Proximal, Differentiable, FBPParams, FDKParams, FGPTVProximal, FISTAParams, LeastSquaresDiff, ReconMethod, ReconstructionParams, ReconstructionPreview, SIRTParams, TGVProximal, TikhonovRegulariser, TVProximal } from "./types";
 
 // ====================================================== //
 // ====================== Endpoints ===================== //
@@ -34,7 +34,6 @@ export interface ReconResponseRegistry {
 	 * Response given when retrieving recon data with the getReconData Endpoint.
 	 */
 	reconResponse: {
-		quality: ReconQuality;
 		method: ReconMethod;
 		[key: string]: string | number | boolean | TikhonovRegulariser | Proximal | Differentiable;
 	};
@@ -76,7 +75,6 @@ export interface ReconRequestRegistry {
 	 * Request given when attempting to change recon parameters.
 	 */
 	reconRequest: {
-		quality: ReconQuality;
 		method: ReconMethod;
 		[key: string]: string | number | boolean;
 	}
@@ -220,19 +218,16 @@ export function processResponse(data: ReconResponseRegistry[keyof ReconResponseR
 		switch (data.method) {
 		case "FBP":
 			return {
-				quality: data.quality,
 				method: data.method,
 				filter: data.filter,
 			} as FBPParams;
 		case "FDK":
 			return {
-				quality: data.quality,
 				method: data.method,
 				filter: data.filter,
 			} as FDKParams;
 		case "CGLS":
 			return {
-				quality: data.quality,
 				method: data.method,
 				iterations: data.iterations,
 				tolerance: data.tolerance,
@@ -240,7 +235,6 @@ export function processResponse(data: ReconResponseRegistry[keyof ReconResponseR
 			} as CGLSParams;
 		case "SIRT":
 			return {
-				quality: data.quality,
 				method: data.method,
 				iterations: data.iterations,
 				operator: processTikhonov(data),
@@ -248,7 +242,6 @@ export function processResponse(data: ReconResponseRegistry[keyof ReconResponseR
 			} as SIRTParams;
 		case "FISTA":
 			return {
-				quality: data.quality,
 				method: data.method,
 				iterations: data.iterations,
 				constraint: processProximal(data),

@@ -11,7 +11,6 @@ import numpy as np
 from webct.blueprints.preview import bp
 from webct.components.imgutils import asPngStr
 from webct.components.sim.Download import DownloadResource, DownloadStatus
-from webct.components.sim.Quality import Quality
 from webct.components.sim.SimSession import Sim
 
 
@@ -52,7 +51,7 @@ def getPreviews() -> Response:
 	then = datetime.now()
 	sim = Sim(session)
 
-	projection = sim.projection(Quality.MEDIUM)
+	projection = sim.projection()
 	log_projection = np.log(projection)
 
 	hist, bins = sim.transmission_histogram()

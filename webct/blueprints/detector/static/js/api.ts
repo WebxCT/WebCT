@@ -43,6 +43,7 @@ export interface DetectorResponseRegistry {
 			};
 			lsf: Array<number>;
 			enableLSF: boolean;
+			binning:number;
 		},
 		energyResponse: {
 			incident: Array<number>;
@@ -70,6 +71,7 @@ export interface DetectorRequestRegistry {
 		scintillator: object;
 		lsf: Array<number>;
 		enableLSF: boolean;
+		binning:number;
 	}
 }
 
@@ -121,6 +123,7 @@ export function processResponse(data: DetectorResponseRegistry["detectorResponse
 		},
 		lsf: new LSF(data.params.lsf),
 		enableLSF: data.params.enableLSF,
+		binning: data.params.binning,
 	};
 
 	const energyResponse: EnergyResponseData = {
@@ -143,5 +146,6 @@ export function prepareRequest(data: DetectorProperties): DetectorRequestRegistr
 		scintillator: data.scintillator,
 		lsf: data.lsf.values,
 		enableLSF: data.enableLSF,
+		binning: data.binning,
 	};
 }

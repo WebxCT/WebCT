@@ -321,6 +321,7 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 					thickness: scintillatorThickness
 				},
 				enableLSF: true,
+				binning: 1
 			},
 			beam: beam,
 			samples: {

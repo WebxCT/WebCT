@@ -17,7 +17,6 @@ from webct.components.Material import (
 	SpecialMaterialEnum,
 )
 from webct.components.Samples import RenderedSampleSettings
-from webct.components.sim.Quality import Quality
 from webct.components.sim.simulators.Simulator import Simulator
 from webct import model_folder
 from matplotlib.colors import hsv_to_rgb
@@ -131,34 +130,16 @@ class GVXRSimulator(Simulator):
 
 	@detector.setter
 	def detector(self, value: DetectorParameters) -> None:
+
 		if value.enableLSF and value.lsf is not None:
-			gvxr.setLSF(value.lsf)
+			gvxr.setLSF(value.binned_lsf)
 		else:
 			gvxr.clearLSF()
-		if self.quality == Quality.MEDIUM or self.quality == Quality.HIGH:
-			gvxr.setDetectorNumberOfPixels(value.shape[1], value.shape[0])
-			gvxr.setDetectorPixelSize(value.pixel_size, value.pixel_size, "mm")
-		elif self.quality == Quality.LOW:
-			gvxr.setDetectorNumberOfPixels(value.shape[1] // 2, value.shape[0] // 2)
-			gvxr.setDetectorPixelSize(value.pixel_size * 2, value.pixel_size * 2, "mm")
-		elif self.quality == Quality.PREVIEW:
-			shape = [0, 0]
-			maxax = np.argmax(value.shape)
-			minax = np.argmin(value.shape)
 
-			if maxax == minax:
-				# both axis are the same
-				shape = (100, 100)
-			else:
-				shape[maxax] = 100
-				shape[minax] = int((value.shape[minax] / value.shape[maxax]) * 100)
-				shape = tuple(shape)
+		# set detector shape
+		gvxr.setDetectorNumberOfPixels(value.binned_shape[1], value.binned_shape[0])
+		gvxr.setDetectorPixelSize(value.binned_pixel_size, value.binned_pixel_size, "mm")
 
-			# pixel scale factor
-			scale = value.shape[maxax] / 100
-
-			gvxr.setDetectorNumberOfPixels(*shape)
-			gvxr.setDetectorPixelSize(value.pixel_size * scale, value.pixel_size * scale, "mm")
 
 		if value.scintillator.material == SCINTILLATOR_MATERIAL.NONE:
 			gvxr.clearDetectorEnergyResponse()
@@ -242,16 +223,6 @@ class GVXRSimulator(Simulator):
 		gvxr.rotateScene(value.sample_rotation[2], 0, 0, 1)
 		self._capture = value
 
-	@property
-	def quality(self) -> Quality:
-
-		return self._quality
-
-	@quality.setter
-	def quality(self, value) -> None:
-		self._quality = value
-		# Update detector with new quality settings
-		self.detector = self._detector
 
 	def RenderScene(self) -> Tuple[Tuple[float]]:
 		gvxr.displayScene()

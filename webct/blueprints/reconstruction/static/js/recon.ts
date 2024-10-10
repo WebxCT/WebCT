@@ -6,7 +6,7 @@
 import { SlCheckbox, SlInput, SlSelect } from "@shoelace-style/shoelace";
 import { AlertType, showAlert } from "../../../base/static/js/base";
 import { prepareRequest, processResponse, ReconResponseRegistry, requestReconData, requestReconPreview, sendReconData } from "./api";
-import { BoxProximal, CGLSParams, Proximal, ProximalMethod, Differentiable, DiffMethod, FBPParams, FDKParams, FGPTVProximal, FISTAParams, LeastSquaresDiff, ReconQuality, ReconstructionParams, ReconstructionPreview, SIRTParams, TGVProximal, TikhonovMethod as TikhonovMethod, TikhonovRegulariser, TVProximal } from "./types";
+import { BoxProximal, CGLSParams, Proximal, ProximalMethod, Differentiable, DiffMethod, FBPParams, FDKParams, FGPTVProximal, FISTAParams, LeastSquaresDiff, ReconstructionParams, ReconstructionPreview, SIRTParams, TGVProximal, TikhonovMethod as TikhonovMethod, TikhonovRegulariser, TVProximal } from "./types";
 import { validateMethod } from "./validation";
 
 // ====================================================== //
@@ -15,8 +15,6 @@ import { validateMethod } from "./validation";
 
 export let AlgElement: SlSelect;
 let AlgGroup: HTMLDivElement;
-let QualityElement: SlSelect;
-let QualityDescription: HTMLParagraphElement;
 
 // FDK
 let FDKSettings: HTMLDivElement;
@@ -113,8 +111,6 @@ export function setupRecon(): boolean {
 
 	const select_alg = document.getElementById("selectReconstruction");
 	const group_alg = document.getElementById("groupAlg");
-	const quality = document.getElementById("selectReconQuality");
-	const quality_text = document.getElementById("descriptionQuality");
 
 	// FDK
 	const fdk_settings = document.getElementById("settingsFDK");
@@ -164,8 +160,6 @@ export function setupRecon(): boolean {
 
 	if (select_alg == null ||
 		group_alg == null ||
-		quality == null ||
-		quality_text == null ||
 		fdk_select_filter == null ||
 		fdk_settings == null ||
 		fbp_settings == null ||
@@ -246,8 +240,6 @@ export function setupRecon(): boolean {
 
 	AlgElement = select_alg as SlSelect;
 	AlgGroup = group_alg as HTMLDivElement;
-	QualityDescription = quality_text as HTMLParagraphElement;
-	QualityElement = quality as SlSelect;
 
 	// FDK
 	FDKFilter = fdk_select_filter as SlSelect;
@@ -403,24 +395,6 @@ export function setupRecon(): boolean {
 		}
 	});
 
-	QualityElement.addEventListener("sl-change", () => {
-		switch (parseInt(QualityElement.value as string) as ReconQuality) {
-		case 0:
-			QualityDescription.innerHTML = "High quality is a pixel-perfect simulation, including full detector size, and a reconstruction space matching the projection size.<br/> <sl-tag pill size='small' variant='danger'>Heavily uses GPU memory</sl-tag>";
-			break;
-		default:
-		case 1:
-			QualityDescription.textContent = "Medium quality uses a full detector size for projections, but a reduced size for the reconstruction space.";
-			break;
-		case 2:
-			QualityDescription.textContent = "Low quality uses a half detector size for projections, and an even more reduced reconstruction space compared to medium quality.";
-			break;
-		case 3:
-			QualityDescription.textContent = "Preview uses a fixed detector size of no more than 100 pixels in all axis, and will keep aspect ratio if one axis exceeds this limit. The reconstruction space is a fixed 100x100x100 cube.";
-			break;
-		}
-	});
-
 	AlgElement.addEventListener("sl-change", () => {
 		// Set group type
 		AlgGroup.setAttribute("type", AlgElement.value + "");
@@ -467,7 +441,6 @@ export function setupRecon(): boolean {
 	ConOpElement.handleValueChange();
 	TikOpElement.handleValueChange();
 	AlgElement.handleValueChange();
-	QualityElement.handleValueChange();
 
 	validateRecon();
 	return true;
@@ -876,7 +849,6 @@ export function UpdateReconPreview(): Promise<void> {
 export function setReconParams(properties:ReconstructionParams) {
 	// Update local values
 	AlgElement.value = properties.method;
-	QualityElement.value = properties.quality + "";
 
 	let params;
 	switch (properties.method) {
@@ -913,7 +885,6 @@ export function getReconParams():ReconstructionParams {
 
 	// Collate paramaters for all reconstruction types
 	const method = AlgElement.value + "";
-	const quality = parseInt(QualityElement.value as string);
 
 	const Tikhonov: TikhonovRegulariser = {
 		method: TikMethod(),
@@ -999,19 +970,16 @@ export function getReconParams():ReconstructionParams {
 
 	const FDKParams: FDKParams = {
 		method: "FDK",
-		quality: quality as ReconQuality,
 		filter: FDKFilter.value as string,
 	};
 
 	const FBPParams: FBPParams = {
 		method: "FBP",
-		quality: quality as ReconQuality,
 		filter: FBPFilter.value as string,
 	};
 
 	const CGLSParams: CGLSParams = {
 		method: "CGLS",
-		quality: quality as ReconQuality,
 		iterations: parseInt(CGLSIterElement.value),
 		tolerance: parseFloat(CGLSToleranceElement.value),
 		operator: Tikhonov,
@@ -1019,7 +987,6 @@ export function getReconParams():ReconstructionParams {
 
 	const SIRTParams: SIRTParams = {
 		method: "SIRT",
-		quality: quality as ReconQuality,
 		iterations: parseInt(SIRTIterElement.value),
 		operator: Tikhonov,
 		constraint: constraint,
@@ -1027,7 +994,6 @@ export function getReconParams():ReconstructionParams {
 
 	const FISTAParams: FISTAParams = {
 		method: "FISTA",
-		quality: quality as ReconQuality,
 		iterations: parseInt(FISTAIterElement.value),
 		constraint: constraint,
 		diff: diff,
