@@ -13,8 +13,6 @@ from webct.components.Material import (
 	HUMaterial,
 	Material,
 	MixtureMaterial,
-	SpecialMaterial,
-	SpecialMaterialEnum,
 )
 from webct.components.Samples import RenderedSampleSettings
 from webct.components.sim.simulators.Simulator import Simulator
@@ -166,13 +164,6 @@ class GVXRSimulator(Simulator):
 		for sample in value.samples:
 			label = sample.label
 			mat: Material = sample.material
-
-			if isinstance(mat, SpecialMaterial):
-				if mat.matType == SpecialMaterialEnum.air:
-					# Don't add meshes that are air
-					continue
-				else:
-					raise NotImplementedError(f"Special material {mat.matType} not implemented.")
 
 			gvxr.loadMeshFile(label, f"{model_folder}{sample.modelPath}", sample.sizeUnit)
 

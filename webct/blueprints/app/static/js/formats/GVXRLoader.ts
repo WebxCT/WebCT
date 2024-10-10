@@ -154,18 +154,10 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 				const matsplit = sample.materialID?.split("/");
 				if (matsplit !== undefined) {
 					const mat = structuredClone(MaterialLib[matsplit[0]][matsplit[1]]).material;
-					if (mat[0] == "special") {
-						continue;
-					} else {
-						material = mat;
-					}
+					material = mat;
 				}
 				continue;
 			} else {
-				if (sample.material.material[0] == "special") {
-					// ignore webct 'special' materials
-					continue;
-				}
 				material = sample.material.material;
 			}
 
