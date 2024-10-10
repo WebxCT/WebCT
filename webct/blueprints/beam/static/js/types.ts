@@ -60,6 +60,10 @@ export interface BeamProperties {
 	 * Filters applied to the resultant beam after generation
 	 */
 	filters: Array<Filter>;
+	/**
+	 * Enable poisson noise, disabling in high-flux situations drastically increases performance.
+	 */
+	enableNoise:boolean;
 }
 
 export interface TubeBeam {
@@ -75,6 +79,8 @@ export class LabBeam implements BeamProperties, TubeBeam {
 
 	voltage: number
 
+	enableNoise: boolean;
+
 	exposure: number
 
 	intensity: number
@@ -89,8 +95,9 @@ export class LabBeam implements BeamProperties, TubeBeam {
 
 	generator: BeamGenerator;
 
-	constructor(voltage: number, exposure:number, intensity:number, spotSize:number, material:number,generator:BeamGenerator, anodeAngle:number, filters:Array<Filter>) {
+	constructor(voltage: number, enableNoise:boolean, exposure:number, intensity:number, spotSize:number, material:number,generator:BeamGenerator, anodeAngle:number, filters:Array<Filter>) {
 		this.voltage = voltage;
+		this.enableNoise = enableNoise;
 		this.exposure = exposure;
 		this.intensity = intensity;
 		this.spotSize = spotSize;
@@ -103,15 +110,17 @@ export class LabBeam implements BeamProperties, TubeBeam {
 
 export class SynchBeam implements BeamProperties {
 	method = "synch" as const
+	enableNoise: boolean
 	energy: number
 	exposure: number
 	flux: number
 	harmonics:boolean
 	filters: Array<Filter>
 
-	constructor(energy:number, exposure:number, flux:number, harmonics:boolean, filters:Array<Filter>) {
+	constructor(energy:number, enableNoise:boolean, exposure:number, flux:number, harmonics:boolean, filters:Array<Filter>) {
 		this.energy = energy;
-		this.exposure = exposure,
+		this.enableNoise = enableNoise;
+		this.exposure = exposure;
 		this.flux = flux;
 		this.harmonics = harmonics;
 		this.filters = filters;
@@ -120,6 +129,7 @@ export class SynchBeam implements BeamProperties {
 
 export class MedBeam implements BeamProperties, TubeBeam {
 	method = "med" as const
+	enableNoise:boolean
 	voltage: number
 	mas: number
 	filters: Array<Filter>
@@ -128,8 +138,9 @@ export class MedBeam implements BeamProperties, TubeBeam {
 	anodeAngle: number;
 	generator: BeamGenerator;
 
-	constructor(voltage: number, mas:number, spotSize:number, material:number,generator:BeamGenerator, anodeAngle:number, filters:Array<Filter>) {
+	constructor(voltage: number, enableNoise:boolean, mas:number, spotSize:number, material:number,generator:BeamGenerator, anodeAngle:number, filters:Array<Filter>) {
 		this.voltage = voltage;
+		this.enableNoise = enableNoise;
 		this.mas = mas;
 		this.spotSize = spotSize;
 		this.material = material;

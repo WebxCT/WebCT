@@ -67,7 +67,8 @@ class BeamParameters:
 	method: str
 	filters: Tuple[Filter, ...]
 	projection: PROJECTION
-	spotSize:float
+	spotSize: float
+	enableNoise: bool
 
 
 	def to_json(self) -> dict:
@@ -79,8 +80,9 @@ class BeamParameters:
 		filters = parseFilters(json["filters"])
 		projection = PROJECTION(json["projection"])
 		spotSize = float(json["spotSize"])
+		enableNoise = bool(json["enableNoise"])
 
-		return BeamParameters(method, filters, projection, spotSize)
+		return BeamParameters(method, filters, projection, spotSize, enableNoise)
 
 	def getSpectra(self) -> Tuple[Spectra, Spectra]:
 		raise NotImplementedError("Cannot create a beam spectra from BeamParamaters.")
@@ -109,6 +111,7 @@ class LabBeam(BeamParameters, TubeBeam):
 	@staticmethod
 	def from_json(json:dict):
 		voltage = float(json["voltage"])
+		enableNoise = bool(json["enableNoise"])
 		exposure = float(json["exposure"])
 		intensity = float(json["intensity"])
 		spotSize = float(json["spotSize"])
@@ -120,6 +123,7 @@ class LabBeam(BeamParameters, TubeBeam):
 
 		return LabBeam(
 			method="lab",
+			enableNoise=enableNoise,
 			projection=PROJECTION.POINT,
 			filters=filters,
 			voltage=voltage,
@@ -146,7 +150,7 @@ class MedBeam(BeamParameters, TubeBeam):
 	def from_json(json:dict):
 		voltage = float(json["voltage"])
 		mas = float(json["mas"])
-
+		enableNoise = bool(json["enableNoise"])
 		spotSize = float(json["spotSize"])
 		anodeAngle = float(json["anodeAngle"])
 		generator = BEAM_GENERATOR(str(json["generator"]))
@@ -159,6 +163,7 @@ class MedBeam(BeamParameters, TubeBeam):
 
 		return MedBeam(method="med",
 			projection=PROJECTION.POINT,
+			enableNoise = enableNoise,
 			filters=filters,
 			voltage=voltage,
 			mas=mas,
@@ -185,6 +190,7 @@ class SynchBeam(BeamParameters):
 	@staticmethod
 	def from_json(json:dict):
 		energy = float(json["energy"])
+		enableNoise = bool(json["enableNoise"])
 		exposure = float(json["exposure"])
 		flux = float(json["flux"])
 		harmonics = bool(json["harmonics"])
@@ -194,6 +200,7 @@ class SynchBeam(BeamParameters):
 		return SynchBeam(
 		method="synch",
 		projection=PROJECTION.PARALLEL,
+		enableNoise=enableNoise,
 		filters=filters,
 		energy=energy,
 		exposure=exposure,

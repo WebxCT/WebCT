@@ -2,8 +2,8 @@ from flask import jsonify, request, session
 from flask.wrappers import Response
 import numpy as np
 from webct.blueprints.reconstruction import bp
-from webct.components.Reconstruction import ReconstructionFromJson, asSinogram
-from webct.components.imgutils import asPngStr, asMp4Str
+from webct.components.Reconstruction import ReconstructionFromJson
+from webct.components.imgutils import asPngStr, asMp4Str, asDisplaySinogram
 from webct.components.sim.SimSession import Sim
 import logging as log
 
@@ -26,7 +26,7 @@ def getReconParams() -> Response:
 
 
 def createSliceVideo(array: np.ndarray) -> str:
-	arr = np.zeros((array.shape[0], array.shape[0], array.shape[1]))
+	arr = np.zeros((array.shape[0], array.shape[0], array.shape[1]), dtype=np.uint8)
 
 	# Broadcast projection into time
 	np.copyto(arr, ((array - array.min()) / (array.max() - array.min()) * 255).astype("uint8"))
@@ -54,7 +54,7 @@ def getReconstruction() -> dict:
 	log.info(f"[{sim._sid}] Encoding slice video")
 	sliceVideo = createSliceVideo(proj)
 	log.info(f"[{sim._sid}] Encoding sinogram video")
-	sino = asSinogram(sim.allProjections(), sim.capture, sim.beam, sim.detector)
+	sino = asDisplaySinogram(sim.allProjections())
 	sinoVideo = asMp4Str(sino)
 
 	reconSlice = recon[recon.shape[0]//2]

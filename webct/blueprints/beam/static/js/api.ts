@@ -36,6 +36,7 @@ export interface BeamResponseRegistry {
 	beamResponse: {
 		params: {
 			method: SourceType;
+			enableNoise:boolean;
 			voltage?: number;
 			energy?: number;
 			exposure?:number;
@@ -137,6 +138,7 @@ export function processResponse(data: BeamResponseRegistry["beamResponse"]): [Be
 	case "lab":
 		beamProperties = new LabBeam(
 			data.params.voltage as number,
+			data.params.enableNoise as boolean,
 			data.params.exposure as number,
 			data.params.intensity as number,
 			data.params.spotSize as number,
@@ -149,6 +151,7 @@ export function processResponse(data: BeamResponseRegistry["beamResponse"]): [Be
 	case "med":
 		beamProperties = new MedBeam(
 			data.params.voltage as number,
+			data.params.enableNoise as boolean,
 			data.params.mas as number,
 			data.params.spotSize as number,
 			data.params.material as number,
@@ -160,6 +163,7 @@ export function processResponse(data: BeamResponseRegistry["beamResponse"]): [Be
 	case "synch":
 		beamProperties = new SynchBeam(
 			data.params.energy as number,
+			data.params.enableNoise as boolean,
 			data.params.exposure as number,
 			data.params.flux as number,
 			data.params.harmonics as boolean,

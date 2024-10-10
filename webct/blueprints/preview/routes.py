@@ -11,7 +11,6 @@ import numpy as np
 from webct.blueprints.preview import bp
 from webct.components.imgutils import asPngStr
 from webct.components.sim.Download import DownloadResource, DownloadStatus
-from webct.components.sim.Quality import Quality
 from webct.components.sim.SimSession import Sim
 
 
@@ -52,7 +51,7 @@ def getPreviews() -> Response:
 	then = datetime.now()
 	sim = Sim(session)
 
-	projection = sim.projection(Quality.MEDIUM)
+	projection = sim.projection()
 	log_projection = np.log(projection)
 
 	hist, bins = sim.transmission_histogram()
@@ -126,11 +125,14 @@ def getDownloadStatus() -> Response:
 	if status == DownloadStatus.DONE:
 		log.info(f"[{sim._sid}] Download Status: DONE")
 		return Response(status.value, 200)
-	elif status == DownloadStatus.SIMULATING or status == DownloadStatus.PACKAGING:
-		log.info(f"[{sim._sid}] Download Status: SIMULATING or PACKAGING")
+	elif status == DownloadStatus.SIMULATING:
+		log.info(f"[{sim._sid}] Download Status: SIMULATING")
+		return Response(status.value, 425)
+	elif status == DownloadStatus.PACKAGING:
+		log.info(f"[{sim._sid}] Download Status: PACKAGING")
 		return Response(status.value, 425)
 	log.info(f"[{sim._sid}] Download Status: PROCESSING")
-	return Response(DownloadStatus.WAITING.value, 400)
+	return Response(DownloadStatus.WAITING.value, 425)
 
 
 @bp.route("/sim/download/", methods=["GET"])

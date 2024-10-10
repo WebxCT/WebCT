@@ -13,11 +13,8 @@ from webct.components.Material import (
 	HUMaterial,
 	Material,
 	MixtureMaterial,
-	SpecialMaterial,
-	SpecialMaterialEnum,
 )
 from webct.components.Samples import RenderedSampleSettings
-from webct.components.sim.Quality import Quality
 from webct.components.sim.simulators.Simulator import Simulator
 from webct import model_folder
 from matplotlib.colors import hsv_to_rgb
@@ -102,7 +99,7 @@ class GVXRSimulator(Simulator):
 			)
 
 		# setup noise
-		if self.capture is not None:
+		if value.params.enableNoise and self.capture is not None:
 			if isinstance(value.params, LabBeam):
 				gvxr.enablePoissonNoise()
 				lab = cast(LabBeam, value.params)
@@ -120,6 +117,8 @@ class GVXRSimulator(Simulator):
 				gvxr.setNumberOfPhotonsPerCM2(flux * 10e10)
 			else:
 				gvxr.disablePoissonNoise()
+		else:
+			gvxr.disablePoissonNoise()
 
 		self._beam = value
 
@@ -129,34 +128,16 @@ class GVXRSimulator(Simulator):
 
 	@detector.setter
 	def detector(self, value: DetectorParameters) -> None:
-		if value.lsf is not None:
-			gvxr.setLSF(value.lsf)
+
+		if value.enableLSF and value.lsf is not None:
+			gvxr.setLSF(value.binned_lsf)
 		else:
-			gvxr.setLSF([0,1,0])
-		if self.quality == Quality.MEDIUM or self.quality == Quality.HIGH:
-			gvxr.setDetectorNumberOfPixels(value.shape[1], value.shape[0])
-			gvxr.setDetectorPixelSize(value.pixel_size, value.pixel_size, "mm")
-		elif self.quality == Quality.LOW:
-			gvxr.setDetectorNumberOfPixels(value.shape[1] // 2, value.shape[0] // 2)
-			gvxr.setDetectorPixelSize(value.pixel_size * 2, value.pixel_size * 2, "mm")
-		elif self.quality == Quality.PREVIEW:
-			shape = [0, 0]
-			maxax = np.argmax(value.shape)
-			minax = np.argmin(value.shape)
+			gvxr.clearLSF()
 
-			if maxax == minax:
-				# both axis are the same
-				shape = (100, 100)
-			else:
-				shape[maxax] = 100
-				shape[minax] = int((value.shape[minax] / value.shape[maxax]) * 100)
-				shape = tuple(shape)
+		# set detector shape
+		gvxr.setDetectorNumberOfPixels(value.binned_shape[1], value.binned_shape[0])
+		gvxr.setDetectorPixelSize(value.binned_pixel_size, value.binned_pixel_size, "mm")
 
-			# pixel scale factor
-			scale = value.shape[maxax] / 100
-
-			gvxr.setDetectorNumberOfPixels(*shape)
-			gvxr.setDetectorPixelSize(value.pixel_size * scale, value.pixel_size * scale, "mm")
 
 		if value.scintillator.material == SCINTILLATOR_MATERIAL.NONE:
 			gvxr.clearDetectorEnergyResponse()
@@ -183,13 +164,6 @@ class GVXRSimulator(Simulator):
 		for sample in value.samples:
 			label = sample.label
 			mat: Material = sample.material
-
-			if isinstance(mat, SpecialMaterial):
-				if mat.matType == SpecialMaterialEnum.air:
-					# Don't add meshes that are air
-					continue
-				else:
-					raise NotImplementedError(f"Special material {mat.matType} not implemented.")
 
 			gvxr.loadMeshFile(label, f"{model_folder}{sample.modelPath}", sample.sizeUnit)
 
@@ -240,16 +214,6 @@ class GVXRSimulator(Simulator):
 		gvxr.rotateScene(value.sample_rotation[2], 0, 0, 1)
 		self._capture = value
 
-	@property
-	def quality(self) -> Quality:
-
-		return self._quality
-
-	@quality.setter
-	def quality(self, value) -> None:
-		self._quality = value
-		# Update detector with new quality settings
-		self.detector = self._detector
 
 	def RenderScene(self) -> Tuple[Tuple[float]]:
 		gvxr.displayScene()

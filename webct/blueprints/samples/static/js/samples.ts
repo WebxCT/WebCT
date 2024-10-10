@@ -177,6 +177,7 @@ export function setupSamples(): boolean {
 	MaterialCloseButton = button_material_close as SlButton;
 	MaterialTab = tab_material as SlTabGroup;
 	SampleDialogSelect.addEventListener("sl-change", () => {
+		SampleDialogRadio1.click()
 		updateDialog();
 	});
 	UploadCloseButton = button_complete_close as SlButton;
@@ -240,6 +241,9 @@ export function setupSamples(): boolean {
 
 	SampleUploadInput = sample_upload_input as HTMLInputElement;
 	SampleUploadInput.onchange = () => {
+		// auto-select sample upload. click() is used to trigger radio button behaviour.
+		SampleDialogRadio2.click()
+
 		const formdata = new FormData();
 		if (SampleUploadInput.files == null) {
 			return;
@@ -526,12 +530,6 @@ function updateSampleCards(): void {
 			}
 		}
 		const air = document.createElement("sl-menu-item");
-		air.textContent = "Air";
-		air.value = "special/air";
-		air.onclick = () => {
-			sample.materialID = "special/air";
-		};
-
 		const divider3 = document.createElement("sl-divider");
 
 		const custom = document.createElement("sl-menu-item");
@@ -616,11 +614,6 @@ function SaveCurrentMaterial(): void {
 	// Get currently selected material.
 	const [catID, matID, form] = getSelectedMaterial();
 
-	if (catID == "special") {
-		console.error("Attempted to save a special material!");
-		return;
-	}
-
 	if (form == undefined) {
 		// ! throw an error
 		return;
@@ -651,7 +644,7 @@ function SaveCurrentMaterial(): void {
 	console.log(data);
 	console.log(mixture);
 	// Get panel elements
-	let mat: Material["material"] = ["special", "air"];
+	let mat: Material["material"] = ["element", "C"];
 
 	switch (data.type) {
 	case "element":
@@ -722,10 +715,6 @@ function SaveCurrentMaterial(): void {
 }
 
 export function DeleteMaterial(categoryKey: string, materialKey: string) {
-	if (categoryKey == "special") {
-		console.error("Attempted to delete a special material. Aborting!");
-		return;
-	}
 
 	if (!Object.prototype.hasOwnProperty.call(MaterialLib, categoryKey)) {
 		console.error("Unable to find category '" + categoryKey + "' in materialLib for deletion");

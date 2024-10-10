@@ -35,6 +35,16 @@ export interface DetectorProperties {
 	 * Line spread Function to replicate Optical Transfer Function of detector
 	 */
 	lsf:LSF;
+
+	/**
+	 * If LSF filtering is enabled, or disabled entirely.
+	 */
+	enableLSF: boolean;
+
+	/**
+	 * Detector pixel binning (averaging)
+	 */
+	binning: number;
 }
 
 export type ScintillatorMaterial = "" | "CUSTOM" | "CsI" | "NaI" | "Gadox" | "Gadox DRZ-Plus" | "Gd2O3" | "Gd3Ga5O12" | "YGO" | "CdWO4" | "Y2O3" | "La2HfO7" | "Y3Al5O12"

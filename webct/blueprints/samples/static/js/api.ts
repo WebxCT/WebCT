@@ -30,7 +30,7 @@ type MaterialTransmission = {
 	label: string,
 	description: string,
 	density: number,
-	material: ["element" | "compound", string] | ["hu", number] | ["mixture", (string | number)[]] | ["special", "air"];
+	material: ["element" | "compound", string] | ["hu", number] | ["mixture", (string | number)[]];
 };
 
 /**
@@ -101,7 +101,7 @@ export interface SamplesRequestRegistry {
 		label: string;
 		description: string;
 		density: number,
-		material: ["element" | "compound", string] | ["hu", number] | ["mixture", (string | number)[]] | ["special", "air"];
+		material: ["element" | "compound", string] | ["hu", number] | ["mixture", (string | number)[]];
 		category: string,
 	};
 

@@ -173,20 +173,6 @@ function createMaterialForm(rootPanel: HTMLElement, categoryKey: string, materia
 		return;
 	}
 
-	if (categoryKey == "special") {
-		const specialDescription = document.createElement("p");
-		switch (materialKey) {
-		case "Air":
-			specialDescription.textContent = "The atmosphere of Earth has an attenuation coefficient of nearly zero, and represents the empty area around a sample.";
-			break;
-		default:
-			console.error("Tried to create an unsupported special material! '" + materialKey + "' is not a supported special material.");
-			return;
-		}
-		rootPanel.appendChild(specialDescription);
-		return;
-	}
-
 	const form = document.createElement("form");
 	form.classList.add("materialForm");
 
