@@ -34,9 +34,9 @@ export interface SampleSettings {
 	scaling:number
 
 	/**
-	 * List of Samples
+	 * Map of Samples, ensures unique label indentifiers
 	 */
-	samples:SampleProperties[]
+	samples:Record<string, SampleProperties>
 }
 
 /**

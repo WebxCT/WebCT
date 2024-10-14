@@ -3,7 +3,7 @@
  * @author Iwan Mitchell
  */
 
-import { SlButton, SlDialog, SlInput, SlProgressBar, SlRadio, SlSelect, SlTabGroup } from "@shoelace-style/shoelace";
+import { SlButton, SlDialog, SlInput, SlProgressBar, SlRadio, SlSelect, SlTab, SlTabGroup } from "@shoelace-style/shoelace";
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form";
 import { AlertType, showAlert } from "../../../base/static/js/base";
 import { prepareSampleRequest, processResponse, requestMaterialList, requestModelList, requestSampleData, SamplesResponseRegistry, sendMaterialData, sendSamplesData, uploadModel, SamplesRequestRegistry, deleteMaterialData } from "./api";
@@ -50,7 +50,7 @@ let CategoryDialogClose: SlButton;
 // ====================================================== //
 // ======================= Globals ====================== //
 // ====================================================== //
-let SessionSamples: SampleProperties[];
+let SessionSamples: Record<string, SampleProperties>;
 let AvailableModels: string[];
 
 let UploadRequest: XMLHttpRequest | null;
@@ -58,7 +58,7 @@ let UploadData: FormData | null;
 
 export let MaterialLib: MaterialLibrary;
 
-let SelectedSampleIndex = 0;
+let SelectedSampleLabel:string = "";
 
 let RecentMaterials: Record<string, number> = {};
 
@@ -75,7 +75,7 @@ export const DefaultMaterial = "element/aluminium";
  */
 export function setupSamples(): boolean {
 	console.log("setupSamples");
-	SessionSamples = [];
+	SessionSamples = {};
 
 	window.customElements.define("mixture-input-list", MixtureInputList, { extends: "ul" });
 
@@ -189,15 +189,18 @@ export function setupSamples(): boolean {
 	};
 	MaterialSubmitButton = button_material_submit as SlButton;
 	MaterialSubmitButton.onclick = () => {
-		SaveCurrentMaterial();
-		const [catID, matID, panel] = getSelectedMaterial();
+		// Save current material may change the currently selected material ID
+		// If the ID is changed from the update, the new material will be selected.
+		// Therefore, we must wait for the materials to be updated, before getting the currently selected material.
+		SaveCurrentMaterial().then(() => {
+			const [catID, matID, panel] = getSelectedMaterial();
+			if (catID == "" || matID == "") {
+				return;
+			}
 
-		if (catID == "" || matID == "") {
-			return;
-		}
-
-		setSampleElement(catID, matID);
-		MaterialDialog.hide();
+			setSampleElement(catID, matID);
+			MaterialDialog.hide();
+		});
 	};
 
 	SampleDialog.addEventListener("sl-request-close", (event: any) => {
@@ -233,7 +236,10 @@ export function setupSamples(): boolean {
 	}
 
 	AddSampleButton = button_sample_add as SlButton;
-	AddSampleButton.onclick = () => { SampleDialog.show(); };
+	AddSampleButton.onclick = () => {
+		updateDialog();
+		SampleDialog.show();
+	};
 
 	SampleDiv = samples_div as HTMLDivElement;
 
@@ -341,7 +347,7 @@ export function setupSamples(): boolean {
 // ====================================================== //
 
 function setSampleElement(catID: string, matID: string): void {
-	if (matID == null || catID == null || SelectedSampleIndex == null) {
+	if (matID == null || catID == null || SelectedSampleLabel == null) {
 		return;
 	}
 
@@ -359,7 +365,9 @@ function setSampleElement(catID: string, matID: string): void {
 
 	console.log(RecentMaterials);
 
-	SessionSamples[SelectedSampleIndex].materialID = fullmatID;
+	// ! bug: Uncaught TypeError: SessionSamples[SelectedSampleIndex] is undefined
+
+	SessionSamples[SelectedSampleLabel].materialID = fullmatID;
 
 	updateSampleCards();
 }
@@ -385,7 +393,18 @@ function updateDialog(): void {
 		SampleDialogSubmit.textContent = "Add Sample";
 		
 		let exists = false;
-		markValid(SampleDialogInput, SampleDialogInput.value != "");
+		if (SampleDialogInput.value == "" || SampleDialogInput.value in SessionSamples) {
+			// do not allow empty input or duplicate labels
+			markValid(SampleDialogInput, false);
+			if (SampleDialogInput.value == "") {
+				SampleDialogInput.helpText = "Sample must have a label";
+			} else {
+				SampleDialogInput.helpText = "Label already exists";
+			}
+		} else {
+			markValid(SampleDialogInput, true);
+			SampleDialogInput.helpText = "";
+		}
 
 		if (SampleDialogInput.value != "") {
 			for (let index = 0; index < AvailableModels.length; index++) {
@@ -406,19 +425,26 @@ function updateDialog(): void {
 		}
 
 		SampleDialogSubmit.onclick = () => {
-			if (SampleDialogInput.value == "") {
+			let label = SampleDialogInput.value
+			if (label == "") {
 				// if no sample label, don't do anything!
-				return
+				return;
+			}
+
+			if (label in SessionSamples) {
+				// sample with that name already exists, don't do anything
+				// technically we could overwrite it, but better make that explicitly required.
+				return;
 			}
 
 			// value is a valid model!
 			// We want to add it to the existing material list
-			SessionSamples.push({
+			SessionSamples[label] = {
 				label: SampleDialogInput.value,
 				modelPath: SampleDialogSelect.value as string,
 				materialID: DefaultMaterial,
 				sizeUnit: "mm",
-			});
+			};
 
 			if (DefaultMaterial in RecentMaterials) {
 				RecentMaterials[DefaultMaterial] += 1;
@@ -432,7 +458,7 @@ function updateDialog(): void {
 		SampleDialogSubmit.removeAttribute("disabled");
 	} else {
 		SampleDialogSubmit.textContent = "Upload Sample";
-		if (UploadData == null) {
+		if (UploadData == null) {	
 			SampleDialogSubmit.setAttribute("disabled", "true");
 			SampleDialogSubmit.onclick = null;
 		} else {
@@ -454,8 +480,9 @@ function updateSampleCards(): void {
 	// I dislike this method of menu list updating to display a mutable state.
 
 	const nodes: HTMLDivElement[] = [];
-	for (let index = 0; index < SessionSamples.length; index++) {
-		const sample = SessionSamples[index];
+
+	for (let key in SessionSamples) {
+		const sample = SessionSamples[key];
 		if (sample.materialID === undefined) {
 			continue;
 		}
@@ -466,8 +493,8 @@ function updateSampleCards(): void {
 	}
 
 
-	for (let index = 0; index < SessionSamples.length; index++) {
-		const sample = SessionSamples[index];
+	for (let key in SessionSamples) {
+		const sample = SessionSamples[key];
 		const card = document.createElement("div");
 		card.classList.add("model");
 
@@ -478,7 +505,7 @@ function updateSampleCards(): void {
 		buttonRemove.textContent = "X";
 		buttonRemove.onclick = () => {
 			card.classList.add("removed");
-			SessionSamples.splice(index, 1);
+			delete SessionSamples[key]
 		};
 		buttonDiv.appendChild(buttonRemove);
 
@@ -519,9 +546,9 @@ function updateSampleCards(): void {
 					// RecentMaterials[sample.materialID as string] -= 1;
 
 					// Change material
-					console.log("Set sample"+index+" to "+matID);
+					console.log("Set sample"+sample.label+" to "+matID);
 
-					SessionSamples[index].materialID = matID;
+					SessionSamples[key].materialID = matID;
 
 					// Add one count to new material
 					RecentMaterials[matID] += 1;
@@ -529,7 +556,6 @@ function updateSampleCards(): void {
 				materialSelect.appendChild(item);
 			}
 		}
-		const air = document.createElement("sl-menu-item");
 		const divider3 = document.createElement("sl-divider");
 
 		const custom = document.createElement("sl-menu-item");
@@ -541,11 +567,10 @@ function updateSampleCards(): void {
 		customIcon.name = "gear";
 		custom.appendChild(customIcon);
 		custom.onclick = () => {
-			SelectedSampleIndex = index;
+			SelectedSampleLabel = key;
 			showMaterialLibrary(true);
 		};
 
-		materialSelect.appendChild(air);
 		materialSelect.appendChild(divider3);
 		materialSelect.appendChild(custom);
 
@@ -610,7 +635,7 @@ type MaterialFormData = {
 	type: "compound" | "element" | "hu" | "mixture",
 };
 
-function SaveCurrentMaterial(): void {
+async function SaveCurrentMaterial(): Promise<void> {
 	// Get currently selected material.
 	const [catID, matID, form] = getSelectedMaterial();
 
@@ -695,7 +720,7 @@ function SaveCurrentMaterial(): void {
 	console.log(nMat);
 
 
-	sendMaterialData(nMat).then((response) => {
+	return sendMaterialData(nMat).then((response) => {
 		return response.json().then((data) => {
 			if (data["catID"] == undefined || data["matID"] == undefined) {
 				return;
@@ -841,8 +866,10 @@ function setSamples(): Promise<void> {
 	const sampleParams = getSampleParams()
 	const newMaterials:Material[] = [];
 
-	for (let index = 0; index < sampleParams.samples.length; index++) {
-		const sample = sampleParams.samples[index];
+	for (let key in sampleParams.samples) {
+		const sample = sampleParams.samples[key];
+
+		// unknown sample ID, occurs if importing from a format that doesn't use webct's material library.
 		if (sample.materialID === undefined && sample.material !== undefined) {
 			// Attempt to get material from current database
 			const perhapsMat = idFromMaterial(sample.material);
@@ -878,19 +905,19 @@ function setSamples(): Promise<void> {
 		}
 	}
 
-	const basePromise:Promise<void|Response> = Promise.resolve();
+	let basePromise:Promise<void|Response> = Promise.resolve();
 	for (let index = 0; index < newMats.length; index++) {
 		const request = newMats[index];
-		basePromise.then(()=>{
+		basePromise = basePromise.then(()=>{
 			console.log("Sent new material");
 			console.log(request);
 			return sendMaterialData(request);
 		});
 	}
 
-	// re-cast sampleparams to IDs since they've been transformed.
+	// re-cast sampleparams materials to IDs since they've been transformed.
 	// Unfortunately this requires a decomposition;- probably an easier way to compose types...
-	const samples = prepareSampleRequest(sampleParams.samples as SamplePropertiesID[], sampleParams.scaling);
+	const samples = prepareSampleRequest(Object.values(sampleParams.samples) as SamplePropertiesID[], sampleParams.scaling);
 
 	return basePromise.then(()=>{
 

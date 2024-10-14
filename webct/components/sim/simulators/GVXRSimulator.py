@@ -60,12 +60,21 @@ class GVXRSimulator(Simulator):
 		gvxr.rotateNode("root", 90, 0, 1, 0)
 
 	def SimSingleProjection(self) -> np.ndarray:
-		image = np.array(gvxr.computeXRayImage())
-		image_in_kev = image / np.asarray(gvxr.getWhiteImage())
+		# workaround, doesn't seem to be set properly in init
+		gvxr.disableArtefactFiltering()
 
-		return image_in_kev
+		# if no samples are loaded, gvxr crashes.
+		# As a workaround, simulate white images if the number of samples is 0.
+		# This makes it easier to deal with on the frontend.
+		white = np.asarray(gvxr.getWhiteImage())
+		if len(self.samples.samples) == 0:
+			return white / white.max()
+		else:
+			return np.asarray(gvxr.computeXRayImage()) / white
 
 	def SimAllProjections(self) -> np.ndarray:
+		# workaround, doesn't seem to be set properly in init
+		gvxr.disableArtefactFiltering()
 		gvxr.computeCTAcquisition("", "", self.capture.projections, 0, False, self.capture.angles[-1], 1, 0, 0, 0, "mm", 0, 0, 1, True, 1)
 
 		images = np.asarray(gvxr.getLastProjectionSet())

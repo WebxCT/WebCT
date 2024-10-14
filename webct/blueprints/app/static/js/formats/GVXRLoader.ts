@@ -16,10 +16,11 @@ type MatHU = number
 type MatMU = number
 
 interface detectorConfig {
-	Position: Position
-	UpVector: [number, number, number]
-	NumberOfPixels: [number, number],
-	Spacing: [number, number, string],
+	Position: Position,
+	UpVector: [number, number, number],
+	NumberOfPixels?: [number, number],
+	Spacing?: [number, number, string],
+	Size?: [number, number, string],
 	LSF: number[],
 	Scintillator: {
 		Material: string,
@@ -146,8 +147,8 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 		};
 
 		const samples:sampleConfig[] = [];
-		for (let index = 0; index < data.samples.samples.length; index++) {
-			const sample = data.samples.samples[index];
+		for (let key in data.samples.samples) {
+			const sample = data.samples.samples[key];
 
 			let material:GVXRMaterial;
 			if (sample.material == undefined) {
@@ -235,7 +236,7 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 			);
 		}
 
-		const samples:SampleProperties[] = [];
+		const samples:Record<string, SampleProperties> = {};
 		for (let index = 0; index < this.Samples.length; index++) {
 			const sample = this.Samples[index];
 
@@ -254,34 +255,67 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 				label: "GVXR Material "+index
 			};
 
-			samples.push({
+			samples[sample.Label] = {
 				label:sample.Label,
 				modelPath:sample.Path,
 				sizeUnit:sample.Unit,
 				material:material
-			});
+			};
 		}
 
-		// Convert units into mm
-		let pixelSize = this.Detector.Spacing[0];
-		let paneHeight = this.Detector.NumberOfPixels[0] * pixelSize;
-		let paneWidth = this.Detector.NumberOfPixels[1] * pixelSize;
 
-		if (this.Detector.Spacing[2] !== "mm") {
+		// pixel size
+		let pixelSize:number = 0
+		if (this.Detector.Spacing != undefined) {
+			// cast to mm, only take first element as we assume square pixels
 			switch (this.Detector.Spacing[2]) {
-			case "cm":
-				paneHeight = paneHeight * 10;
-				paneWidth = paneHeight * 10;
-				pixelSize = paneHeight * 10;
-				break;
-			case "um":
-				paneHeight = paneHeight * 0.001;
-				paneWidth = paneHeight * 0.001;
-				pixelSize = paneHeight * 0.001;
-				break;
-			default:
-				// Eh
-				break;
+				case "mm":
+					break;
+				case "um":
+					pixelSize = pixelSize * 0.001
+				default:
+					break;
+			}
+		}
+
+		// physical size
+		let paneHeight:number = 0
+		let paneWidth:number = 0
+		if (this.Detector.Size != undefined) {
+			switch (this.Detector.Size[2]) {
+				case "mm":
+					paneHeight = this.Detector.Size[0];
+					paneWidth = this.Detector.Size[1];
+					break;
+				case "cm":
+					paneHeight = this.Detector.Size[0] * 10;
+					paneWidth = this.Detector.Size[1] * 10;
+					break;
+				case "um":
+					paneHeight = this.Detector.Size[0] * 0.001;
+					paneWidth = this.Detector.Size[1] * 0.001;
+					break;
+				default:
+					// eh
+					break;
+			}
+		}
+
+		if (this.Detector.Size == undefined || this.Detector.Spacing == undefined) {
+			// Missing either detector size, or pixel pitch, therefore attempt to find a resolution key and work out the required properties
+			if (this.Detector.NumberOfPixels == undefined) {
+				// also missing resolution, we don't have enough information, and this is an invalid config...
+				throw "Missing detector properties; require two of [Size, Spacing, NumberOfPixels] to determine detector."
+			} else {
+				let resolution: [number, number] = this.Detector.NumberOfPixels;
+				
+				if (this.Detector.Spacing == undefined) {
+					// only compute on one axis, since square pixels are assumed
+					pixelSize = paneHeight / resolution[0]
+				} else if (this.Detector.Size == undefined) {
+					paneHeight = resolution[0] * pixelSize;
+					paneWidth = resolution[1] * pixelSize;
+				}
 			}
 		}
 

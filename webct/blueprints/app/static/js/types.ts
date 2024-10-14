@@ -73,9 +73,9 @@ export class WebCTConfig {
 		if (keys.samples) {
 			const sampleParams = getSampleParams();
 			if (optMatasID == false) {
-				// Resolve materials
-				for (let index = 0; index < sampleParams.samples.length; index++) {
-					const sample:SampleProperties = sampleParams.samples[index];
+				// Resolve sample materials
+				for (let key in sampleParams.samples) {
+					const sample:SampleProperties = sampleParams.samples[key];
 					const matsplit = sample.materialID?.split("/");
 					if (matsplit !== undefined) {
 						sample.material = structuredClone(MaterialLib[matsplit[0]][matsplit[1]]);
@@ -86,7 +86,7 @@ export class WebCTConfig {
 						delete s.material.weights;
 						delete s.material.elements;
 						delete s.material.compound;
-						sampleParams.samples[index] = s;
+						sampleParams.samples[key] = s;
 					}
 				}
 			}

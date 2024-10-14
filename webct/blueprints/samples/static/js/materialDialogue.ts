@@ -447,12 +447,16 @@ function createCategoryPanel(rootPanel: HTMLElement, categoryKey: string, blank=
 }
 
 export function getSelectedMaterial(): [string, string, HTMLFormElement?] {
+	// bug: if sample has changed its ID and the UI hasn't been updated, the old ID is used, causing a not-found issue later on.
+	// This can be fixed by doing a UI refresh before running this function, as done in 
 	const catID = (document.querySelector("#tabMaterial > sl-tab[active]") as unknown as SlTab).getAttribute("catID");
 	const matID = (document.querySelector("#tabMaterial > sl-tab-panel[active] > sl-tab-group > sl-tab[active]") as unknown as SlTab).getAttribute("materialid");
 	const form = document.querySelector("#tabMaterial > sl-tab-panel[active] > sl-tab-group > sl-tab-panel[active] > form") as HTMLFormElement;
 
-	if (catID == null || matID == null) {
-		return ["", "", undefined];
+	if (catID == null || MaterialLib[catID] == undefined) {
+		throw "Unknown category ID for material selection '"+catID+"'"
+	} else if (matID == null || MaterialLib[catID][matID] == undefined) {
+		throw "Unknown material ID in '"+catID+"' for material selection '"+matID+"'"
 	}
 
 	return [catID, matID, form];
