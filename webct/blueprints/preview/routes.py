@@ -1,5 +1,5 @@
 from base64 import b64encode
-from datetime import datetime
+from time import monotonic
 import io
 from typing import List
 import logging as log
@@ -48,10 +48,11 @@ def getHistImage(array:np.ndarray, bins:List[float]) -> str:
 
 @bp.route("/sim/preview/get")
 def getPreviews() -> Response:
-	then = datetime.now()
+	then = monotonic()
 	sim = Sim(session)
 
 	projection = sim.projection()
+	delta = monotonic() - then
 	log_projection = np.log(projection)
 
 	hist, bins = sim.transmission_histogram()
@@ -71,7 +72,7 @@ def getPreviews() -> Response:
 
 	return jsonify(
 		{
-			"time": f"{(then-datetime.now()).total_seconds()}",
+			"time": delta,
 			"projection": {
 				"image": {
 					"raw": projectionstr,

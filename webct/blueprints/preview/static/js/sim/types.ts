@@ -3,7 +3,7 @@ import { Chart } from "chart.js";
 import { colors } from "../../../../base/static/js/colors";
 //! Chart.js elements must already be registered with Chart.register(...registerables)
 
-export interface PreviewData {
+export interface PreviewDataResponse {
 	time:number,
 	projection: {
 		image: {
@@ -33,11 +33,11 @@ export interface PreviewData {
  * Spectra display class linked to spectra data and a canvas.
  */
 export class TransmissionDisplay {
-	readonly previewData: PreviewData
+	readonly previewData: PreviewDataResponse
 	readonly canvas: HTMLCanvasElement
 	_chart?: Chart;
 
-	constructor(previewData: PreviewData, canvas: HTMLCanvasElement) {
+	constructor(previewData: PreviewDataResponse, canvas: HTMLCanvasElement) {
 		this.previewData = previewData;
 		this.canvas = canvas;
 
