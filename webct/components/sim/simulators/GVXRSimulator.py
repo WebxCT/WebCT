@@ -46,7 +46,7 @@ class GVXRSimulator(Simulator):
 		self._initRenderer()
 
 	def _initRenderer(self):
-		gvxr.createWindow(-1, 0, "OPENGL")
+		gvxr.createWindow(-1, 0, "EGL")
 		gvxr.setWindowSize(1800, 600)
 
 		gvxr.removePolygonMeshesFromSceneGraph()
@@ -89,12 +89,7 @@ class GVXRSimulator(Simulator):
 	def beam(self, value: Beam) -> None:
 		if value.params.projection == PROJECTION.POINT:
 			gvxr.usePointSource()
-			if value.params.spotSize != 0:
-				gvxr.setFocalSpot(*self.capture.beam_position, value.params.spotSize, "mm", 3)
-			else:
-				# workaround to disable focalspot
-				if self.capture is not None:
-					gvxr.setSourcePosition(*self.capture.beam_position, "mm")
+			# Focal spot is setup in capture, as it changes beam position.
 		elif value.params.projection == PROJECTION.PARALLEL:
 			gvxr.useParallelBeam()
 		else:
@@ -204,10 +199,14 @@ class GVXRSimulator(Simulator):
 
 	@capture.setter
 	def capture(self, value: CaptureParameters) -> None:
+		print(value)
 		gvxr.setDetectorPosition(*value.detector_position, "mm")
-		if self.beam.params.spotSize == 0.0:
-			# if using a spot size, the focal point is handled in beam settings
-			gvxr.setSourcePosition(*value.beam_position, "mm")
+		gvxr.setSourcePosition(*value.beam_position, "mm")
+
+		if self.beam.params.spotSize != 0:
+			# todo: change to square source
+			gvxr.setFocalSpot(*self.capture.beam_position, self.beam.params.spotSize, "mm", 3)
+
 		# Changing detector/source position will effect if the source is in
 		# parallel or point mode. We re-set the beam value to fix this.
 		self.beam = self._beam

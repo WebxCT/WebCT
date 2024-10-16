@@ -45,6 +45,18 @@
 
 <div class="group">
 	<div>
+		<div id="gridSDD">
+			<p style="text-align: left;">Source</p>
+			<p id="textSDD">500mm</p>
+			<p style="text-align: right;">Detector</p>
+		</div>
+		<sl-range id="rangeSamplePosition" max="100" min="0" step="0.1" tooltip="none"></sl-range>
+		<div id="gridSOD">
+			<p id="textSOD">400mm</p>
+			<p>Sample</p>
+			<p id="textODD">100mm</p>
+		</div>
+
 		<p>Beam source to sample</p>
 		<sl-input advanced type="number" max="1000" step="0.1" min="-1000" id="inputBeamPosX" label=""><span slot="prefix">X</span>0<span slot="suffix">mm</span></sl-input>
 		<sl-input type="number" max="1000" step="0.1" min="-1000" id="inputBeamPosY"><span slot="prefix">Y</span>0<span slot="suffix">mm</span></sl-input>
