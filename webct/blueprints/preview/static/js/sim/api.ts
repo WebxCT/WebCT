@@ -3,7 +3,7 @@
  * @author Iwan Mitchell
  */
 
-import { PreviewData } from "./types";
+import { PreviewDataResponse } from "./types";
 
 // ====================================================== //
 // ====================== Endpoints ===================== //
@@ -76,9 +76,9 @@ export async function requestProjection(): Promise<Response> {
  * @param data - unconverted objects created from a getSim request.
  * @returns Sim Properties, Unfiltered spectra data, and filtered spectra data.
  */
-export function processResponse(data: SimResponseRegistry["simResponse"]): PreviewData {
+export function processResponse(data: SimResponseRegistry["simResponse"]): PreviewDataResponse {
 
-	const preview: PreviewData = {
+	const preview: PreviewDataResponse = {
 		time: data.time,
 		projection: {
 			image: {

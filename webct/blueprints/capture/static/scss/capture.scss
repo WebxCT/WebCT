@@ -82,3 +82,35 @@ sl-range.linked {
 sl-range::part(tooltip) {
 	z-index: var(--sl-z-index-tooltip);
 }
+
+#rangeSamplePosition {
+	margin: 0;
+}
+
+#gridSDD {
+	display: grid;
+	grid-template-columns: 1fr 1fr 1fr;
+	margin: 0;
+}
+
+#gridSDD > p {
+	text-align: center;
+	margin: 0;
+}
+
+#gridSOD {
+	display: grid;
+	grid-template-columns: 1fr max-content 1fr;
+	margin: 0;
+}
+
+#gridSOD > p {
+	text-align: center;
+	margin: 0;
+	margin-bottom: 1rem;
+}
+
+#textSDD, #textSOD, #textODD {
+	color: var(--sl-color-neutral-500);
+	font-size: var(--sl-font-size-x-small);
+}

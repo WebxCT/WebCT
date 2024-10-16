@@ -42,6 +42,8 @@ export interface DetectorResponseRegistry {
 				material:string,
 			};
 			lsf: Array<number>;
+			enableLSF: boolean;
+			binning:number;
 		},
 		energyResponse: {
 			incident: Array<number>;
@@ -68,6 +70,8 @@ export interface DetectorRequestRegistry {
 		pixel_size: number;
 		scintillator: object;
 		lsf: Array<number>;
+		enableLSF: boolean;
+		binning:number;
 	}
 }
 
@@ -117,7 +121,9 @@ export function processResponse(data: DetectorResponseRegistry["detectorResponse
 			material: data.params.scintillator.material as ScintillatorMaterial,
 			thickness: data.params.scintillator.thickness
 		},
-		lsf: new LSF(data.params.lsf)
+		lsf: new LSF(data.params.lsf),
+		enableLSF: data.params.enableLSF,
+		binning: data.params.binning,
 	};
 
 	const energyResponse: EnergyResponseData = {
@@ -138,6 +144,8 @@ export function prepareRequest(data: DetectorProperties): DetectorRequestRegistr
 		pane_width:data.paneWidth,
 		pixel_size:data.pixelSize,
 		scintillator: data.scintillator,
-		lsf: data.lsf.values
+		lsf: data.lsf.values,
+		enableLSF: data.enableLSF,
+		binning: data.binning,
 	};
 }

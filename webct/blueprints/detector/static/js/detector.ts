@@ -3,7 +3,7 @@
  * @author Iwan Mitchell
  */
 
-import { SlButton, SlDialog, SlInput, SlSelect } from "@shoelace-style/shoelace";
+import { SlButton, SlCheckbox, SlDialog, SlInput, SlSelect } from "@shoelace-style/shoelace";
 import { AlertType, showAlert } from "../../../base/static/js/base";
 import { SetPreviewSize } from "../../../preview/static/js/sim/projection";
 import { DetectorResponseRegistry, prepareRequest, processResponse, requestDetectorData, sendDetectorData } from "./api";
@@ -29,12 +29,15 @@ let LSFDialogClose: SlButton;
 let LSFDialogInput: SlInput;
 let LSFDialogSubmit: SlButton;
 let LSFDialog:SlDialog;
+let LSFEnableCheckbox: SlCheckbox;
 let LSFCanvas: HTMLCanvasElement;
 let LSFDialogCanvas: HTMLCanvasElement;
 
 let ScintillatorSelectElement: SlSelect;
 let ScintillatorThicknessElement: SlInput;
 let EnergyResponseCanvas: HTMLCanvasElement;
+
+let DetectorBinningElement: SlSelect;
 
 // ====================================================== //
 // ======================= Globals ====================== //
@@ -70,6 +73,7 @@ export function setupDetector(): boolean {
 	const text_detector_horizontal = document.getElementById("textDetectorHorizontal");
 	const text_detector_vertical = document.getElementById("textDetectorVertical");
 
+	const checkbox_lsf_enable = document.getElementById("checkboxLSFEnable");
 	const dialog_lsf = document.getElementById("dialogueLSF");
 	const button_show_lsf = document.getElementById("buttonShowLSF");
 	const input_lsf = document.getElementById("inputLSF");
@@ -82,6 +86,8 @@ export function setupDetector(): boolean {
 	const scintillator_thickness_element = document.getElementById("inputScintillatorThickness");
 	const energy_response_canvas = document.getElementById("canvasEnergyResponse");
 
+	const select_detector_binning = document.getElementById("selectDetectorBinning");
+
 
 	if (pane_width_element == null ||
 		pane_height_element == null ||
@@ -92,6 +98,7 @@ export function setupDetector(): boolean {
 		text_detector_horizontal == null ||
 		text_detector_vertical == null ||
 
+		checkbox_lsf_enable == null ||
 		dialog_lsf == null ||
 		button_show_lsf == null ||
 		input_lsf == null ||
@@ -102,7 +109,8 @@ export function setupDetector(): boolean {
 
 		scintillator_select_element == null ||
 		scintillator_thickness_element == null ||
-		energy_response_canvas == null) {
+		energy_response_canvas == null ||
+		select_detector_binning == null) {
 
 		console.log(pane_width_element);
 		console.log(pane_height_element);
@@ -111,6 +119,7 @@ export function setupDetector(): boolean {
 		console.log(text_detector_horizontal);
 		console.log(text_detector_vertical);
 
+		console.log(checkbox_lsf_enable);
 		console.log(dialog_lsf);
 		console.log(button_show_lsf);
 		console.log(input_lsf);
@@ -122,6 +131,7 @@ export function setupDetector(): boolean {
 		console.log(scintillator_select_element);
 		console.log(scintillator_thickness_element);
 		console.log(energy_response_canvas);
+		console.log(select_detector_binning);
 
 		showAlert("Detector setup failure", AlertType.ERROR);
 		return false;
@@ -165,6 +175,7 @@ export function setupDetector(): boolean {
 	DetectorHorizontalText = text_detector_horizontal as unknown as SVGTextElement;
 	DetectorVerticalText = text_detector_vertical as unknown as SVGTextElement;
 
+	LSFEnableCheckbox = checkbox_lsf_enable as SlCheckbox;
 	LSFDialog = dialog_lsf as SlDialog;
 	LSFDialogButton = button_show_lsf as SlButton;
 	LSFDialogInput = input_lsf as SlInput;
@@ -223,6 +234,16 @@ export function setupDetector(): boolean {
 
 	EnergyResponseCanvas = energy_response_canvas as HTMLCanvasElement;
 
+	DetectorBinningElement = select_detector_binning as SlSelect;
+	DetectorBinningElement.addEventListener("sl-change", () => {
+		let width = (parseFloat(PaneWidthPxElement.value) / parseFloat(DetectorBinningElement.value as string)).toFixed(0);
+		let height = (parseFloat(PaneHeightPxElement.value) / parseFloat(DetectorBinningElement.value as string)).toFixed(0);
+		DetectorBinningElement.helpText = PaneWidthPxElement.value + "x" + PaneHeightPxElement.value + " => " + width + "x" + height + " @ " + parseFloat(PanePixelSizeElement.value) * parseFloat(DetectorBinningElement.value as string) + "μm";
+
+		// resize preview to scale pixels
+		previewDetector();
+	});
+
 	previewDetector();
 	return true;
 }
@@ -266,7 +287,7 @@ function previewDetector(): void {
 		return;
 	}
 
-	const pixSize = parseFloat(PanePixelSizeElement.value) / 1000;
+	const pixSize = parseFloat(PanePixelSizeElement.value) / (1000 / parseFloat(DetectorBinningElement.value as string));
 	const height = Math.round(parseFloat(PaneHeightElement.value) / pixSize);
 	const width = Math.round(parseFloat(PaneWidthElement.value) / pixSize);
 	SetPreviewSize(height, width);
@@ -376,6 +397,9 @@ export function setDetectorParams(properties:DetectorProperties) {
 	LSFDialogInput.value = CurrentLSF.values.join(", ");
 	new LSFDisplay(CurrentLSF, LSFDialogCanvas).displayLSF();
 
+	LSFEnableCheckbox.checked = properties.enableLSF;
+	DetectorBinningElement.value = properties.binning + "";
+
 	previewDetector();
 }
 
@@ -388,6 +412,8 @@ export function getDetectorParams():DetectorProperties {
 			thickness: parseFloat(ScintillatorThicknessElement.value) / 1000,
 			material: ScintillatorSelectElement.value as ScintillatorMaterial
 		},
-		lsf: CurrentLSF
+		lsf: CurrentLSF,
+		enableLSF: LSFEnableCheckbox.checked,
+		binning: parseInt(DetectorBinningElement.value as string),
 	};
 }

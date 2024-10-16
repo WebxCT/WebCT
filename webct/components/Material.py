@@ -66,10 +66,6 @@ class Material(SaveableParameters):
 		if ID == "":
 			raise ValueError("Material ID cannot be empty.")
 
-		# Special materials
-		if ID == "special/air":
-			return SpecialMaterial("Air", "Air", 0.0, SpecialMaterialEnum.air)
-
 		catID = ID.split("/")[0]
 
 		if catID not in MATERIALS:
@@ -261,45 +257,6 @@ class HUMaterial(Material):
 		return HUMaterial(parent.label, parent.description, parent.density, HUunit)
 
 
-class SpecialMaterialEnum(Enum):
-	air = "air"
-
-	def to_json(self):
-		return self.value
-
-
-@dataclass(frozen=True)
-class SpecialMaterial(Material):
-	matType: SpecialMaterialEnum
-
-	def to_json(self) -> dict:
-		parent = super().to_json()
-		parent["material"] = ["special", self.matType.value]
-		del parent["matType"]
-		return parent
-
-	@staticmethod
-	def from_json(json: dict):
-		parent = Material.from_json(json)
-
-		if "material" not in json:
-			raise ValueError("Missing keys.")
-		tuple(json["material"])
-		str(tuple(json["material"])[0])
-		str(tuple(json["material"])[1])
-
-		material = json["material"]
-
-		if len(material) != 2 or material[0].lower() != "special":
-			raise ValueError("Special Material key must only contain 'special' and a specific material.")
-
-		try:
-			mat = SpecialMaterialEnum[material[1]]
-			return SpecialMaterial(parent.label, parent.description, parent.density, matType=mat)
-		except KeyError:
-			raise ValueError(f"'{material[1]}' is not a special material.")
-
-
 def MaterialFromJson(json: dict) -> Material:
 	"""Select and create a material type from a json dict."""
 	if "material" not in json:
@@ -315,8 +272,6 @@ def MaterialFromJson(json: dict) -> Material:
 		return MixtureMaterial.from_json(json)
 	if "hu" in json["material"][0]:
 		return HUMaterial.from_json(json)
-	if "special" in json["material"][0]:
-		return SpecialMaterial.from_json(json)
 
 	raise TypeError(
 		f"Unable to deduce material type. Was given a material key with a value of {json['material']} elements."

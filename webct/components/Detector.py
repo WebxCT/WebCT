@@ -4,7 +4,6 @@ from enum import Enum, unique
 import math
 from typing import List, Optional, Tuple
 import numpy as np
-from scipy import ndimage
 
 # gvxr is only used in this context for scintillator properties.
 # Do not initialize the simulator in this context.
@@ -111,14 +110,37 @@ class DetectorParameters:
 	pane_width: float  # width of pane in mm
 	pane_height: float  # height of pane in mm
 	pixel_size: float  # size of pixels in mm
-	lsf: Optional[List[float]]  # Point spread function
+	lsf: List[float]  # Point spread function
+	enableLSF: bool # Enable LSF
 	scintillator: Scintillator # Scintillator
+	binning: int # Detector Binning
 
 	@property
 	def shape(self) -> Tuple[int, int]:
 		return tuple(
-			int(t / self.pixel_size) for t in (self.pane_height, self.pane_width)
+			int(t / self.pixel_size * self.binning) for t in (self.pane_height, self.pane_width)
 		)
+
+	@property
+	def binned_shape(self) -> Tuple[int, int]:
+			return tuple(
+			int(t / self.binned_pixel_size) for t in (self.pane_height, self.pane_width)
+		)
+
+	@property
+	def binned_pixel_size(self) -> float:
+		return self.pixel_size * self.binning
+
+	@property
+	def binned_lsf(self) -> float:
+		lsf_y = self.lsf
+		lsf_x = np.arange(len(self.lsf)) - len(self.lsf) // 2
+
+		num_points = int(len(self.lsf) / self.binning)
+		num_points += int(num_points % 2 == 0)
+
+		points = np.linspace(lsf_x[0], lsf_x[-1], num_points)
+		return np.interp(points, lsf_x, lsf_y)
 
 	@staticmethod
 	def from_json(json: dict):
@@ -155,19 +177,27 @@ class DetectorParameters:
 			raise ValueError("Pixel size cannot be 0 or less.")
 
 		# lsf/psf
-		lsf:List[float]= DEFAULT_LSF
+		enableLSF = bool(json["enableLSF"])
+		lsf:List[float] = [0, 1, 0]
 		if "lsf" in json:
 			lsf = list(np.asarray(json["lsf"], dtype=float))
 
 		# Scintillator
 		scintillator = Scintillator.from_json(json["scintillator"])
 
+		# binning
+		binning = int(json["binning"])
+		if binning < 1:
+			raise ValueError("Binning must be a positive number")
+
 		return DetectorParameters(
 			pane_height=pane_height,
 			pane_width=pane_width,
 			pixel_size=pixel_size,
 			lsf=lsf,
+			enableLSF=enableLSF,
 			scintillator=scintillator,
+			binning=binning
 		)
 
 def _lsf(x:np.ndarray, b2 = 54.9359, c2 = -3.58452, e2 = 6.32561e+09, f2 = 1.0):
