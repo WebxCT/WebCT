@@ -4,7 +4,7 @@ from gvxrPython3 import gvxr
 import numpy as np
 import os
 
-from webct.components.Beam import PROJECTION, Beam, LabBeam, SynchBeam
+from webct.components.Beam import PROJECTION, Beam, LabBeam, MedBeam, SynchBeam
 from webct.components.Capture import CaptureParameters
 from webct.components.Detector import SCINTILLATOR_MATERIAL, DetectorParameters
 from webct.components.Material import (
@@ -46,7 +46,7 @@ class GVXRSimulator(Simulator):
 		self._initRenderer()
 
 	def _initRenderer(self):
-		gvxr.createWindow(-1, 0, "EGL")
+		gvxr.createWindow(-1, 0, "OpenGL")
 		gvxr.setWindowSize(1800, 600)
 
 		gvxr.removePolygonMeshesFromSceneGraph()
@@ -75,11 +75,22 @@ class GVXRSimulator(Simulator):
 	def SimAllProjections(self) -> np.ndarray:
 		# workaround, doesn't seem to be set properly in init
 		gvxr.disableArtefactFiltering()
-		gvxr.computeCTAcquisition("", "", self.capture.projections, 0, False, self.capture.angles[-1], 1, 0, 0, 0, "mm", 0, 0, 1, True, 1)
 
-		images = np.asarray(gvxr.getLastProjectionSet())
+		# ! bug:- does not take into account scene node scaling.
+		# gvxr.computeCTAcquisition("", "", self.capture.projections, 0, False, self.capture.angles[-1], 1, 0, 0, 0, "mm", 0, 0, 1, True, 1)
+		# images = np.asarray(gvxr.getLastProjectionSet())
 
-		return images
+		white = gvxr.getWhiteImage()
+		im1 = np.asarray(gvxr.computeXRayImage())
+		images = np.empty((self.capture.projections, *im1.shape))
+
+		images[0] = im1
+		from tqdm import trange
+		for i in trange(1, self.capture.projections):
+			gvxr.rotateNode("root", 1*self.capture.angle_delta, 0, 0)
+			images[i] = np.asarray(gvxr.computeXRayImage())
+
+		return images/ white
 
 	@property
 	def beam(self) -> Beam:
@@ -104,10 +115,15 @@ class GVXRSimulator(Simulator):
 
 		# setup noise
 		if value.params.enableNoise and self.capture is not None:
-			if isinstance(value.params, LabBeam):
+			if isinstance(value.params, LabBeam) or isinstance(value.params, MedBeam):
 				gvxr.enablePoissonNoise()
-				lab = cast(LabBeam, value.params)
-				mAs = (lab.intensity / 1000) * lab.exposure
+				mAs = 1
+				if isinstance(value.params, LabBeam):
+					lab = cast(LabBeam, value.params)
+					mAs = (lab.intensity / 1000) * lab.exposure
+				else:
+					med = cast(MedBeam, value.params)
+					mAs = med.mas
 
 				electron_charge = 1.602e-19  # [C]
 				photon_count = mAs * (1.0e-3 / electron_charge) * (1 / ((self.capture.SDD * 10) ** 2))
