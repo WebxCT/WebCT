@@ -270,10 +270,12 @@ def generateSpectra(beam: BeamParameters) -> Tuple[Spectra, Spectra]:
 
 		if params.generator == BEAM_GENERATOR.SPEKPY:
 			spec = sp.Spek(
-			kvp=params.voltage,
-			th=params.anodeAngle,
-			targ=params.material.name,
-			mas=params.mas
+				kvp=params.voltage,
+				th=params.anodeAngle,
+				dk=1,
+				targ=params.material.name,
+				mas=params.mas,
+				shift=0.5
 			)
 			results = spec.get_std_results()
 
