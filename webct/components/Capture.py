@@ -19,6 +19,7 @@ class CaptureParameters:
 
 	@property
 	def angle_delta(self) -> float:
+		"""Angle delta in degrees"""
 		return self.capture_angle / self.projections
 
 	@property
@@ -44,8 +45,8 @@ class CaptureParameters:
 
 		# Number of projections
 		projections = int(json["projections"])
-		if projections > 2000:
-			raise ValueError("Number of projections must be less than 3000.")
+		if projections > 10000:
+			raise ValueError("Number of projections must be less than 10000.")
 		elif projections < 2:
 			raise ValueError("Number of projections must be 2 or larger.")
 

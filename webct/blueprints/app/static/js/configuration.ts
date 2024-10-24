@@ -3,6 +3,8 @@ import { AlertType, showAlert } from "../../../base/static/js/base";
 import { FormatLoader } from "./formats/FormatLoader";
 import { GVXRConfig } from "./formats/GVXRLoader";
 import { configFull, configSubset, ExportModes as ExportMode, ExportOptions, getConfigKeys, WebCTConfig } from "./types";
+import { XTEKCTConfig } from "./formats/XTEKCTLoader";
+import { ScanDocuConfig } from "./formats/ScanDocuLoader";
 
 let ConfigButton:SlIconButton;
 let CloseDialogButton:SlButton;
@@ -62,7 +64,7 @@ export function setupConfig():boolean {
 		button_config_upload == null ||
 		menu_mode_json == null ||
 		menu_mode_gvxr == null ||
-		menu_mode_xtek == null ||
+		// menu_mode_xtek == null ||
 		checkbox_config_beam == null ||
 		checkbox_config_detector == null ||
 		checkbox_config_samples == null ||
@@ -107,12 +109,12 @@ export function setupConfig():boolean {
 	ModeButton = button_mode as SlButton;
 	ModeJson = menu_mode_json as SlMenuItem;
 	ModeGVXR = menu_mode_gvxr as SlMenuItem;
-	ModeXTEK = menu_mode_xtek as SlMenuItem;
+	// ModeXTEK = menu_mode_xtek as SlMenuItem;
 
 	ModeButton.onclick = updateConfigPreview;
 	ModeJson.onclick = () => {setMode(ExportMode.JSON);};
 	ModeGVXR.onclick = () => {setMode(ExportMode.GVXR);};
-	ModeXTEK.onclick = () => {setMode(ExportMode.XTEK);};
+	// ModeXTEK.onclick = () => {setMode(ExportMode.XTEK);};
 
 	BeamCheckbox = checkbox_config_beam as SlCheckbox;
 	DetectorCheckbox = checkbox_config_detector as SlCheckbox;
@@ -143,13 +145,9 @@ export function setupConfig():boolean {
 }
 
 function setMode(mode:ExportMode) {
-	if (mode == ExportMode.XTEK) {
-		return;
-	}
-
 	ModeGVXR.checked = false;
 	ModeJson.checked = false;
-	ModeXTEK.checked = false;
+	// ModeXTEK.checked = false;
 
 	switch (mode) {
 	case ExportMode.JSON:
@@ -158,12 +156,13 @@ function setMode(mode:ExportMode) {
 		ConfigFormat = ExportMode.JSON;
 		break;
 	case ExportMode.GVXR:
-		ModeButton.textContent = "Format: GVXR";
+		ModeButton.textContent = "Format: gVXR";
 		ModeGVXR.checked = true;
 		ConfigFormat = ExportMode.GVXR;
 		break;
+	// * Currently unsupported
 	// case ExportMode.XTEK:
-	// 	ModeButton.textContent = "Format: XTEK";
+	// 	ModeButton.textContent = "Format: xtekct";
 	// 	ModeXTEK.checked = true;
 	// 	ConfigFormat = ExportMode.XTEK;
 	// 	break;
@@ -249,7 +248,17 @@ function updateGvxrConfig() {
 
 
 function updateXtekConfig() {
-	return {} as configSubset;
+	BeamCheckbox.disabled = true;
+	BeamCheckbox.checked = true;
+	DetectorCheckbox.disabled = true;
+	DetectorCheckbox.checked = true;
+	SampleCheckbox.checked = false;
+	SampleCheckbox.disabled = true;
+	CaptureCheckbox.checked = true;
+	CaptureCheckbox.disabled = true;
+	ReconCheckbox.checked = false;
+	ReconCheckbox.disabled = true;
+	return XTEKCTConfig.from_config(WebCTConfig.to_json({beam:true,detector:true,samples:true,capture:true,recon:true},[]) as configFull);
 }
 
 function setExportContent(content:string):void {
@@ -283,7 +292,7 @@ function downloadConfig():void {
 function showUploadConfigDialog():void {
 	const fInput = document.createElement("input");
 	fInput.type = "file";
-	fInput.accept = ".json";
+	fInput.accept = ".json, .xtekct, .xml";
 
 	fInput.addEventListener("change",()=> {
 		console.log("Filebrowser change");
@@ -328,6 +337,19 @@ function parseImport(text:string) {
 			// Json parse error, but first key is a {
 			console.error("Unparsable JSON file!");
 			return;
+		}
+	} else if (text[0] == "[") {
+		// INI file format, likely starting with [text]
+		if (XTEKCTConfig.can_parse(text)) {
+			console.log("Importing XTEKCT Config");
+			config = XTEKCTConfig.from_text(text).as_config();
+			console.log(config);
+		}
+	} else if (text[0] == "<" ) {
+		if (ScanDocuConfig.can_parse(text)) {
+			console.log("Importing ScanDocPara Config");
+			config = ScanDocuConfig.from_text(text).as_config();
+			console.log(config);
 		}
 	} else {
 		// Invalid file?
