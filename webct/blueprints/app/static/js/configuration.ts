@@ -182,25 +182,111 @@ function updateConfigPreview() {
 	JsonSettingsPanel.classList.add("hidden");
 
 	// Call independent mode update functions
-	let config:FormatLoader|configSubset;
+	let content:string;
 	switch (ConfigFormat) {
 	case ExportMode.JSON:
-		config = updateJsonConfig();
+		content = updateJsonConfig();
 		break;
 	case ExportMode.GVXR:
-		config = updateGvxrConfig();
+		content = updateGvxrConfig();
 		break;
 	case ExportMode.XTEK:
-		config = updateXtekConfig();
+		content = updateXtekConfig();
+		break;
+	case ExportMode.PYTHON:
+		content = updateXtekConfig();
 		break;
 	}
 
 	// Remove selected parts from the export
-	setExportContent(JSON.stringify(config, undefined, 4));
+	setExportContent();
 }
 
 
 function updateJsonConfig() {
+
+	// Enumerate options
+	const options:ExportOptions[] = [];
+
+	const optionKeys:[SlCheckbox, ExportOptions][] = [
+		[OptionMatasIDCheckbox, ExportOptions.MatasId],
+	];
+
+	for (let index = 0; index < optionKeys.length; index++) {
+		const [checkbox, option] = optionKeys[index];
+		if (checkbox.checked) {
+			options.push(option);
+		}
+	}
+
+	// Visual: Disable options based on enabled elements
+	OptionMatasIDCheckbox.disabled = !SampleCheckbox.checked;
+	JsonSettingsPanel.classList.remove("hidden");
+
+	// Return config
+	return JSON.stringify(
+		WebCTConfig.to_json(
+			{
+				beam: BeamCheckbox.checked,
+				detector: DetectorCheckbox.checked,
+				samples:SampleCheckbox.checked,
+				capture: CaptureCheckbox.checked,
+				recon:ReconCheckbox.checked
+			},
+			options
+		),
+		undefined,
+		4);
+}
+
+function updateGvxrConfig() {
+
+	BeamCheckbox.disabled = true;
+	BeamCheckbox.checked = true;
+	DetectorCheckbox.disabled = true;
+	DetectorCheckbox.checked = true;
+	SampleCheckbox.checked = true;
+	SampleCheckbox.disabled = true;
+	CaptureCheckbox.checked = true;
+	CaptureCheckbox.disabled = true;
+	ReconCheckbox.checked = false;
+	ReconCheckbox.disabled = true;
+
+	return JSON.stringify(
+		GVXRConfig.from_config(
+			WebCTConfig.to_json(
+				{
+					beam:true,
+					detector:true,
+					samples:true,
+					capture:true,
+					recon:true
+				},
+				[]
+			) as configFull),
+		undefined,
+		4);
+}
+
+
+function updateXtekConfig() {
+	BeamCheckbox.disabled = true;
+	BeamCheckbox.checked = true;
+	DetectorCheckbox.disabled = true;
+	DetectorCheckbox.checked = true;
+	SampleCheckbox.checked = false;
+	SampleCheckbox.disabled = true;
+	CaptureCheckbox.checked = true;
+	CaptureCheckbox.disabled = true;
+	ReconCheckbox.checked = false;
+	ReconCheckbox.disabled = true;
+
+	// todo: fully populate ini format
+	return XTEKCTConfig.from_config(
+		WebCTConfig.to_json({beam:true,detector:true,samples:true,capture:true,recon:true},[]) as configFull);
+}
+
+function updatePythonConfig() {
 
 	// Enumerate options
 	const options:ExportOptions[] = [];
@@ -230,37 +316,6 @@ function updateJsonConfig() {
 	}, options);
 }
 
-function updateGvxrConfig() {
-
-	BeamCheckbox.disabled = true;
-	BeamCheckbox.checked = true;
-	DetectorCheckbox.disabled = true;
-	DetectorCheckbox.checked = true;
-	SampleCheckbox.checked = true;
-	SampleCheckbox.disabled = true;
-	CaptureCheckbox.checked = true;
-	CaptureCheckbox.disabled = true;
-	ReconCheckbox.checked = false;
-	ReconCheckbox.disabled = true;
-
-	return GVXRConfig.from_config(WebCTConfig.to_json({beam:true,detector:true,samples:true,capture:true,recon:true},[]) as configFull);
-}
-
-
-function updateXtekConfig() {
-	BeamCheckbox.disabled = true;
-	BeamCheckbox.checked = true;
-	DetectorCheckbox.disabled = true;
-	DetectorCheckbox.checked = true;
-	SampleCheckbox.checked = false;
-	SampleCheckbox.disabled = true;
-	CaptureCheckbox.checked = true;
-	CaptureCheckbox.disabled = true;
-	ReconCheckbox.checked = false;
-	ReconCheckbox.disabled = true;
-	return XTEKCTConfig.from_config(WebCTConfig.to_json({beam:true,detector:true,samples:true,capture:true,recon:true},[]) as configFull);
-}
-
 function setExportContent(content:string):void {
 	// Update code preview
 	CodePreview.textContent = content;
@@ -283,6 +338,9 @@ function downloadConfig():void {
 		break;
 	case ExportMode.XTEK:
 		va.download = "Config-XTEK.xtek";
+		break;
+	case ExportMode.PYTHON:
+		va.download = "simulate.py";
 		break;
 	}
 

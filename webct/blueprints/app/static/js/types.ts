@@ -133,6 +133,20 @@ export class WebCTConfig {
 
 		UpdatePage();
 	}
+
+	static to_python(keys:ConfigKeys, option:ExportOptions[]):string {
+		// Create a python file to locally simulate and reconstruct WebCT
+		
+		let config = this.to_json(keys, [])
+
+		return `
+			import numpy as np
+			from gvxrPython3 import gvxr
+			gvxr.
+		`
+
+
+	}
 }
 
 export interface ConfigKeys {
@@ -146,5 +160,6 @@ export interface ConfigKeys {
 export enum ExportModes {
 	JSON,
 	GVXR,
-	XTEK
+	XTEK,
+	PYTHON
 }
