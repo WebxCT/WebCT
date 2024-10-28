@@ -17,20 +17,24 @@
 			<sl-progress-bar value="0" id="barSampleUpload">0</sl-progress-bar>
 		</div>
 	</sl-radio-group>
-	<sl-divider></sl-divider>
-
-	<div class="buttons">
-		<sl-button variant="" class="close" id="buttonSampleClose">Close</sl-button>
-		<sl-button variant="success" id="buttonSampleSubmit" disabled>Add Sample</sl-button>
+	
+	<div slot="footer">
+		<sl-divider></sl-divider>
+		<div class="buttons">
+			<sl-button variant="" class="close" id="buttonSampleClose">Close</sl-button>
+			<sl-button variant="success" id="buttonSampleSubmit" disabled>Add Sample</sl-button>
+		</div>
 	</div>
 </sl-dialog>
 
 <sl-dialog label="Upload Complete!" id="dialogueUploadComplete">
 	<p>Sample has been uploaded!<br>You can now add the sample using the model dropdown.</p>
-		<sl-divider></sl-divider>
 
-	<div class="buttons">
-		<sl-button variant="" class="close" id="buttonUploadClose">Close</sl-button>
+		<div slot="footer">
+			<sl-divider></sl-divider>
+			<div class="buttons">
+			<sl-button variant="" class="close" id="buttonUploadClose">Close</sl-button>
+		</div>
 	</div>
 </sl-dialog>
 

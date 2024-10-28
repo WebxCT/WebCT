@@ -355,7 +355,6 @@ sl-progress-bar[variant="long"]::part(indicator) {
 .downloadPanel {
 	padding-left: 1rem;
 	padding-right: 0.25rem;
-	max-height: 40rem;
 	overflow: hidden;
 }
 
@@ -392,6 +391,17 @@ sl-progress-bar[variant="long"]::part(indicator) {
 	padding: 1rem;
 	margin-top: 1rem;
 	width: 95%;
+	display: flex;
+	flex-wrap: wrap;
+}
+
+.settingsPanel > sl-input {
+	padding: 0.5rem;
+	width: auto;
+}
+
+#buttonMode {
+	width: 10rem;
 }
 
 sl-tag[size="x-small"]::part(base) {
@@ -417,13 +427,24 @@ sl-tag[size="x-small"]::part(base) {
 }
 
 #dialogueConfig > div.dialogpanel > div:not(.downloadPanel) > div {
+	grid-row-start: 3;
+	grid-row-end: 4;
+}
+
+#dialogueConfig > div.dialogpanel > div:not(.downloadPanel) > p {
 	grid-row-start: 2;
 	grid-row-end: 3;
+	font-size: var(--sl-font-size-x-small);
+	color: var(--sl-color-gray-500);
 }
 
 #dialogueConfig > div.dialogpanel > div:not(.downloadPanel) > sl-button {
-	grid-row-start: 3;
-	grid-row-end: 4;
+	grid-row-start: 4;
+	grid-row-end: 5;
+}
+
+#settingsPanelGVXR[mode="gvxr"] > #inputOptSimReconstructionFolder {
+	display: none;
 }
 
 #panelImport {

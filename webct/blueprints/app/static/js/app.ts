@@ -158,6 +158,9 @@ function setupEvents(): void {
 	window.addEventListener("startLongLoadingDownload", () => {
 		setPageLoading(true, "long", "Download");
 	});
+	window.addEventListener("pageError", () => {
+		setPageLoading(false, "error")
+	});
 }
 
 function loadApp() {
@@ -190,7 +193,7 @@ function loadApp() {
 	InitialUpdate();
 }
 
-type LoadingType = "default" | "long";
+type LoadingType = "default" | "long" | "error";
 
 // https://stackoverflow.com/questions/14226803/wait-5-seconds-before-executing-next-line
 const delay = async (ms: number) => new Promise(res => setTimeout(res, ms));
@@ -251,7 +254,7 @@ function setPageLoading(loading: boolean, type: LoadingType = "default", source:
 			console.log(PreviewData);
 			let numProj = getCaptureParams().numProjections;
 
-			UpdateProgressTime(PreviewData.time * numProj * 0.90, numProj)
+			UpdateProgressTime(PreviewData.time * numProj, numProj)
 		} else {
 			LoadingBar.setAttribute("indeterminate", "true");
 		}
@@ -260,32 +263,35 @@ function setPageLoading(loading: boolean, type: LoadingType = "default", source:
 		LoadingBar.removeAttribute("hidden");
 	} else {
 		// Check to see if the finish loading source supercedes the caller
-
-		switch (LongLoadingCaller) {
-		case "Capture":
-			// Capture loading cannot be cancelled by random sources
-			if (source == "") {
-				return;
+		if (type != "error") {
+			switch (LongLoadingCaller) {
+			case "Capture":
+				// Capture loading cannot be cancelled by random sources
+				if (source == "") {
+					return;
+				}
+				break;
+			case "Recon":
+				// Reconstruction loading has a higher priority than capture
+				if (source == "" || source == "Capture") {
+					return;
+				}
+				break;
+			case "Download":
+				// Download loading has the highest priority
+				if (source !== "Download") {
+					return;
+				}
+				break;
+			case "":
+			default:
+				break;
 			}
-			break;
-		case "Recon":
-			// Reconstruction loading has a higher priority than capture
-			if (source == "" || source == "Capture") {
-				return;
-			}
-			break;
-		case "Download":
-			// Download loading has the highest priority
-			if (source !== "Download") {
-				return;
-			}
-			break;
-		case "":
-		default:
-			break;
+			console.log("## Finished Loading");
+		} else {
+			console.log("Loading interrupted due to error.");
 		}
 
-		console.log("## Finished Loading");
 		for (let index = 0; index < UpdateButtons.length; index++) {
 			const button = UpdateButtons[index];
 			button.removeAttribute("loading");

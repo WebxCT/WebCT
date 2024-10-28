@@ -3,6 +3,7 @@
 # todo: split update functions into separate calls
 
 import sys
+import math
 from time import monotonic
 from dataclasses import dataclass
 from enum import Enum
@@ -390,6 +391,8 @@ class SimClient(Process):
 		shape = (self.capture.projections, *self.detector.binned_shape)
 
 		# allocate shared memory
+		size_GiB = (math.prod(shape) * 4) / 1024 / 1024 / 1024
+		log.info(f"Attempting to allocate {size_GiB * 2:.2f} GiB")
 		result_np: np.ndarray = np.ndarray(shape, dtype=float)
 		mem = shared_memory.SharedMemory(
 			f"WCT_SM_GP-{self.pid}-{rng.random()}", create=True, size=result_np.nbytes

@@ -30,6 +30,8 @@
 				</li>
 			</ul>
 			<div id="areaConfigUpload"></div>
+			{% include "about.html.j2" %}
+
 			<sl-button id="buttonConfigUpload" variant="primary" outline>Import Config
 				<sl-icon name="file-earmark-arrow-up" slot="prefix"></sl-icon>
 			</sl-button>
@@ -46,7 +48,10 @@
 					<sl-menu>
 						<sl-menu-item value="json" id="menuModeJson" checked>JSON</sl-menu-item>
 						<sl-menu-item value="gvxr" id="menuModeGVXR">gVXR</sl-menu-item>
-						<!-- <sl-menu-item value="xtek" id="menuModeXTEK">xtekct <span>Nikon</span></sl-menu-item> -->
+						<sl-menu-item value="python" id="menuModePython">Python</sl-menu-item>
+						<sl-menu-item value="xtek" id="menuModeXTEK">XtekCT <span> Nikon</span></sl-menu-item>
+						<!-- Not Implemented -->
+						<sl-menu-item value="diondo" disabled class="hidden" id="menuModeXMLDiondo">XML <span>Diondo</span></sl-menu-item>
 					</sl-menu>
 				</sl-dropdown>
 			</sl-button-group>
@@ -54,6 +59,15 @@
 			<div class="settingsPanel" id="settingsPanelJson">
 				<sl-checkbox checked id="checkboxOptMatasID">Materials as IDs <span>- Export materials as references,
 						rather than embedding material data.</span></sl-checkbox>
+			</div>
+
+			<div class="settingsPanel" id="settingsPanelGVXR" mode="gvxr">
+				<sl-input id="inputOptSimProjectionFolder" label="Projection Output Folder" help-text="Output folder for simulated projections" value="proj/"></sl-input>
+
+				<!-- gvxr panel is reused for python exporting, however
+				reconstruction is done via CIL, so reconstruction settings aren't
+				saved with gVXR's JSON config -->
+				<sl-input id="inputOptSimReconstructionFolder" label="Reconstruction Output Prefix" help-text="Output prefix for 3D reconstruction" value="recon/slice-"></sl-input>
 			</div>
 
 			<sl-divider></sl-divider>

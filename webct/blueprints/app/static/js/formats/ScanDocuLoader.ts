@@ -1,10 +1,7 @@
 import { AlertType, showAlert } from "../../../../base/static/js/base";
 import { ElementSymbols } from "../../../../base/static/js/elements";
 import { BeamProperties, Filter, LabBeam, SynchBeam, TubeBeam } from "../../../../beam/static/js/types";
-import { DetectorProperties, ScintillatorMaterial } from "../../../../detector/static/js/types";
-import { MaterialLib } from "../../../../samples/static/js/samples";
-import { Material, SampleProperties } from "../../../../samples/static/js/types";
-import { configFull, configSubset } from "../types";
+import { configFull, configSubset, ExportOptions } from "../types";
 import { FormatLoader, FormatLoaderStatic } from "./FormatLoader";
 
 interface geometrie {
@@ -45,6 +42,9 @@ export const ScanDocuConfig: FormatLoaderStatic = class ScanDocuConfig implement
 		this.recon = recon;
 		this.scanparameter = scan;
 	}
+	to_text():string {
+		return "Not Implemented"
+	};
 
 	as_config(): configSubset {
 		let beam: BeamProperties
@@ -87,7 +87,7 @@ export const ScanDocuConfig: FormatLoaderStatic = class ScanDocuConfig implement
 		};
 	};
 
-	static from_config(data:configFull) {
+	static from_config(data:configFull, options:ExportOptions) {
 
 		if (data.beam.method == "synch") {
 			throw "ScanDocu Format does not support synchrotron sources."
