@@ -20,6 +20,7 @@ dependencies:
   - tigre
   - astra-toolbox
   - ccpi-regulariser
+  - py-cpuinfo
 
   # Packaging
   - pyinstaller
