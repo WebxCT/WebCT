@@ -12,18 +12,10 @@ dll = Path(dll_path)
 datas = collect_data_files("cil")
 binaries = [(dll, "./")]
 
-# include ipp
-
-binaries.append((conda.lib_dir.locate() / "ippcck0.dll", "./"))
-binaries.append((conda.lib_dir.locate() / "ippchk0.dll", "./"))
-binaries.append((conda.lib_dir.locate() / "ippcvk0.dll", "./"))
-binaries.append((conda.lib_dir.locate() / "ippdck0.dll", "./"))
-binaries.append((conda.lib_dir.locate() / "ippek0.dll", "./"))
-binaries.append((conda.lib_dir.locate() / "ippik0.dll", "./"))
-binaries.append((conda.lib_dir.locate() / "ippsk0.dll", "./"))
-binaries.append((conda.lib_dir.locate() / "ippvmk0.dll", "./"))
-# binaries.append((conda.lib_dir.locate() / "ipp.dll", "./"))
-# ippik0
+# include ipp (l9 is for cpus that support AVX2;- which is all processors in the last decade.)
+binaries.append((conda.lib_dir.locate() / "ippil9.dll", "./"))
+binaries.append((conda.lib_dir.locate() / "ippsl9.dll", "./"))
+binaries.append((conda.lib_dir.locate() / "ippvml9.dll", "./"))
 
 # gpu-accelerated iterative regularizers
 base_reg = Path(reg_base)

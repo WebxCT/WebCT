@@ -2,9 +2,9 @@
 
 import { SlButton, SlProgressBar } from "@shoelace-style/shoelace";
 import { setupBeam, spectraNormPercentButton, SyncBeam, UpdateBeam } from "../../../beam/static/js/beam";
-import { setupCapture, SyncCapture, UpdateCapture, UpdateCapturePreview } from "../../../capture/static/js/capture";
+import { getCaptureParams, setupCapture, SyncCapture, UpdateCapture, UpdateCapturePreview } from "../../../capture/static/js/capture";
 import { setupDetector, SyncDetector, UpdateDetector } from "../../../detector/static/js/detector";
-import { MarkLoading, setupPreview, updateProjection } from "../../../preview/static/js/sim/projection";
+import { MarkLoading, PreviewData, setupPreview, updateProjection } from "../../../preview/static/js/sim/projection";
 import { setupRecon, SyncRecon, UpdateRecon, UpdateReconPreview as UpdateReconPreview } from "../../../reconstruction/static/js/recon";
 import { setupSamples, SyncSamples, UpdateSamples } from "../../../samples/static/js/samples";
 import { setupConfig } from "./configuration";
@@ -17,7 +17,7 @@ let LoadingBar: SlProgressBar;
 
 type LongLoadingSource = "Recon"|"Capture"|"Download"|"";
 
-let LongLoadingSource: LongLoadingSource;
+let LongLoadingCaller: LongLoadingSource;
 
 function bindGroupButtons() {
 	const groups = document.getElementsByClassName("group");
@@ -158,6 +158,9 @@ function setupEvents(): void {
 	window.addEventListener("startLongLoadingDownload", () => {
 		setPageLoading(true, "long", "Download");
 	});
+	window.addEventListener("pageError", () => {
+		setPageLoading(false, "error")
+	});
 }
 
 function loadApp() {
@@ -190,12 +193,35 @@ function loadApp() {
 	InitialUpdate();
 }
 
-type LoadingType = "default" | "long";
+type LoadingType = "default" | "long" | "error";
+
+// https://stackoverflow.com/questions/14226803/wait-5-seconds-before-executing-next-line
+const delay = async (ms: number) => new Promise(res => setTimeout(res, ms));
+
+function UpdateProgressTime(seconds:number, segments:number) {
+	console.log("UpdateProgressTime("+seconds+")");
+	LoadingBar.value = (1 / seconds)
+
+	let delta = seconds / segments
+	console.log(delta);
+	setTimeout(async () => {
+		for (let time = 1; time < seconds; time+=delta) {
+			console.log("tik ");
+			if (LongLoadingCaller == "") {
+				LoadingBar.value = 100;
+				return
+			}
+			LoadingBar.value = (time / seconds) * 100;
+			console.log(LoadingBar.value);
+			await delay(delta * 1000);
+		}
+	}, 1000);
+}
 
 function setPageLoading(loading: boolean, type: LoadingType = "default", source: LongLoadingSource=""): void {
 	if (loading) {
 		console.log("## Button Loading");
-		LongLoadingSource = source;
+		LongLoadingCaller = source;
 
 		for (let index = 0; index < UpdateButtons.length; index++) {
 			const button = UpdateButtons[index];
@@ -221,37 +247,51 @@ function setPageLoading(loading: boolean, type: LoadingType = "default", source:
 		}
 
 		document.getElementsByTagName("body")[0].style.cursor = "wait";
+	
+		if (source == "Capture") {
+			// For all projections, we can make a guess for duration
+			LoadingBar.removeAttribute("indeterminate");
+			console.log(PreviewData);
+			let numProj = getCaptureParams().numProjections;
+
+			UpdateProgressTime(PreviewData.time * numProj, numProj)
+		} else {
+			LoadingBar.setAttribute("indeterminate", "true");
+		}
 
 		LoadingBar.setAttribute("variant", type);
 		LoadingBar.removeAttribute("hidden");
 	} else {
 		// Check to see if the finish loading source supercedes the caller
-
-		switch (LongLoadingSource) {
-		case "Capture":
-			// Capture loading cannot be cancelled by random sources
-			if (source == "") {
-				return;
+		if (type != "error") {
+			switch (LongLoadingCaller) {
+			case "Capture":
+				// Capture loading cannot be cancelled by random sources
+				if (source == "") {
+					return;
+				}
+				break;
+			case "Recon":
+				// Reconstruction loading has a higher priority than capture
+				if (source == "" || source == "Capture") {
+					return;
+				}
+				break;
+			case "Download":
+				// Download loading has the highest priority
+				if (source !== "Download") {
+					return;
+				}
+				break;
+			case "":
+			default:
+				break;
 			}
-			break;
-		case "Recon":
-			// Reconstruction loading has a higher priority than capture
-			if (source == "" || source == "Capture") {
-				return;
-			}
-			break;
-		case "Download":
-			// Download loading has the highest priority
-			if (source !== "Download") {
-				return;
-			}
-			break;
-		case "":
-		default:
-			break;
+			console.log("## Finished Loading");
+		} else {
+			console.log("Loading interrupted due to error.");
 		}
 
-		console.log("## Finished Loading");
 		for (let index = 0; index < UpdateButtons.length; index++) {
 			const button = UpdateButtons[index];
 			button.removeAttribute("loading");
@@ -277,6 +317,9 @@ function setPageLoading(loading: boolean, type: LoadingType = "default", source:
 
 		document.getElementsByTagName("body")[0].style.cursor = "";
 		LoadingBar.setAttribute("hidden", "true");
+
+		// Reset the loading caller, this may also be used by watchdogs to halt.
+		LongLoadingCaller = "";
 	}
 }
 

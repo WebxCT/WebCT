@@ -21,18 +21,7 @@ from webct.components.Reconstruction import (FDKParam, ReconParameters, reconstr
 from webct.components.Samples import RenderedSampleSettings, Sample, SampleSettings
 from webct.components.sim.Download import DownloadManager
 from webct.components.sim.clients.SimClient import SimClient, SimThreadError, SimTimeoutError
-from webct.components.sim.Quality import Quality
 from webct.components.sim.SimManager import getClient
-
-class ProjCorrection(Enum):
-	# No correction is done, projections are a direct result from the detector.
-	NONE = 1
-
-	# Flatfield and darkfield normalisation has taken place.
-	FLATFIELD = 2
-
-	# Conversion from absorbtion measurements to transmission measurements have taken place.
-	ABSORBTION = 3
 
 class SimSession:
 	"""
@@ -51,9 +40,9 @@ class SimSession:
 
 	# Save a flag if parameters have changed since last projection creation
 	_dirty: List[bool] = [False, False, False]
-	_projections: dict[Quality, np.ndarray]
-	_projection: dict[Quality, np.ndarray]
-	_reconstruction: dict[Quality, np.ndarray]
+	_projections: np.ndarray
+	_projection: np.ndarray
+	_reconstruction: np.ndarray
 	_recon_param: ReconParameters
 	_scene: Optional[np.ndarray]
 	_dlmanager:DownloadManager
@@ -76,6 +65,7 @@ class SimSession:
 		self.beam = LabBeam(method="lab", projection=PROJECTION.POINT,
 			filters=(Filter(Element.Cu,2),),
 			voltage=70,
+			enableNoise=True,
 			exposure=1,
 			intensity=120,
 			spotSize=0,
@@ -83,7 +73,15 @@ class SimSession:
 			generator=BEAM_GENERATOR.SPEKPY,
 			material=Element.W
 		)
-		self.detector = DetectorParameters(300, 250, 0.5, DEFAULT_LSF, Scintillator(SCINTILLATOR_MATERIAL.GADOX, 136.55 / 1000))
+		self.detector = DetectorParameters(
+			pane_height=300,
+			pane_width=250,
+			pixel_size=0.5,
+			lsf=DEFAULT_LSF,
+			enableLSF=True,
+			scintillator=Scintillator(SCINTILLATOR_MATERIAL.GADOX, 136.55 / 1000),
+			binning = 1,
+			)
 		self.samples = SampleSettings(
 			scaling = 1.0,
 			samples = (
@@ -91,7 +89,7 @@ class SimSession:
 			),
 		)
 		self.capture = CaptureParameters(360, 360, (0, 100, 0), (0, -400, 0), (0, 0, 90))
-		self.recon = FDKParam(quality=Quality.MEDIUM, filter="ram-lak")
+		self.recon = FDKParam(filter="ram-lak")
 
 	@property
 	def beam(self) -> BeamParameters:
@@ -202,8 +200,8 @@ class SimSession:
 				self._simClient = SimClient(self._sid)
 				raise e
 
-	def transmission_histogram(self, quality=Quality.MEDIUM) -> Tuple[List[float], List[float]]:
-		projection = self.projection(quality)
+	def transmission_histogram(self) -> Tuple[List[float], List[float]]:
+		projection = self.projection()
 
 		hist, bins = np.histogram(projection, 100, (0, 1))
 
@@ -217,13 +215,13 @@ class SimSession:
 
 		return hist.astype(float).tolist(), bins.astype(float).tolist()
 
-	def projection(self, quality=Quality.MEDIUM, corrected=True) -> np.ndarray:
+	def projection(self) -> np.ndarray:
 		with self._lock:
-			if self._dirty[0] and not self._dirty[1] and quality in self._projections:
+			if self._dirty[0] and not self._dirty[1]:
 				# Just nick first proj from allprojections
-				return self._projections[quality][0]
-			if not self._dirty[0] and hasattr(self, "_projection") and quality in self._projection:
-				return self._projection[quality]
+				return self._projections[0]
+			if not self._dirty[0] and hasattr(self, "_projection"):
+				return self._projection
 			self._counter += 1
 			if self._dirty[0]:
 				self._projection = {}
@@ -231,14 +229,14 @@ class SimSession:
 				self._scene = None
 
 			try:
-				self._projection[quality] = self._simClient.getProjection(quality)
+				self._projection = self._simClient.getProjection()
 			except SimThreadError as e:
 				log.error("Thread Error while simulating one projection! Forcefully killing Client...")
 				self._simClient.kill()
 				log.error("Replacing Simulator Child with a new one...")
 				self._simClient = SimClient(self._sid)
 				raise e
-			return self._projection[quality]
+			return self._projection
 
 	def scene(self) -> np.ndarray:
 		with self._lock:
@@ -256,16 +254,16 @@ class SimSession:
 				raise e
 			return self._scene
 
-	def allProjections(self, quality=Quality.MEDIUM, corrected=True) -> np.ndarray:
+	def allProjections(self) -> np.ndarray:
 		with self._lock:
-			if not self._dirty[1] and hasattr(self, "_projections") and quality in self._projections:
-				return self._projections[quality]
+			if not self._dirty[1] and hasattr(self, "_projections"):
+				return self._projections
 			self._counter += 1
 			if self._dirty[1]:
 				self._projections = {}
 				self._dirty[1] = False
 			try:
-				self._projections[quality] = self._simClient.getAllProjections(quality)
+				self._projections = self._simClient.getAllProjections()
 			except SimThreadError as e:
 				if isinstance(e, SimTimeoutError):
 					log.error("Waited too long (>1s per projection) to render all projections. Unsure if simulator crashed since it's not responding. Forcefully killing Client...")
@@ -275,7 +273,7 @@ class SimSession:
 				log.error("Replacing Simulator Child with a new one...")
 				self._simClient = SimClient(self._sid)
 				raise e
-			return self._projections[quality]
+			return self._projections
 
 	def layout(self) -> np.ndarray:
 		geo: Optional[AcquisitionGeometry] = None
@@ -316,10 +314,9 @@ class SimSession:
 			self._recon_param = value
 
 	def getReconstruction(self) -> np.ndarray:
-		quality = self._recon_param.quality
 		with self._lock:
-			if not self._dirty[2] and hasattr(self, "_reconstruction") and quality in self._reconstruction:
-				return self._reconstruction[quality]
+			if not self._dirty[2] and hasattr(self, "_reconstruction"):
+				return self._reconstruction
 			self._counter += 1
 			if self._dirty[2]:
 				self._reconstruction = {}
@@ -328,12 +325,12 @@ class SimSession:
 			# Get projections
 			# We have the lock, so disregard locking
 			self._lock.release()
-			projections = self.allProjections(quality=quality, corrected=False)
+			projections = self.allProjections()
 			self._lock.acquire()
 
 			log.info(f"[{self._sid}] Reconstructing")
-			self._reconstruction[quality] = reconstruct(projections, self._capture_param, self._beam_param, self._detector_param, self._recon_param)
-			return self._reconstruction[quality]
+			self._reconstruction = reconstruct(projections, self._capture_param, self._beam_param, self._detector_param, self._recon_param)
+			return self._reconstruction
 
 	@property
 	def capture(self) -> CaptureParameters:

@@ -1,7 +1,7 @@
 import { SlButton, SlCheckbox, SlRadio } from "@shoelace-style/shoelace";
 import { processResponse, requestProjection, SimResponseRegistry } from "./api";
 import { ProjectionRequestError, showError } from "./errors";
-import { PreviewData, TransmissionDisplay } from "./types";
+import { PreviewDataResponse, TransmissionDisplay } from "./types";
 // import type { Buffer } from "buffer";
 
 // ====================================================== //
@@ -27,7 +27,7 @@ let SettingInvertElement: SlCheckbox;
 let PreviewImages: NodeListOf<HTMLImageElement>;
 let LayoutImages: NodeListOf<HTMLImageElement>;
 let SceneImages: NodeListOf<HTMLImageElement>;
-let PreviewData: PreviewData;
+export let PreviewData: PreviewDataResponse;
 let PreviewPaneImage: HTMLImageElement;
 
 let TransmissionChart: TransmissionDisplay;

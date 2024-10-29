@@ -44,21 +44,7 @@
 				{% include "./tags/cpu.html.j2" %}
 			</sl-menu-item>
 		</sl-select>
-
-		<sl-select label="Reconstruction Quality" value="medium" id="selectReconQuality" advanced>
-			<sl-menu-item value="0">High
-				<sl-tag slot="suffix" variant="danger" pill size="small">Memory Intensive</sl-tag>
-			</sl-menu-item>
-			<sl-menu-item value="1">Medium</sl-menu-item>
-			<sl-menu-item value="2">Low</sl-menu-item>
-			<sl-divider></sl-divider>
-			<sl-menu-item value="3">Preview</sl-menu-item>
-		</sl-select>
-		<p id="descriptionQuality" advanced>
-			Medium quality uses a full detector size for projections, but a reduced size for the reconstruction space.
-		</p>
 	</div>
-	<button></button>
 </div>
 
 <div class="group" id="settingsFDK">

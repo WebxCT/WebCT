@@ -8,10 +8,7 @@ export type TikhonovMethod = "projection" | "identity" | "gradient"
 export type ProximalMethod = "box" | "tv" | "fgp-tv" | "tgv"
 export type DiffMethod = "least-squares"
 
-export type ReconQuality = 0 | 1 | 2 | 3
-
 export interface ReconstructionParams {
-	quality: ReconQuality;
 	readonly method: ReconMethod;
 }
 
@@ -98,22 +95,18 @@ export interface IterativeReconstructionParams extends ReconstructionParams {
 
 export class FDKParams implements FilteredReconstructionParams {
 	readonly method = "FDK" as const
-	quality: ReconQuality
 	filter = "ram_lak"
 
-	constructor(quality: ReconQuality, filter: Filter) {
-		this.quality = quality;
+	constructor(filter: Filter) {
 		this.filter = filter;
 	}
 }
 
 export class FBPParams implements FilteredReconstructionParams {
 	readonly method = "FBP" as const
-	quality: ReconQuality
 	filter = "ram_lak"
 
-	constructor(quality: ReconQuality, filter: Filter) {
-		this.quality = quality;
+	constructor(filter: Filter) {
 		this.filter = filter;
 	}
 }
@@ -121,13 +114,11 @@ export class FBPParams implements FilteredReconstructionParams {
 
 export class CGLSParams implements IterativeReconstructionParams {
 	readonly method = "CGLS" as const
-	quality: ReconQuality
 	iterations: number
 	tolerance: number
 	operator: TikhonovRegulariser
 
-	constructor(quality: ReconQuality, iterations: number, tolerance:number, operator: TikhonovRegulariser) {
-		this.quality = quality;
+	constructor(iterations: number, tolerance:number, operator: TikhonovRegulariser) {
 		this.iterations = iterations;
 		this.tolerance = tolerance;
 		this.operator = operator;
@@ -136,13 +127,11 @@ export class CGLSParams implements IterativeReconstructionParams {
 
 export class SIRTParams implements IterativeReconstructionParams {
 	readonly method = "SIRT" as const
-	quality:ReconQuality
 	iterations:number
 	constraint: Proximal
 	operator: TikhonovRegulariser
 
-	constructor(quality:ReconQuality, iterations:number, constraint:Proximal, operator:TikhonovRegulariser) {
-		this.quality = quality;
+	constructor(iterations:number, constraint:Proximal, operator:TikhonovRegulariser) {
 		this.iterations = iterations;
 		this.constraint = constraint;
 		this.operator = operator;
@@ -151,13 +140,11 @@ export class SIRTParams implements IterativeReconstructionParams {
 
 export class FISTAParams implements IterativeReconstructionParams {
 	readonly method = "FISTA" as const
-	quality:ReconQuality
 	iterations: number
 	constraint: Proximal
 	diff:Differentiable
 
-	constructor(quality:ReconQuality, iterations:number, constriant:Proximal, diff:Differentiable) {
-		this.quality = quality;
+	constructor(iterations:number, constriant:Proximal, diff:Differentiable) {
 		this.iterations = iterations;
 		this.constraint = constriant;
 		this.diff = diff;

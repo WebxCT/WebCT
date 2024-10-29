@@ -2,7 +2,13 @@ from flask.templating import render_template
 from flask.wrappers import Response
 from flask import session
 from webct.blueprints.app import bp
-
+from platform import system
+import psutil
+from webct import version as webct_version
+from cil import __version__ as cil_version
+from tigre.utilities.gpu import getGpuNames
+from gvxrPython3 import gvxr
+from cpuinfo import get_cpu_info
 
 @bp.route("/js/app.js")
 def js_app() -> Response:
@@ -22,6 +28,20 @@ def html_app_list() -> str:
 	session.permanent = True
 	return render_template("main.html.j2")
 
+
+@bp.context_processor
+def about_info() -> dict:
+	"""WebCT, host, and library versions"""
+
+	return {
+		"v_webct": f"{webct_version}",
+		"v_gvxr": gvxr.getVersionOfCoreGVXR().split(' ')[4],
+		"v_cil": f"{cil_version}",
+		"h_sys": f"{system()}",
+		"h_cpu": f"{get_cpu_info()['brand_raw']}",
+		"h_mem": f"{int(psutil.virtual_memory().total / 1000 / 1000 / 1000)}GB",
+		"h_gpu": f"{getGpuNames()[0]}",
+	}
 
 # ======================================================== #
 # ======================= Favicons ======================= #

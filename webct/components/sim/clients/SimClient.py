@@ -3,6 +3,7 @@
 # todo: split update functions into separate calls
 
 import sys
+import math
 from time import monotonic
 from dataclasses import dataclass
 from enum import Enum
@@ -18,7 +19,6 @@ from webct.components.Beam import Beam, BeamParameters, Spectra
 from webct.components.Capture import CaptureParameters
 from webct.components.Detector import DetectorParameters
 from webct.components.Samples import RenderedSampleSettings
-from webct.components.sim.Quality import Quality
 from webct.components.sim.simulators.GVXRSimulator import GVXRSimulator
 
 rng = Random()
@@ -39,7 +39,6 @@ class STM:
 
 @dataclass(frozen=True)
 class STM_PROJECTION(STM):
-	quality: Quality
 	result_sm: Any
 	result_arr_shape: tuple
 	result_arr_type: type
@@ -50,7 +49,6 @@ class STM_SCENE(STM):
 
 @dataclass(frozen=True)
 class STM_ALL_PROJECTION(STM):
-	quality: Quality
 	result_sm: Any
 	result_arr_shape: tuple
 	result_arr_type: type
@@ -81,34 +79,6 @@ class SimResponse(Enum):
 	ERROR = 1
 	REJECTED = 10
 	ACCEPTED = 20
-
-
-def shape_from_quality(value: tuple, quality: Quality) -> Tuple[Tuple[int, int], float]:
-	shape = [0, 0]
-	scale = 1.0
-	if quality == Quality.HIGH or quality == Quality.MEDIUM:
-		shape = value
-		scale = 1.0
-	elif quality == Quality.LOW:
-		shape = (shape[0] // 2, shape[1] // 2)
-		scale = 2
-	elif quality == Quality.PREVIEW:
-		shape = [0, 0]
-		maxax = np.argmax(value)
-		minax = np.argmin(value)
-
-		if maxax == minax:
-			# both axis are the same
-			shape = (100, 100)
-		else:
-			shape[maxax] = 100
-			shape[minax] = int((value[minax] / value[maxax]) * 100)
-			shape = tuple(shape)
-
-		# pixel scale factor
-		scale = value[maxax] / 100
-	return shape, scale
-
 
 class SimClient(Process):
 	# we store detector and capture params just to preallocate memory for
@@ -207,9 +177,6 @@ class SimClient(Process):
 				# Setup done, signal to parent and start simulation
 				self.conn_child.send(SimResponse.ACCEPTED)
 
-				# Set quality of simulator
-				self._simulator.quality = input.quality
-				
 				# copy values into shared memory
 				tik = monotonic()
 				log.info(f"({self.pid}) Filling [[{input.result_sm}]] with a single projection")
@@ -238,9 +205,6 @@ class SimClient(Process):
 
 				# Setup done, signal to parent and start simulation
 				self.conn_child.send(SimResponse.ACCEPTED)
-
-				# Set quality of simulator
-				self._simulator.quality = input.quality
 
 				# copy values into shared memory
 				tik = monotonic()
@@ -365,14 +329,12 @@ class SimClient(Process):
 		else:
 			raise SimThreadError(f"Unexpected response: {response}, wanted SimResponse.DONE")
 
-	def getProjection(self, quality=Quality.MEDIUM) -> np.ndarray:
+	def getProjection(self) -> np.ndarray:
 		if self.detector is None:
 			raise AssertionError("Detector parameters were not set before calling getProjection")
 
-		shape, scale = shape_from_quality(self.detector.shape, quality)
-
 		# allocate shared memory
-		result_np: np.ndarray = np.ndarray(shape, dtype=float)
+		result_np: np.ndarray = np.ndarray(self.detector.binned_shape, dtype=float)
 		mem = shared_memory.SharedMemory(
 			f"WCT_SM_GP-{self.pid}-{rng.random()}", create=True, size=result_np.nbytes
 		)
@@ -388,7 +350,7 @@ class SimClient(Process):
 			buffer=mem.buf,
 		)
 
-		request = STM_PROJECTION(quality, mem.name, result_np.shape, float)
+		request = STM_PROJECTION(mem.name, result_np.shape, float)
 
 		# deallocate result_np immediately
 		del result_np
@@ -421,16 +383,16 @@ class SimClient(Process):
 				f"Unexpected response: {response}, wanted SimResponse.DONE"
 			)
 
-	def getAllProjections(self, quality=Quality.MEDIUM) -> np.ndarray:
+	def getAllProjections(self) -> np.ndarray:
 		log.info(f"[{self._sid}] Generating {self.capture.projections} projections")
 		if self.detector is None:
 			raise AssertionError("Detector parameters were not set before calling getProjections")
 
-		proj_shape, scale = shape_from_quality(self.detector.shape, quality)
-
-		shape = (self.capture.projections, *proj_shape)
+		shape = (self.capture.projections, *self.detector.binned_shape)
 
 		# allocate shared memory
+		size_GiB = (math.prod(shape) * 4) / 1024 / 1024 / 1024
+		log.info(f"Attempting to allocate {size_GiB * 2:.2f} GiB")
 		result_np: np.ndarray = np.ndarray(shape, dtype=float)
 		mem = shared_memory.SharedMemory(
 			f"WCT_SM_GP-{self.pid}-{rng.random()}", create=True, size=result_np.nbytes
@@ -447,7 +409,7 @@ class SimClient(Process):
 			buffer=mem.buf,
 		)
 
-		request = STM_ALL_PROJECTION(quality, mem.name, result_np.shape, float)
+		request = STM_ALL_PROJECTION(mem.name, result_np.shape, float)
 
 		# deallocate result_np immediately
 		del result_np

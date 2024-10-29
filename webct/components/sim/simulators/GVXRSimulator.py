@@ -4,7 +4,7 @@ from gvxrPython3 import gvxr
 import numpy as np
 import os
 
-from webct.components.Beam import PROJECTION, Beam, LabBeam, SynchBeam
+from webct.components.Beam import PROJECTION, Beam, LabBeam, MedBeam, SynchBeam
 from webct.components.Capture import CaptureParameters
 from webct.components.Detector import SCINTILLATOR_MATERIAL, DetectorParameters
 from webct.components.Material import (
@@ -13,11 +13,8 @@ from webct.components.Material import (
 	HUMaterial,
 	Material,
 	MixtureMaterial,
-	SpecialMaterial,
-	SpecialMaterialEnum,
 )
 from webct.components.Samples import RenderedSampleSettings
-from webct.components.sim.Quality import Quality
 from webct.components.sim.simulators.Simulator import Simulator
 from webct import model_folder
 from matplotlib.colors import hsv_to_rgb
@@ -49,7 +46,7 @@ class GVXRSimulator(Simulator):
 		self._initRenderer()
 
 	def _initRenderer(self):
-		gvxr.createWindow(-1, 0, "OPENGL")
+		gvxr.createWindow(-1, 0, "OpenGL")
 		gvxr.setWindowSize(1800, 600)
 
 		gvxr.removePolygonMeshesFromSceneGraph()
@@ -63,17 +60,37 @@ class GVXRSimulator(Simulator):
 		gvxr.rotateNode("root", 90, 0, 1, 0)
 
 	def SimSingleProjection(self) -> np.ndarray:
-		image = np.array(gvxr.computeXRayImage())
-		image_in_kev = image / np.asarray(gvxr.getWhiteImage())
+		# workaround, doesn't seem to be set properly in init
+		gvxr.disableArtefactFiltering()
 
-		return image_in_kev
+		# if no samples are loaded, gvxr crashes.
+		# As a workaround, simulate white images if the number of samples is 0.
+		# This makes it easier to deal with on the frontend.
+		white = np.asarray(gvxr.getWhiteImage())
+		if len(self.samples.samples) == 0:
+			return white / white.max()
+		else:
+			return np.asarray(gvxr.computeXRayImage()) / white
 
 	def SimAllProjections(self) -> np.ndarray:
-		gvxr.computeCTAcquisition("", "", self.capture.projections, 0, False, self.capture.angles[-1], 1, 0, 0, 0, "mm", 0, 0, 1, True, 1)
+		# workaround, doesn't seem to be set properly in init
+		gvxr.disableArtefactFiltering()
 
-		images = np.asarray(gvxr.getLastProjectionSet())
+		# ! bug:- does not take into account scene node scaling.
+		# gvxr.computeCTAcquisition("", "", self.capture.projections, 0, False, self.capture.angles[-1], 1, 0, 0, 0, "mm", 0, 0, 1, True, 1)
+		# images = np.asarray(gvxr.getLastProjectionSet())
 
-		return images
+		white = gvxr.getWhiteImage()
+		im1 = np.asarray(gvxr.computeXRayImage())
+		images = np.empty((self.capture.projections, *im1.shape))
+
+		images[0] = im1
+		from tqdm import trange
+		for i in trange(1, self.capture.projections):
+			gvxr.rotateNode("root", 1*self.capture.angle_delta, 0, 0)
+			images[i] = np.asarray(gvxr.computeXRayImage())
+
+		return images/ white
 
 	@property
 	def beam(self) -> Beam:
@@ -83,12 +100,7 @@ class GVXRSimulator(Simulator):
 	def beam(self, value: Beam) -> None:
 		if value.params.projection == PROJECTION.POINT:
 			gvxr.usePointSource()
-			if value.params.spotSize != 0:
-				gvxr.setFocalSpot(*self.capture.beam_position, value.params.spotSize, "mm", 3)
-			else:
-				# workaround to disable focalspot
-				if self.capture is not None:
-					gvxr.setSourcePosition(*self.capture.beam_position, "mm")
+			# Focal spot is setup in capture, as it changes beam position.
 		elif value.params.projection == PROJECTION.PARALLEL:
 			gvxr.useParallelBeam()
 		else:
@@ -102,11 +114,16 @@ class GVXRSimulator(Simulator):
 			)
 
 		# setup noise
-		if self.capture is not None:
-			if isinstance(value.params, LabBeam):
+		if value.params.enableNoise and self.capture is not None:
+			if isinstance(value.params, LabBeam) or isinstance(value.params, MedBeam):
 				gvxr.enablePoissonNoise()
-				lab = cast(LabBeam, value.params)
-				mAs = (lab.intensity / 1000) * lab.exposure
+				mAs = 1
+				if isinstance(value.params, LabBeam):
+					lab = cast(LabBeam, value.params)
+					mAs = (lab.intensity / 1000) * lab.exposure
+				else:
+					med = cast(MedBeam, value.params)
+					mAs = med.mas
 
 				electron_charge = 1.602e-19  # [C]
 				photon_count = mAs * (1.0e-3 / electron_charge) * (1 / ((self.capture.SDD * 10) ** 2))
@@ -120,6 +137,8 @@ class GVXRSimulator(Simulator):
 				gvxr.setNumberOfPhotonsPerCM2(flux * 10e10)
 			else:
 				gvxr.disablePoissonNoise()
+		else:
+			gvxr.disablePoissonNoise()
 
 		self._beam = value
 
@@ -129,34 +148,16 @@ class GVXRSimulator(Simulator):
 
 	@detector.setter
 	def detector(self, value: DetectorParameters) -> None:
-		if value.lsf is not None:
-			gvxr.setLSF(value.lsf)
+
+		if value.enableLSF and value.lsf is not None:
+			gvxr.setLSF(value.binned_lsf)
 		else:
-			gvxr.setLSF([0,1,0])
-		if self.quality == Quality.MEDIUM or self.quality == Quality.HIGH:
-			gvxr.setDetectorNumberOfPixels(value.shape[1], value.shape[0])
-			gvxr.setDetectorPixelSize(value.pixel_size, value.pixel_size, "mm")
-		elif self.quality == Quality.LOW:
-			gvxr.setDetectorNumberOfPixels(value.shape[1] // 2, value.shape[0] // 2)
-			gvxr.setDetectorPixelSize(value.pixel_size * 2, value.pixel_size * 2, "mm")
-		elif self.quality == Quality.PREVIEW:
-			shape = [0, 0]
-			maxax = np.argmax(value.shape)
-			minax = np.argmin(value.shape)
+			gvxr.clearLSF()
 
-			if maxax == minax:
-				# both axis are the same
-				shape = (100, 100)
-			else:
-				shape[maxax] = 100
-				shape[minax] = int((value.shape[minax] / value.shape[maxax]) * 100)
-				shape = tuple(shape)
+		# set detector shape
+		gvxr.setDetectorNumberOfPixels(value.binned_shape[1], value.binned_shape[0])
+		gvxr.setDetectorPixelSize(value.binned_pixel_size, value.binned_pixel_size, "mm")
 
-			# pixel scale factor
-			scale = value.shape[maxax] / 100
-
-			gvxr.setDetectorNumberOfPixels(*shape)
-			gvxr.setDetectorPixelSize(value.pixel_size * scale, value.pixel_size * scale, "mm")
 
 		if value.scintillator.material == SCINTILLATOR_MATERIAL.NONE:
 			gvxr.clearDetectorEnergyResponse()
@@ -183,13 +184,6 @@ class GVXRSimulator(Simulator):
 		for sample in value.samples:
 			label = sample.label
 			mat: Material = sample.material
-
-			if isinstance(mat, SpecialMaterial):
-				if mat.matType == SpecialMaterialEnum.air:
-					# Don't add meshes that are air
-					continue
-				else:
-					raise NotImplementedError(f"Special material {mat.matType} not implemented.")
 
 			gvxr.loadMeshFile(label, f"{model_folder}{sample.modelPath}", sample.sizeUnit)
 
@@ -221,10 +215,14 @@ class GVXRSimulator(Simulator):
 
 	@capture.setter
 	def capture(self, value: CaptureParameters) -> None:
+		print(value)
 		gvxr.setDetectorPosition(*value.detector_position, "mm")
-		if self.beam.params.spotSize == 0.0:
-			# if using a spot size, the focal point is handled in beam settings
-			gvxr.setSourcePosition(*value.beam_position, "mm")
+		gvxr.setSourcePosition(*value.beam_position, "mm")
+
+		if self.beam.params.spotSize != 0:
+			# todo: change to square source
+			gvxr.setFocalSpot(*self.capture.beam_position, self.beam.params.spotSize, "mm", 3)
+
 		# Changing detector/source position will effect if the source is in
 		# parallel or point mode. We re-set the beam value to fix this.
 		self.beam = self._beam
@@ -240,16 +238,6 @@ class GVXRSimulator(Simulator):
 		gvxr.rotateScene(value.sample_rotation[2], 0, 0, 1)
 		self._capture = value
 
-	@property
-	def quality(self) -> Quality:
-
-		return self._quality
-
-	@quality.setter
-	def quality(self, value) -> None:
-		self._quality = value
-		# Update detector with new quality settings
-		self.detector = self._detector
 
 	def RenderScene(self) -> Tuple[Tuple[float]]:
 		gvxr.displayScene()

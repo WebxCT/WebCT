@@ -2,7 +2,7 @@ name: webct
 channels:
   - conda-forge
   - ccpi
-  - intel
+  - https://software.repos.intel.com/python/conda
   - astra-toolbox
 dependencies:
   - python>=3.9
@@ -20,6 +20,10 @@ dependencies:
   - tigre
   - astra-toolbox
   - ccpi-regulariser
+  - py-cpuinfo
+
+  # Packaging
+  - pyinstaller
 
   # Pip packages
   # (environment.yml does not support multiple pip: keys.)

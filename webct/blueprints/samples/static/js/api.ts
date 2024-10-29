@@ -30,7 +30,7 @@ type MaterialTransmission = {
 	label: string,
 	description: string,
 	density: number,
-	material: ["element" | "compound", string] | ["hu", number] | ["mixture", (string | number)[]] | ["special", "air"];
+	material: ["element" | "compound", string] | ["hu", number] | ["mixture", (string | number)[]];
 };
 
 /**
@@ -101,7 +101,7 @@ export interface SamplesRequestRegistry {
 		label: string;
 		description: string;
 		density: number,
-		material: ["element" | "compound", string] | ["hu", number] | ["mixture", (string | number)[]] | ["special", "air"];
+		material: ["element" | "compound", string] | ["hu", number] | ["mixture", (string | number)[]];
 		category: string,
 	};
 
@@ -203,7 +203,7 @@ export async function deleteMaterialData(data: SamplesRequestRegistry["materialD
  */
 export function processResponse(data: SamplesResponseRegistry[keyof SamplesResponseRegistry], type: keyof SamplesResponseRegistry): SampleSettings | string[] | MaterialLibrary {
 	// can't declare variables in switch statements...
-	const samples: SampleProperties[] = [];
+	const samples: Record<string, SampleProperties> = {};
 	const files: string[] = [];
 	let mixtureMat: [string, number][] = [];
 
@@ -213,12 +213,12 @@ export function processResponse(data: SamplesResponseRegistry[keyof SamplesRespo
 		for (let index = 0; index < data.samples.length; index++) {
 			const sample = data.samples[index];
 
-			samples.push({
+			samples[sample.label] = {
 				label: sample.label,
 				modelPath: sample.modelPath,
 				materialID: sample.materialID,
 				sizeUnit: sample.sizeUnit,
-			});
+			};
 		}
 		return {
 			scaling: data.scaling,

@@ -19,13 +19,11 @@ from webct.components.recon import (
 	OperatorFromJson, ProjectionBlock,
 	dataWithOp)
 from webct.components.recon.Differentiable import Diff, DiffFromJson, DiffLeastSquares
-from webct.components.sim.Quality import Quality
 
 use("Agg")
 
 @dataclass(frozen=True)
 class ReconParameters:
-	quality: Quality
 	method: str
 
 @dataclass(frozen=True)
@@ -217,29 +215,6 @@ def reconstruct(projections: np.ndarray, capture: CaptureParameters, beam: BeamP
 	# flip reconstruction
 	return np.flipud(rec.as_array())
 
-def asSinogram(projections: np.ndarray, capture: CaptureParameters, beam: BeamParameters, detector: DetectorParameters) -> np.ndarray:
-	geo: Optional[AcquisitionGeometry] = None
-	if beam.projection == PROJECTION.PARALLEL:
-		geo = AcquisitionGeometry.create_Parallel3D(detector_position=capture.detector_position)
-	elif beam.projection == PROJECTION.POINT:
-		geo = AcquisitionGeometry.create_Cone3D(source_position=capture.beam_position, detector_position=capture.detector_position)
-	assert geo is not None
-	# Panel is height x width
-	geo.set_labels(["angle", "vertical", "horizontal"])
-
-	# Panel is height x width
-	geo.set_panel(projections.shape[1:][::-1], detector.pixel_size)
-	geo.set_angles(capture.angles)
-	geo.set_labels(["angle", "vertical", "horizontal"])
-
-	acData: AcquisitionData = geo.allocate()
-	acData.fill(projections)
-	acData = TransmissionAbsorptionConverter(min_intensity=1e-10,white_level=1)(acData)
-	acData.reorder(("vertical", "angle", "horizontal"))
-
-	return acData.array
-
-
 def ReconstructionFromJson(json: dict) -> ReconParameters:
 	"""Select and create reconstruction parameters from a json dict."""
 	if "method" not in json:
@@ -248,23 +223,17 @@ def ReconstructionFromJson(json: dict) -> ReconParameters:
 	if json["method"] not in ReconMethods:
 		raise TypeError(f"Method '{json['method']}' is not supported.")
 
-	if "quality" not in json:
-		raise KeyError("Given dict does not contain a 'quality' key.")
-
-	quality = int(json["quality"])
-	quality = Quality(quality)
-
 	if method == "FDK":
 		filter = "ram-lak"
 		if "filter" in json:
 			filter = str(json["filter"])
-		return FDKParam(quality=quality, filter=filter)
+		return FDKParam(filter=filter)
 
 	elif method == "FBP":
 		filter = "ram-lak"
 		if "filter" in json:
 			filter = str(json["filter"])
-		return FBPParam(quality=quality, filter=filter)
+		return FBPParam(filter=filter)
 
 	elif method == "CGLS":
 		operator:IterativeOperator = ProjectionBlock()
@@ -279,7 +248,7 @@ def ReconstructionFromJson(json: dict) -> ReconParameters:
 		tolerance = 1
 		if "tolerance" in json:
 			tolerance = float(json["tolerance"])
-		return CGLSParam(quality=quality, iterations=iterations, operator=operator, tolerance=tolerance)
+		return CGLSParam(iterations=iterations, operator=operator, tolerance=tolerance)
 
 	elif method == "SIRT":
 		operator:IterativeOperator = ProjectionBlock()
@@ -294,7 +263,7 @@ def ReconstructionFromJson(json: dict) -> ReconParameters:
 		if "constraint" in json:
 			constraint = ProximalFromJson(json["constraint"])
 
-		return SIRTParam(quality=quality, iterations=iterations, constraint=constraint, operator=operator)
+		return SIRTParam(iterations=iterations, constraint=constraint, operator=operator)
 	elif method == "FISTA":
 		constraint:Proximal = BoxProximal()
 		if "constraint" in json:
@@ -308,6 +277,6 @@ def ReconstructionFromJson(json: dict) -> ReconParameters:
 		if "diff" in json:
 			diff = DiffFromJson(json["diff"])
 
-		return FISTAParam(quality=quality, iterations=iterations, constraint=constraint, diff=diff)
+		return FISTAParam(iterations=iterations, constraint=constraint, diff=diff)
 	else:
 		raise TypeError(f"Recon paramaters for '{method}' is not supported.")

@@ -6,7 +6,6 @@ from webct.components.Beam import Beam
 from webct.components.Capture import CaptureParameters
 from webct.components.Detector import DetectorParameters
 from webct.components.Samples import RenderedSampleSettings
-from webct.components.sim.Quality import Quality
 
 
 class Simulator(metaclass=ABCMeta):
@@ -28,7 +27,6 @@ class Simulator(metaclass=ABCMeta):
 		self._samples: RenderedSampleSettings = None
 		self._simSettings: dict[str, str] = {}
 		self._capture: CaptureParameters = None
-		self._quality: Quality = Quality.PREVIEW
 
 	@abstractmethod
 	def SimSingleProjection(self) -> np.ndarray:
@@ -72,11 +70,3 @@ class Simulator(metaclass=ABCMeta):
 	@capture.setter
 	def capture(self, value: CaptureParameters) -> None:
 		self._capture = value
-
-	@property
-	def quality(self) -> Quality:
-		return self._quality
-
-	@quality.setter
-	def quality(self, value: Quality) -> None:
-		self._quality = value

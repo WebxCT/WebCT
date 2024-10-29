@@ -12,9 +12,9 @@ import { ReconMethod } from "./types";
  */
 const ProjectionValidator: Validator = {
 	min: 2,
-	max: 2000,
+	max: 10000,
 	type: "int",
-	message: "Number of projections must be a whole number larger than 2, and less than 2000."
+	message: "Number of projections must be a whole number larger than 2, and less than 10000."
 };
 
 export function validateMethod(MethodElement: SlSelect): boolean {

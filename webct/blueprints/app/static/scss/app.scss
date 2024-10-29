@@ -126,7 +126,7 @@ main > section.content > sl-split-panel {
 	max-height: 100%;
 	--max: 80%;
 	--min: 20%;
-	padding-left: 1rem;
+	margin-left: 1rem;
 }
 sl-split-panel::part(divider) {
 	background-color: var(--sl-color-primary-500);
@@ -355,20 +355,18 @@ sl-progress-bar[variant="long"]::part(indicator) {
 .downloadPanel {
 	padding-left: 1rem;
 	padding-right: 0.25rem;
-	max-height: 40rem;
 	overflow: hidden;
 }
 
-.downloadPanel > div > :first-child {
-	width: 100%;
+.downloadPanel > div > div:first-child {
 	box-sizing: border-box;
-	height: 30%;
-	object-fit: contain;
+	display: flex;
+	justify-content: center;
 }
 
-.downloadPanel > div > :first-child > img {
-	height: 100%;
-	width: 100%;
+.downloadPanel > div > :first-child img {
+	max-height: 30rem;
+	width: auto;
 	object-fit: contain;
 }
 
@@ -392,6 +390,17 @@ sl-progress-bar[variant="long"]::part(indicator) {
 	padding: 1rem;
 	margin-top: 1rem;
 	width: 95%;
+	display: flex;
+	flex-wrap: wrap;
+}
+
+.settingsPanel > sl-input {
+	padding: 0.5rem;
+	width: auto;
+}
+
+#buttonMode {
+	width: 10rem;
 }
 
 sl-tag[size="x-small"]::part(base) {
@@ -417,13 +426,24 @@ sl-tag[size="x-small"]::part(base) {
 }
 
 #dialogueConfig > div.dialogpanel > div:not(.downloadPanel) > div {
+	grid-row-start: 3;
+	grid-row-end: 4;
+}
+
+#dialogueConfig > div.dialogpanel > div:not(.downloadPanel) > p {
 	grid-row-start: 2;
 	grid-row-end: 3;
+	font-size: var(--sl-font-size-x-small);
+	color: var(--sl-color-gray-500);
 }
 
 #dialogueConfig > div.dialogpanel > div:not(.downloadPanel) > sl-button {
-	grid-row-start: 3;
-	grid-row-end: 4;
+	grid-row-start: 4;
+	grid-row-end: 5;
+}
+
+#settingsPanelGVXR[mode="gvxr"] > #inputOptSimReconstructionFolder {
+	display: none;
 }
 
 #panelImport {

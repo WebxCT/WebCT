@@ -23,12 +23,8 @@
 		<sl-input type="number" label="Pixel Size" value="0.5" step="0.01" id="inputPanePixelSize">
 			<span slot="suffix">μm</span>
 		</sl-input>
-	</div>
-</div>
 
-<div class="group">
-	<div>
-		<sl-select label="Detector Scintillator" value="" id="selectScintillator">
+		<sl-select label="Detector Scintillator" value="" id="selectScintillator" advanced>
 			<sl-menu-item value="">Perfect Scintillator
 			</sl-menu-item>
 
@@ -84,9 +80,11 @@
 
 		</sl-select>
 
-		<sl-input type="number" label="Scintillator Thickness" value="200" id="inputScintillatorThickness">
+		<sl-input type="number" label="Scintillator Thickness" value="200" id="inputScintillatorThickness" advanced>
 			<span slot="suffix">μm</span>
 		</sl-input>
+
+		<sl-checkbox id="checkboxLSFEnable" advanced>Enable Line Spread Function</sl-checkbox>
 
 		<div class="LSFGraph" advanced>
 			<canvas id="canvasLSF" width="100%"></canvas>
@@ -98,4 +96,16 @@
 
 	</div>
 	<button></button>
+</div>
+
+<div class="group">
+	<div>
+		<sl-select label = "Detector Binning" value="1" id="selectDetectorBinning" help="2030x2030 => 200x200">
+			<sl-menu-item value="1">1x1 <span>1:1</span></sl-menu-item>
+			<sl-menu-item value="2">3x3 <span>1:9</span></sl-menu-item>
+			<sl-menu-item value="3">5x5 <span>1:25</span></sl-menu-item>
+			<sl-menu-item value="4">7x7 <span>1:49</span></sl-menu-item>
+		</sl-select>
+		<p>Pixel binning reduces the effective resolution of the detector, in exchange for pixel averaging.<br/> It is recommended on weaker systems</p>
+	</div>
 </div>

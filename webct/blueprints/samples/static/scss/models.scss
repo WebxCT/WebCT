@@ -48,26 +48,26 @@ div.model > div:not(.remove) {
 	padding-left: 1rem;
 }
 
-sl-dialog > div.buttons {
+div.buttons {
 	display: inline-grid;
 	grid-template-columns: 7rem auto 7rem 1rem 7rem;
 	width: 100%;
 	margin-top: 1rem;
 }
 
-sl-dialog > div.buttons > sl-button#buttonMaterialSave {
+div.buttons > sl-button#buttonMaterialSave {
 	grid-column-start: 3;
 }
 
-sl-dialog > div.buttons > sl-button.close {
+div.buttons > sl-button.close {
 	grid-column-start: 1;
 }
 
-sl-dialog > div.buttons > sl-button#buttonMaterialSubmit {
+div.buttons > sl-button#buttonMaterialSubmit {
 	grid-column-start: 5;
 }
 
-sl-dialog > div.buttons > sl-button#buttonCategorySubmit {
+div.buttons > sl-button#buttonCategorySubmit {
 	grid-column-start: 5;
 }
 
@@ -108,7 +108,7 @@ sl-dialog::part(body) {
 	padding-top: 0;
 }
 
-sl-dialog > div.buttons > sl-button {
+div\.buttons > sl-button {
 	box-sizing: border-box;
 }
 

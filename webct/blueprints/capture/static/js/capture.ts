@@ -24,6 +24,10 @@ let DetectorPosXElement: SlInput;
 let DetectorPosYElement: SlInput;
 let DetectorPosZElement: SlInput;
 
+let SamplePosElement: SlRange;
+let SampleSDDElement: HTMLParagraphElement;
+let SampleSODElement: HTMLParagraphElement;
+let SampleODDElement: HTMLParagraphElement;
 let SampleRotateXElement: SlInput;
 let SampleRotateYElement: SlInput;
 let SampleRotateZElement: SlInput;
@@ -64,6 +68,11 @@ export function setupCapture(): boolean {
 	const detector_posy_element = document.getElementById("inputDetectorPosY");
 	const detector_posz_element = document.getElementById("inputDetectorPosZ");
 
+	const sample_position_element = document.getElementById("rangeSamplePosition");
+	const sample_position_sdd = document.getElementById("textSDD")
+	const sample_position_sod = document.getElementById("textSOD")
+	const sample_position_odd = document.getElementById("textODD")
+
 	const sample_rotatex_element = document.getElementById("inputSampleRotateX");
 	const sample_rotatey_element = document.getElementById("inputSampleRotateY");
 	const sample_rotatez_element = document.getElementById("inputSampleRotateZ");
@@ -78,6 +87,10 @@ export function setupCapture(): boolean {
 		beam_posx_element == null ||
 		beam_posy_element == null ||
 		beam_posz_element == null ||
+		sample_position_element == null ||
+		sample_position_sdd == null ||
+		sample_position_sod == null ||
+		sample_position_odd == null ||
 		sample_rotatex_element == null ||
 		sample_rotatey_element == null ||
 		sample_rotatez_element == null ||
@@ -99,9 +112,14 @@ export function setupCapture(): boolean {
 		console.log(detector_posy_element);
 		console.log(detector_posz_element);
 
+		console.log(sample_position_element);
+		console.log(sample_position_sdd);
+		console.log(sample_position_sod);
+		console.log(sample_position_odd);
 		console.log(sample_rotatex_element);
 		console.log(sample_rotatey_element);
 		console.log(sample_rotatez_element);
+
 		console.log(sample_rotate_clock_45_element);
 		console.log(sample_rotate_counter_clock_45_element);
 		console.log(range_nyquist);
@@ -123,6 +141,10 @@ export function setupCapture(): boolean {
 	DetectorPosYElement = detector_posy_element as SlInput;
 	DetectorPosZElement = detector_posz_element as SlInput;
 
+	SamplePosElement = sample_position_element as SlRange;
+	SampleSDDElement = sample_position_sdd as HTMLParagraphElement;
+	SampleSODElement = sample_position_sod as HTMLParagraphElement;
+	SampleODDElement = sample_position_odd as HTMLParagraphElement;
 	SampleRotateXElement = sample_rotatex_element as SlInput;
 	SampleRotateYElement = sample_rotatey_element as SlInput;
 	SampleRotateZElement = sample_rotatez_element as SlInput;
@@ -140,6 +162,28 @@ export function setupCapture(): boolean {
 				});
 			}
 		});
+	});
+
+	SamplePosElement.addEventListener("sl-change", () => {
+		let [sod, odd, sdd] = updateSamplePositionBar();
+
+		BeamPosYElement.value = (sod * -1).toFixed(2)
+		DetectorPosYElement.value = odd.toFixed(2)
+	});
+
+	BeamPosYElement.addEventListener("sl-change", () => {
+		let sod = parseFloat(BeamPosYElement.value) * -1
+		let odd = parseFloat(DetectorPosYElement.value)
+		let sdd = sod + odd
+		SamplePosElement.value = (sod / sdd) * 100
+		updateSamplePositionBar();
+	});
+	DetectorPosYElement.addEventListener("sl-change", () => {
+		let sod = parseFloat(BeamPosYElement.value) * -1
+		let odd = parseFloat(DetectorPosYElement.value)
+		let sdd = sod + odd
+		SamplePosElement.value = (sod / sdd) * 100
+		updateSamplePositionBar();
 	});
 
 	NyquistRange = range_nyquist as SlRange;
@@ -190,6 +234,20 @@ export function validateCapture(): boolean {
 // ====================================================== //
 // =================== Display and UI =================== //
 // ====================================================== //
+
+function updateSamplePositionBar():[number, number, number] {
+	// Assuming sample position only moves in the Y-coordinate, not taking into account axis offsets.
+	let sod = parseFloat(BeamPosYElement.value) * -1
+	let odd = parseFloat(DetectorPosYElement.value)
+	let sdd = sod + odd
+
+	sod = sdd * (SamplePosElement.value / 100)
+	odd = sdd - sod
+	SampleODDElement.textContent = odd.toFixed(2) + "mm"
+	SampleSODElement.textContent = sod.toFixed(2) + "mm"
+	SampleSDDElement.textContent = sdd.toFixed(2) + "mm"
+	return [sod, odd, sdd]
+}
 
 function SetOverlaySize(width: number, height: number): void {
 	for (let index = 0; index < PreviewOverlays.length; index++) {
@@ -405,4 +463,9 @@ export function setCaptureParams(properties:CaptureProperties) {
 	SampleRotateYElement.value = properties.sampleRotation[1] + "";
 	SampleRotateZElement.value = properties.sampleRotation[2] + "";
 
+	let pct = ((properties.beamPosition[1] * -1) / ((properties.beamPosition[1]* -1) + properties.detectorPosition[1])) * 100
+	console.log(properties);
+	console.log(pct);
+	SamplePosElement.value = pct
+	updateSamplePositionBar();
 }

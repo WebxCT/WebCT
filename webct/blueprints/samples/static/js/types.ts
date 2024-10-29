@@ -34,9 +34,9 @@ export interface SampleSettings {
 	scaling:number
 
 	/**
-	 * List of Samples
+	 * Map of Samples, ensures unique label indentifiers
 	 */
-	samples:SampleProperties[]
+	samples:Record<string, SampleProperties>
 }
 
 /**
@@ -75,7 +75,7 @@ export type Material = {
 	 * Density of the material [g/cm3]
 	 */
 	density: number;
-	material: ["element" | "compound", string] | ["hu", number] | ["mixture", [string , number][]] | ["special", "air"]
+	material: ["element" | "compound", string] | ["hu", number] | ["mixture", [string , number][]];
 }
 
 export interface MaterialLibrary {

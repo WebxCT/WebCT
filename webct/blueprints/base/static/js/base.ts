@@ -55,7 +55,14 @@ export function showAlert(message: string, type: AlertType, duration = 20): Prom
 			${message}
 			`
 	});
-
+	if (type == AlertType.ERROR) {
+		// Additionally, dispatch an error event
+		window.dispatchEvent(new CustomEvent("pageError", {
+			bubbles: true,
+			cancelable: false,
+			composed: false,
+		}));
+	}
 	document.body.append(alert);
 	return (alert as SlAlert).toast();
 }

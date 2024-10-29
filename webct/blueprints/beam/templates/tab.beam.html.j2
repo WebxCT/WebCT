@@ -22,6 +22,8 @@
 			{% include "./units/voltage.html.j2" %}
 		</sl-input>
 
+		<sl-checkbox id="checkboxNoiseEnabled" advanced>Enable Noise</sl-checkbox>
+
 		<sl-input type="number" label="Photon Flux" step="0.1" value="1.8" id="inputBeamFlux">
 			{% include "./units/photon_flux.html.j2" %}
 		</sl-input>
@@ -34,7 +36,7 @@
 			{% include "./units/intensity.html.j2" %}
 		</sl-input>
 
-		<sl-input type="number" label="Milliampere-seconds" step="0.01" value="1" id="inputBeamMAS">
+		<sl-input type="number" label="Milliampere-seconds" step="0.001" value="1" id="inputBeamMAS">
 			{% include "./units/mas.html.j2" %}
 		</sl-input>
 
@@ -50,15 +52,14 @@
 
 <div class="group" id="settingsTube">
 	<div>
-		<sl-select label="Anode Material" value="74" id="selectTubeMaterial">
-			{# <sl-menu-item value="29">Cu (Copper)</sl-menu-item> #}
+		<sl-input type="number" label="Focal Spot Size" step="0.01" value="0.0" id="inputBeamSpotSize">
+			{% include "./units/size.html.j2" %}
+		</sl-input>
+		<sl-select label="Anode Material" value="74" id="selectTubeMaterial" advanced>
 			<sl-menu-item value="74">W (Tungsten)</sl-menu-item>
 			<sl-menu-item value="42">Mo (Molydbenum)</sl-menu-item>
 			<sl-menu-item value="45">Rh (Rhodium)</sl-menu-item>
 		</sl-select>
-		<sl-input type="number" label="Focal Spot Size" step="0.01" value="0.0" id="inputBeamSpotSize">
-			{% include "./units/size.html.j2" %}
-		</sl-input>
 		<sl-input label="Anode Angle" type="number" step="0.1" value="12" id="inputBeamAngle" advanced >
 			{% include "./units/degree.html.j2" %}
 		</sl-input>

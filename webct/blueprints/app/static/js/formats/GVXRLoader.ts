@@ -3,7 +3,7 @@ import { BeamProperties, Filter, LabBeam, SynchBeam, TubeBeam } from "../../../.
 import { ScintillatorMaterial } from "../../../../detector/static/js/types";
 import { MaterialLib } from "../../../../samples/static/js/samples";
 import { Material, SampleProperties } from "../../../../samples/static/js/types";
-import { configFull, configSubset } from "../types";
+import { configFull, configSubset, ExportOptions } from "../types";
 import { FormatLoader, FormatLoaderStatic } from "./FormatLoader";
 
 type DistanceUnit = "m" | "cm"| "mm" | "um"
@@ -16,10 +16,11 @@ type MatHU = number
 type MatMU = number
 
 interface detectorConfig {
-	Position: Position
-	UpVector: [number, number, number]
-	NumberOfPixels: [number, number],
-	Spacing: [number, number, string],
+	Position: Position,
+	UpVector: [number, number, number],
+	NumberOfPixels?: [number, number],
+	Spacing?: [number, number, string],
+	Size?: [number, number, string],
 	LSF: number[],
 	Scintillator: {
 		Material: string,
@@ -67,7 +68,9 @@ type MatMixture = string | [string, number][]
 
 type GVXRMaterial = ["element", MatElement] | ["compound", MatCompound] | ["mixture", MatMixture] | ["hu", MatHU] | ["mu", MatMU]
 
-interface sampleConfig {
+type sampleCommand = "MoveToCenter"
+
+interface sampleEntry {
 	Label:string,
 	Cube?:[number, DistanceUnit]
 	Cylinder?:[number, number,number, DistanceUnit],
@@ -80,23 +83,42 @@ interface sampleConfig {
 	Unit:DistanceUnit,
 }
 
+type sampleConfig = sampleEntry | sampleCommand
+
+interface scanConfig {
+	OutFolder:string,
+	NumberOfProjections:number,
+	FinalAngle:number,
+	StartAngle:number,
+	IncludeLastAngle:boolean,
+	"Flat-Field Correction":boolean,
+}
+
 export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatLoader {
 	Detector: detectorConfig;
 	Source:sourceConfig;
 	Samples:sampleConfig[];
+	Scan?:scanConfig;
 
-	constructor(detector:detectorConfig, source:sourceConfig, samples:sampleConfig[]){
+	constructor(detector:detectorConfig, source:sourceConfig, samples:sampleConfig[], scan?:scanConfig){
 		this.Detector = detector;
 		this.Source = source;
 		this.Samples = samples;
+		this.Scan = scan;
 	}
 
-	static from_config(data:configFull){
+	to_text(): string {
+		return JSON.stringify(this, undefined, 4).replaceAll("false","False").replaceAll("true","True")
+	}
+
+	static from_config(data:configFull, options:ExportOptions){
 		console.log("fromconfig");
+		console.log(data);
+		console.log(options);
 
 		const detector:detectorConfig = {
-			UpVector: [0, 1, 0],
-			Position: [...data.capture.beamPosition, "mm" as DistanceUnit],
+			UpVector: [0, 0, -1],
+			Position: [...data.capture.detectorPosition, "mm" as DistanceUnit],
 			Spacing: [data.detector.pixelSize, data.detector?.pixelSize, "mm" as DistanceUnit],
 			NumberOfPixels: [data.detector.paneWidth / (data.detector.pixelSize), data.detector.paneHeight / (data.detector.pixelSize)],
 			LSF: data.detector.lsf.values,
@@ -145,41 +167,47 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 			Beam: beam
 		};
 
-		const samples:sampleConfig[] = [];
-		for (let index = 0; index < data.samples.samples.length; index++) {
-			const sample = data.samples.samples[index];
-
+		const samples:sampleConfig[] = ["MoveToCenter"];
+		for (let key in data.samples.samples) {
+			const sample = data.samples.samples[key];
 			let material:GVXRMaterial;
+			let density:number;
 			if (sample.material == undefined) {
 				const matsplit = sample.materialID?.split("/");
 				if (matsplit !== undefined) {
-					const mat = structuredClone(MaterialLib[matsplit[0]][matsplit[1]]).material;
-					if (mat[0] == "special") {
-						continue;
-					} else {
-						material = mat;
-					}
+					const mat = structuredClone(MaterialLib[matsplit[0]][matsplit[1]]);
+					material = mat.material;
+					density = mat.density;
+				} else {
+					throw "Unable to get material from " + sample.material
 				}
-				continue;
 			} else {
-				if (sample.material.material[0] == "special") {
-					// ignore webct 'special' materials
-					continue;
-				}
 				material = sample.material.material;
+				density = sample.material.density;
 			}
-
 			samples.push({
 				Label: sample.label,
 				Material: material,
 				Path: sample.modelPath,
-				Density: sample.material.density,
+				Density: density,
 				Unit: "mm"
 			});
 		}
 
+		let scan:scanConfig|undefined = {
+			OutFolder: options.ProjectionFolder,
+			NumberOfProjections: data.capture.numProjections,
+			FinalAngle: data.capture.totalAngle,
+			StartAngle: 0,
+			IncludeLastAngle: false,
+			"Flat-Field Correction":true,
+		}
 
-		return new GVXRConfig(detector, source, samples);
+		if (!options.gvxrIncludeScan) {
+			scan = undefined
+		}
+
+		return new GVXRConfig(detector, source, samples, scan);
 	}
 
 	static from_text(data:string): GVXRConfig {
@@ -191,6 +219,7 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 		const detector:detectorConfig = obj["Detector"];
 		const source:sourceConfig = obj["Source"];
 		const samples:sampleConfig[] = obj["Samples"];
+		const scan:scanConfig = obj["Scan"];
 
 		if (detector.LSF === undefined) {
 			console.log("Undefined lsf");
@@ -206,7 +235,7 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 			}
 		}
 
-		return new GVXRConfig(detector, source, samples);
+		return new GVXRConfig(detector, source, samples, scan);
 	}
 
 	as_config():configSubset {
@@ -217,10 +246,11 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 			const configBeam = this.Source.Beam as BeamEnergy[];
 			beam = new SynchBeam(
 				configBeam[0].Energy,
+				true,
 				1,1,false,[]
 			);
 		} else {
-			// We only support kvp imports
+			// We only support kvp imports for point sources
 			const configBeam = this.Source.Beam as Tube;
 			let filters:Filter[] = [];
 			if (configBeam.filter !== undefined && configBeam.filter.length > 0) {
@@ -231,6 +261,7 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 			}
 			beam = new LabBeam(
 				configBeam.kvp,
+				true,
 				1,
 				1,
 				1,
@@ -241,9 +272,12 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 			);
 		}
 
-		const samples:SampleProperties[] = [];
+		const samples:Record<string, SampleProperties> = {};
 		for (let index = 0; index < this.Samples.length; index++) {
 			const sample = this.Samples[index];
+			if (typeof sample == "string") {
+				continue
+			}
 
 			if (!("Path" in sample) || sample.Path == undefined) {
 				throw "Only path samples are supported";
@@ -260,34 +294,67 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 				label: "GVXR Material "+index
 			};
 
-			samples.push({
+			samples[sample.Label] = {
 				label:sample.Label,
 				modelPath:sample.Path,
 				sizeUnit:sample.Unit,
 				material:material
-			});
+			};
 		}
 
-		// Convert units into mm
-		let pixelSize = this.Detector.Spacing[0];
-		let paneHeight = this.Detector.NumberOfPixels[0] * pixelSize;
-		let paneWidth = this.Detector.NumberOfPixels[1] * pixelSize;
 
-		if (this.Detector.Spacing[2] !== "mm") {
+		// pixel size
+		let pixelSize:number = 0
+		if (this.Detector.Spacing != undefined) {
+			// cast to mm, only take first element as we assume square pixels
 			switch (this.Detector.Spacing[2]) {
-			case "cm":
-				paneHeight = paneHeight * 10;
-				paneWidth = paneHeight * 10;
-				pixelSize = paneHeight * 10;
-				break;
-			case "um":
-				paneHeight = paneHeight * 0.001;
-				paneWidth = paneHeight * 0.001;
-				pixelSize = paneHeight * 0.001;
-				break;
-			default:
-				// Eh
-				break;
+				case "mm":
+					break;
+				case "um":
+					pixelSize = pixelSize * 0.001
+				default:
+					break;
+			}
+		}
+
+		// physical size
+		let paneHeight:number = 0
+		let paneWidth:number = 0
+		if (this.Detector.Size != undefined) {
+			switch (this.Detector.Size[2]) {
+				case "mm":
+					paneHeight = this.Detector.Size[0];
+					paneWidth = this.Detector.Size[1];
+					break;
+				case "cm":
+					paneHeight = this.Detector.Size[0] * 10;
+					paneWidth = this.Detector.Size[1] * 10;
+					break;
+				case "um":
+					paneHeight = this.Detector.Size[0] * 0.001;
+					paneWidth = this.Detector.Size[1] * 0.001;
+					break;
+				default:
+					// eh
+					break;
+			}
+		}
+
+		if (this.Detector.Size == undefined || this.Detector.Spacing == undefined) {
+			// Missing either detector size, or pixel pitch, therefore attempt to find a resolution key and work out the required properties
+			if (this.Detector.NumberOfPixels == undefined) {
+				// also missing resolution, we don't have enough information, and this is an invalid config...
+				throw "Missing detector properties; require two of [Size, Spacing, NumberOfPixels] to determine detector."
+			} else {
+				let resolution: [number, number] = this.Detector.NumberOfPixels;
+				
+				if (this.Detector.Spacing == undefined) {
+					// only compute on one axis, since square pixels are assumed
+					pixelSize = paneHeight / resolution[0]
+				} else if (this.Detector.Size == undefined) {
+					paneHeight = resolution[0] * pixelSize;
+					paneWidth = resolution[1] * pixelSize;
+				}
 			}
 		}
 
@@ -317,7 +384,9 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 				scintillator: {
 					material: scintillatorMaterial,
 					thickness: scintillatorThickness
-				}
+				},
+				enableLSF: true,
+				binning: 1
 			},
 			beam: beam,
 			samples: {

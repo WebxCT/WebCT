@@ -1,5 +1,3 @@
-import { data } from "jquery";
-
 const Endpoint = {
 	putPrepare: "sim/download/prep",
 	getDownload: "sim/download/",

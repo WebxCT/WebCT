@@ -3,7 +3,9 @@
 
 	<div class="downloadPanel">
 		<div>
-			<img src="" alt="" class="image-projection">
+			<div>
+				<img src="" alt="" class="image-projection">
+			</div>
 			<h1 style="justify-content: center;"> Projection Data </h1>
 			<sl-button-group>
 				<sl-button variant="primary" outline id="buttonDownloadRadiograph">
@@ -43,7 +45,9 @@
 			<p><small>Single 360x500x500 float32 numpy array</small></p> -->
 		</div>
 		<div>
-			{% include "recon-centre.html.j2" %}
+			<div>
+				{% include "recon-centre.html.j2" %}
+			</div>
 			<h1>Reconstruction Data</h1>
 			<sl-button-group>
 				<sl-button variant="primary" outline id="buttonDownloadReconCentre">
