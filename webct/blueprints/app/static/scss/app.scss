@@ -358,7 +358,7 @@ sl-progress-bar[variant="long"]::part(indicator) {
 	overflow: hidden;
 }
 
-.downloadPanel > div > :first-child {
+.downloadPanel > div > div:first-child {
 	box-sizing: border-box;
 	display: flex;
 	justify-content: center;
