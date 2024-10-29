@@ -2,7 +2,6 @@
 	"label": "Copper",
 	"description": "Copper Metal",
 	"density": 8.96,
-	"element": "Cu",
 	"material": [
 		"element",
 		"Cu"
