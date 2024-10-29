@@ -87,10 +87,12 @@ class GVXRSimulator(Simulator):
 		images[0] = im1
 		from tqdm import trange
 		for i in trange(1, self.capture.projections):
-			gvxr.rotateNode("root", 1*self.capture.angle_delta, 0, 0)
+			angle = self.capture.angles[i]
+			gvxr.rotateNode("root", angle, 0, 0)
 			images[i] = np.asarray(gvxr.computeXRayImage())
+			gvxr.rotateNode("root", -angle, 0, 0)
 
-		return images/ white
+		return images / white
 
 	@property
 	def beam(self) -> Beam:
