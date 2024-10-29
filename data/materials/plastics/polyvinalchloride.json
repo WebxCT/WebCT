@@ -1,0 +1,9 @@
+{
+	"label": "PCV",
+	"description": "Widely produced plastic",
+	"density": 1.4,
+	"material": [
+		"compound",
+		"C2H3Cl"
+	]
+}
