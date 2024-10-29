@@ -3,7 +3,7 @@ from datetime import datetime
 from time import monotonic
 """version.py : Update and write version information to files"""
 
-version = "0.0.1.2"
+version = "0.1.3"
 
 def file_version_info_cfg(release:bool, version:str, commit:str) -> None:
 	# developer version; use a commit reference instead of file version
@@ -17,8 +17,8 @@ VSVersionInfo(
 	ffi=FixedFileInfo(
 		# filevers and prodvers should be always a tuple with four items: (1, 2, 3, 4)
 		# Set not needed items to zero 0.
-		filevers=({', '.join(version.split('.'))}),
-		prodvers=({', '.join(version.split('.'))}),
+		filevers=(0, {', '.join(version.split('.'))}),
+		prodvers=(0, {', '.join(version.split('.'))}),
 		# Contains a bitmask that specifies the valid bits 'flags'r
 		mask=0x3f,
 		# Contains a bitmask that specifies the Boolean attributes of the file.
