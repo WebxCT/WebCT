@@ -359,15 +359,14 @@ sl-progress-bar[variant="long"]::part(indicator) {
 }
 
 .downloadPanel > div > :first-child {
-	width: 100%;
 	box-sizing: border-box;
-	height: 30%;
-	object-fit: contain;
+	display: flex;
+	justify-content: center;
 }
 
-.downloadPanel > div > :first-child > img {
-	height: 100%;
-	width: 100%;
+.downloadPanel > div > :first-child img {
+	max-height: 30rem;
+	width: auto;
 	object-fit: contain;
 }
 

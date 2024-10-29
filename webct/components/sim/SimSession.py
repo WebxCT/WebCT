@@ -23,16 +23,6 @@ from webct.components.sim.Download import DownloadManager
 from webct.components.sim.clients.SimClient import SimClient, SimThreadError, SimTimeoutError
 from webct.components.sim.SimManager import getClient
 
-class ProjCorrection(Enum):
-	# No correction is done, projections are a direct result from the detector.
-	NONE = 1
-
-	# Flatfield and darkfield normalisation has taken place.
-	FLATFIELD = 2
-
-	# Conversion from absorbtion measurements to transmission measurements have taken place.
-	ABSORBTION = 3
-
 class SimSession:
 	"""
 	A simulator session, storing current simulation parameters and outputs.
