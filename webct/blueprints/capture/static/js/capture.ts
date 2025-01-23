@@ -438,7 +438,7 @@ export function UpdateCapturePreview(): Promise<void> {
 export function getCaptureParams():CaptureProperties {
 	return {
 		numProjections: parseInt(TotalProjectionsElement.value),
-		totalAngle: parseInt(TotalRotationElement.value as string),
+		totalAngle: parseInt(TotalRotationElement.value as string) as 180 | 360,
 		beamPosition: [parseFloat(BeamPosXElement.value), parseFloat(BeamPosYElement.value), parseFloat(BeamPosZElement.value)],
 		detectorPosition: [parseFloat(DetectorPosXElement.value), parseFloat(DetectorPosYElement.value), parseFloat(DetectorPosZElement.value)],
 		sampleRotation: [parseFloat(SampleRotateXElement.value), parseFloat(SampleRotateYElement.value), parseFloat(SampleRotateZElement.value)],

@@ -141,7 +141,7 @@ export const XTEKCTConfig: FormatLoaderStatic = class XTEKCTConfig implements Fo
 				detectorPosition: [0, this.config.SrcToDetector - this.config.SrcToObject, 0],
 				numProjections: this.config.Projections ?? 360,
 				sampleRotation: [0, 0, 0],
-				totalAngle: this.config.AngularStep * this.config.Projections,
+				totalAngle: this.config.AngularStep * this.config.Projections < 270 ? 180 : 360
 			}
 		};
 	};

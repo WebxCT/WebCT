@@ -129,7 +129,7 @@ export function processResponse(data: CaptureResponseRegistry[keyof CaptureRespo
 		data = data as CaptureResponseRegistry["captureResponse"];
 		return {
 			numProjections: data.projections,
-			totalAngle: data.capture_angle,
+			totalAngle: data.capture_angle as 180 | 360,
 			beamPosition: data.beam_position,
 			detectorPosition: data.detector_position,
 			sampleRotation: data.sample_rotation,

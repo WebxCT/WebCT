@@ -15,7 +15,7 @@ export interface CaptureProperties {
 	/**
 	 * Total angle of the scan in degrees (180 or 360)
 	 */
-	totalAngle: number;
+	totalAngle: 180 | 360;
 	/**
 	 * Detector Position relative to sample origin
 	 */
