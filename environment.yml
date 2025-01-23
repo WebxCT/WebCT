@@ -16,7 +16,7 @@ dependencies:
   - scipy
   - matplotlib<3.5
   - opencv
-  - cil>=22.2.0
+  - cil>=24.2.0
   - tigre
   - astra-toolbox
   - ccpi-regulariser

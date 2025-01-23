@@ -1,7 +1,7 @@
 from PyInstaller.utils.hooks import collect_data_files
 import PyInstaller.utils.hooks.conda as conda
 from pathlib import Path
-from cil.framework.framework import dll as dll_path
+from cil.framework.cilacc import dll as dll_path
 from ccpi.filters.utils import dll as reg_dll_path
 from ccpi.filters.utils import gpudll as reg_dll_gpu_path
 from ccpi.filters.utils import _here as reg_base
