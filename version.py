@@ -3,7 +3,7 @@ from datetime import datetime
 from time import monotonic
 """version.py : Update and write version information to files"""
 
-version = "0.1.3"
+version = "0.1.4"
 
 def file_version_info_cfg(release:bool, version:str, commit:str) -> None:
 	# developer version; use a commit reference instead of file version
