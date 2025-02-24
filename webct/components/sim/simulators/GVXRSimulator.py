@@ -230,14 +230,14 @@ class GVXRSimulator(Simulator):
 		self.beam = self._beam
 
 		# Undo rotations in order to reset scene rotation matrix
-		gvxr.rotateScene(-1 * self.total_rotation[2], 0, 0, 1)
-		gvxr.rotateScene(-1 * self.total_rotation[1], 0, 1, 0)
-		gvxr.rotateScene(-1 * self.total_rotation[0], 1, 0, 0)
+		gvxr.rotateNode("root", -1 * self.total_rotation[2], 0, 0, 1)
+		gvxr.rotateNode("root", -1 * self.total_rotation[1], 0, 1, 0)
+		gvxr.rotateNode("root", -1 * self.total_rotation[0], 1, 0, 0)
 		self.total_rotation = value.sample_rotation
 
-		gvxr.rotateScene(value.sample_rotation[0], 1, 0, 0)
-		gvxr.rotateScene(value.sample_rotation[1], 0, 1, 0)
-		gvxr.rotateScene(value.sample_rotation[2], 0, 0, 1)
+		gvxr.rotateNode("root", value.sample_rotation[0], 1, 0, 0)
+		gvxr.rotateNode("root", value.sample_rotation[1], 0, 1, 0)
+		gvxr.rotateNode("root", value.sample_rotation[2], 0, 0, 1)
 		self._capture = value
 
 
