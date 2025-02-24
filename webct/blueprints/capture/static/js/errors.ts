@@ -10,13 +10,10 @@ import { AlertType, showAlert } from "../../../base/static/js/base";
 // ====================================================== //
 
 /**
- * Errors regarding capture parameters
+ * Errors regarding capture parameters.
+ * This is a string constructed by the validators for each setting.
  */
-export enum CaptureConfigError {
-	PANE_UNSUPPORTED_WIDTH = "Unsupported Pane Width",
-	PANE_UNSUPPORTED_HEIGHT = "Unsupported Pane Height",
-	PANE_UNSUPPORTED_PIXEL_SIZE = "Unsupported Pixel Size",
-}
+export type CaptureConfigError = string;
 
 /**
  * Errors regarding transmission and communication with the API
@@ -46,9 +43,14 @@ const beamErrorMessages = new Map<CaptureError, string>([
  * @param errorType - Type of error to report
  */
 export function showError(errorType: CaptureError): void {
-	const message = beamErrorMessages.has(errorType) ? beamErrorMessages.get(errorType) as string : "An unexpected error has occurred.<br><b>" + errorType + "</b>";
+	const message = beamErrorMessages.has(errorType) ? beamErrorMessages.get(errorType) as string : errorType
 
 	console.error(errorType + " : " + message);
 	showAlert(message, AlertType.ERROR);
 	return;
+}
+
+export function showValidationError(message:CaptureConfigError):void {
+	console.error("Validation Error: " + message)
+	showAlert(message, AlertType.WARNING)
 }

@@ -5,12 +5,13 @@
 
 import { SlButton, SlDropdown, SlInput, SlRange, SlSelect } from "@shoelace-style/shoelace";
 import { AlertType, showAlert } from "../../../base/static/js/base";
-import { PanePixelSizeElement, PaneWidthElement } from "../../../detector/static/js/detector";
+import { PanePixelSizeElement, PaneWidthElement, validateDetector } from "../../../detector/static/js/detector";
 import { CaptureResponseRegistry, processResponse, requestCaptureData, sendCaptureData, prepareRequest, requestCapturePreview } from "./api";
-import { CaptureConfigError, CaptureRequestError, showError } from "./errors";
+import { CaptureConfigError, CaptureRequestError, showError, showValidationError } from "./errors";
 import { CapturePreview, CaptureProperties } from "./types";
-import { validateProjections } from "./validation";
+import { validateSourcePosition, validateProjections, validateRotation, validateDetectorPosition } from "./validation";
 import { UpdatePage } from "../../../app/static/js/app";
+import { Valid } from "../../../base/static/js/validation";
 
 // ====================================================== //
 // ================== Document Elements ================= //
@@ -140,6 +141,20 @@ export function setupCapture(): boolean {
 	DetectorPosXElement = detector_posx_element as SlInput;
 	DetectorPosYElement = detector_posy_element as SlInput;
 	DetectorPosZElement = detector_posz_element as SlInput;
+	[BeamPosXElement, BeamPosYElement, BeamPosZElement].forEach(element => {
+		element.addEventListener("sl-change", () => {
+			validateSourcePosition(element);
+		})
+	});
+
+	// The only reason this is seperate from the above BeamPos event listeners
+	// is to inform the user seperately if the source or detector positions are
+	// incorrect.
+	[DetectorPosXElement, DetectorPosYElement, DetectorPosZElement].forEach(element => {
+		element.addEventListener("sl-change", () => {
+			validateDetectorPosition(element);
+		})
+	});
 
 	SamplePosElement = sample_position_element as SlRange;
 	SampleSDDElement = sample_position_sdd as HTMLParagraphElement;
@@ -148,6 +163,11 @@ export function setupCapture(): boolean {
 	SampleRotateXElement = sample_rotatex_element as SlInput;
 	SampleRotateYElement = sample_rotatey_element as SlInput;
 	SampleRotateZElement = sample_rotatez_element as SlInput;
+	[SampleRotateXElement, SampleRotateYElement, SampleRotateZElement].forEach(element => {
+		element.addEventListener("sl-change", () => {
+			validateRotation(element);
+		})
+	});
 	ButtonRotateClock45Element = sample_rotate_clock_45_element as SlButton;
 	ButtonRotateCounterClock45Element = sample_rotate_counter_clock_45_element as SlButton;
 
@@ -189,6 +209,7 @@ export function setupCapture(): boolean {
 	NyquistRange = range_nyquist as SlRange;
 	NyquistRange.addEventListener("sl-change", () => {
 		TotalProjectionsElement.value = Math.floor((Math.PI / 2.0 * (parseInt(PaneWidthElement.value) / (parseFloat(PanePixelSizeElement.value) / 1000))) * (NyquistRange.value as number / 100)) + "";
+		validateProjections(TotalProjectionsElement)
 		NyquistRange.classList.add("linked");
 	});
 	NyquistRange.tooltipFormatter = (value: number) => {
@@ -219,7 +240,6 @@ export function setupCapture(): boolean {
 		UpdatePage();
 	};
 
-	validateCapture();
 	SetOverlaySize(300, 300);
 	return true;
 }
@@ -227,8 +247,31 @@ export function setupCapture(): boolean {
 /**
  * Validate capture parameters and mark as valid/invalid.
  */
-export function validateCapture(): boolean {
-	return validateProjections(TotalProjectionsElement);
+export function validateCapture(): void {
+	let validationResults:Valid[] = []
+	validationResults = [
+		validateProjections(TotalProjectionsElement),
+		validateRotation(SampleRotateXElement),
+
+		// sample rotation
+		validateRotation(SampleRotateYElement),
+		validateRotation(SampleRotateZElement),
+		// panel positon
+		validateSourcePosition(DetectorPosXElement),
+		validateSourcePosition(DetectorPosYElement),
+		validateSourcePosition(DetectorPosZElement),
+		// beam position
+		validateSourcePosition(BeamPosXElement),
+		validateSourcePosition(BeamPosYElement),
+		validateSourcePosition(BeamPosZElement)
+	]
+
+	validationResults.forEach(validation => {
+		if (!validation.valid) {
+			// An element is invalid, bubble as an exception
+			throw "<b>Invalid Capture Settings</b><br/> Your " + validation.InvalidReason as CaptureConfigError
+		}
+	});
 }
 
 // ====================================================== //
@@ -380,8 +423,12 @@ export function UpdateCapture(): Promise<void> {
  */
 function setCapture(): Promise<void> {
 
-	if (!validateCapture()) {
-		throw CaptureConfigError;
+	try {
+		validateCapture()
+	} catch (e) {
+		// Show the error and then re-throw to interrupt future chaining
+		showValidationError(e as CaptureConfigError)
+		throw e
 	}
 
 	const capture = prepareRequest(getCaptureParams());

@@ -8,6 +8,7 @@ import { AlertType, showAlert } from "../../../base/static/js/base";
 import { prepareRequest, processResponse, ReconResponseRegistry, requestReconData, requestReconPreview, sendReconData } from "./api";
 import { BoxProximal, CGLSParams, Proximal, ProximalMethod, Differentiable, DiffMethod, FBPParams, FDKParams, FGPTVProximal, FISTAParams, LeastSquaresDiff, ReconstructionParams, ReconstructionPreview, SIRTParams, TGVProximal, TikhonovMethod as TikhonovMethod, TikhonovRegulariser, TVProximal } from "./types";
 import { validateMethod } from "./validation";
+import { ReconstructionConfigError, ReconstructionRequestError, showError, showValidationError } from "./errors";
 
 // ====================================================== //
 // ================== Document Elements ================= //
@@ -398,7 +399,6 @@ export function setupRecon(): boolean {
 	AlgElement.addEventListener("sl-change", () => {
 		// Set group type
 		AlgGroup.setAttribute("type", AlgElement.value + "");
-		validateRecon();
 
 		// Hide all settings menus
 		FDKSettings.classList.add("hidden");
@@ -433,6 +433,15 @@ export function setupRecon(): boolean {
 			DiffSettings.classList.remove("hidden");
 			break;
 		}
+
+		try {
+			validateRecon();
+		} catch {
+			// Ignore invalid settings exception, since we don't want to show an
+			// alert popup everytime the user selects FDK while a synchrotron
+			// source is selected. The input box will show why it's invalid already.
+			return
+		}
 	});
 
 	// Run initial component updates
@@ -442,13 +451,15 @@ export function setupRecon(): boolean {
 	TikOpElement.handleValueChange();
 	AlgElement.handleValueChange();
 
-	validateRecon();
 	return true;
 }
 
-export function validateRecon(): boolean {
-	return true;
-	// return validateMethod(AlgElement);
+export function validateRecon(): void {
+	let validation = validateMethod(AlgElement)
+	if (!validation.valid) {
+		// An element is invalid, bubble as an exception
+		throw "<b>Invalid Reconstruction Settings</b><br/> Your " + validation.InvalidReason as ReconstructionConfigError
+	}
 }
 
 // ====================================================== //
@@ -456,7 +467,6 @@ export function validateRecon(): boolean {
 // ====================================================== //
 
 function MarkLoading(): void {
-	console.log("markloading");
 
 	for (let index = 0; index < ReconImages.length; index++) {
 		const image = ReconImages[index];
@@ -796,15 +806,17 @@ function TikBoundValue(): "Neumann" | "Periodic" {
  * Send capture parameters to the server.
  */
 function setRecon(): Promise<void> {
-	if (!validateRecon()) {
-		throw Error;
+	try {
+		validateRecon()
+	} catch (e) {
+		// Show the error and then re-throw to interrupt future chaining
+		showValidationError(e as ReconstructionConfigError)
+		throw e
 	}
 
 	let request = undefined;
 	request = prepareRequest(getReconParams());
 
-	console.log("---Sent---");
-	console.log(request);
 	return sendReconData(request).then((response: Response) => {
 		if (response.status == 200) {
 			console.log("Reconstruction updated");
@@ -821,7 +833,9 @@ export function UpdateReconPreview(): Promise<void> {
 		requestReconPreview().then((response: Response) => {
 			console.log("Reconstruction Preview Response Status:" + response.status);
 			if (response.status == 500) {
-				return;
+				showError(ReconstructionRequestError.UNEXPECTED_SERVER_ERROR)
+				MarkError();
+				return
 			}
 
 			// Convert to json

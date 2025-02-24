@@ -1,56 +1,43 @@
 /**
- * Validation.ts : Validate beam parameters
+ * Validation.ts : Validate reconstruction parameters
  * @author Iwan Mitchell
  */
 
-import { SlInput, SlSelect } from "@shoelace-style/shoelace";
-import { markValid, validateInput, Validator } from "../../../base/static/js/validation";
+import { SlSelect } from "@shoelace-style/shoelace";
+import { markValid, Valid } from "../../../base/static/js/validation";
 import { ReconMethod } from "./types";
+import { BeamSourceSelectElement } from "../../../beam/static/js/beam";
+import { SourceType } from "../../../beam/static/js/types";
 
-/**
- * Validator for projection count.
- */
-const ProjectionValidator: Validator = {
-	min: 2,
-	max: 10000,
-	type: "int",
-	message: "Number of projections must be a whole number larger than 2, and less than 10000."
-};
-
-export function validateMethod(MethodElement: SlSelect): boolean {
-
-	// Method validity is based on beam paramaters.
-	// const projection = BeamTypeElement.value + "";
-	const projection = "point";
-
+export function validateMethod(MethodElement: SlSelect): Valid {
 	let valid = true;
 	let message = "";
 
-	switch (MethodElement.value as ReconMethod) {
-	case "FBP":
-		// FBP only works with parallel projections
-		valid = false;
-		if (!valid) {
-			message = "FBP Reconstruction only supports parallel beam types.";
-		}
-		break;
-	case "FDK":
-		// FDK only works with point projections
-		valid = projection == "point";
-		if (!valid) {
-			message = "FDK Reconstruction only supports cone beam types.";
-		}
-	default:
-		break;
+	switch (BeamSourceSelectElement.value as SourceType) {
+		case "lab":
+		case "med":
+			// X-ray tube beams are point-source and don't support FBP
+			if (MethodElement.value as ReconMethod == "FBP") {
+				message = "FBP Reconstruction only supports parallel beams (Synchrotron Source Type).";
+				valid = false;
+			}
+			break;
+		case "synch":
+			// Synchrotron are parallel beams and don't support FDK
+			if (MethodElement.value as ReconMethod == "FDK") {
+				message = "FDK Reconstruction only supports cone beams (Lab CT & Medical Source Types).";
+				valid = false;
+			}
+			break;
 	}
 
 	markValid(MethodElement, valid);
 
 	if (!valid) {
 		MethodElement.helpText = message;
+		return {valid:false, InvalidReason:"Reconstruction Method is Unsupported for the Selected Scan Geometry. <br/>" + message}
 	} else {
 		MethodElement.helpText = "";
+		return {valid:true}
 	}
-
-	return valid;
 }

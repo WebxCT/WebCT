@@ -88,9 +88,11 @@ export class LSF {
 		}
 
 		// split on , and parse each float
-
 		const txtvalues = text.split(",");
-		console.log(txtvalues);
+		// check for minimum length and odd-number of elements
+		if (txtvalues.length < 3 || txtvalues.length % 2 == 0) {
+			return {status:LSFParseEnum.FAIL};
+		}
 
 		const values = new Array<number>();
 
@@ -102,23 +104,16 @@ export class LSF {
 			}
 			values.push(pval);
 		}
-		console.log(values);
 
 		// Normalise values so area under curve == 1
 		const total: number = values.reduce((previousValue:number, currentValue:number) => {
 			return previousValue + currentValue;
 		});
 
-		console.log("-----");
-		console.log(values);
-		console.log(total);
 		for (let index = 0; index < values.length; index++) {
 			const element = values[index];
 			values[index] = element / 1 / total;
 		}
-		console.log(values);
-		console.log("-----");
-
 
 		return {lsf:new LSF(values), status: LSFParseEnum.SUCCESS};
 	}
