@@ -145,6 +145,7 @@ function processProximal(data:ReconResponseRegistry["reconResponse"]):Proximal {
 		return {
 			method: dataProximal.method,
 			params: {
+				alpha: dataProximal.params.alpha,
 				isotropic: dataProximal.params.isotropic,
 				iterations: dataProximal.params.iterations,
 				tolerance: dataProximal.params.tolerance,

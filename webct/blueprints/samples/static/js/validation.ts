@@ -11,7 +11,6 @@ import { Valid, validateInputWithHelptext, Validator } from "../../../base/stati
  */
 const ScalingValidator:Validator = {
 	min:0.0001,
-	max:10000,
 	type: "number",
 	message: "Global Sample Scaling must be larger than 0."
 }

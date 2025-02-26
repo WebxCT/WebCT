@@ -81,7 +81,6 @@ export function validateAngle(AngleElement: SlInput): Valid {
  */
 const FilterValidator: Validator = {
 	min: 0,
-	max: 1000,
 	type: "number",
 	message: "Filter thickness cannot be negative. Set to 0mm to disable."
 };
@@ -100,7 +99,6 @@ export function validateFilter(FilterElement: SlInput): Valid {
  */
 const SpotSizeValidator: Validator = {
 	min: 0,
-	max: 10000,
 	type: "number",
 	message: "Focal Spot Size cannot be negative. Set to 0mm to disable."
 };
@@ -119,7 +117,6 @@ export function validateSpotSize(SpotSizeElement: SlInput): Valid {
  */
 const ExposureValidator:Validator = {
 	min:0.0001,
-	max:10000,
 	type: "number",
 	message: "Exposure must be larger than 0s."
 }
@@ -138,7 +135,6 @@ export function validateExposure(ExposureElement: SlInput): Valid {
  */
 const IntensityValidator:Validator = {
 	min:0.0001,
-	max:10000,
 	type: "number",
 	message: "Intensity must be larger than 0uA."
 }
@@ -157,9 +153,8 @@ export function validateIntensity(IntensityElement: SlInput): Valid {
  */
 const EnergyValidator:Validator = {
 	min:1,
-	max:10000,
 	type: "number",
-	message: "SpectraEnergy must be larger than 1keV."
+	message: "Spectrum energy must be larger than 1keV."
 }
 /**
  * Validate Energy text input.
@@ -175,7 +170,6 @@ export function validateEnergy(EnergyElement: SlInput): Valid {
  */
 const FluxValidator:Validator = {
 	min:0.0001,
-	max:10000,
 	type: "number",
 	message: "Synchrotron Flux must be larger than 0.0001x10^10."
 }
@@ -193,7 +187,6 @@ export function validateFlux(FluxElement: SlInput): Valid {
  */
 const MAsValidator:Validator = {
 	min:0.0001,
-	max:10000,
 	type: "number",
 	message: "mAs must be larger than 0mAs."
 }

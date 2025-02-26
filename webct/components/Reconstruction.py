@@ -154,7 +154,7 @@ def reconstruct(projections: np.ndarray, capture: CaptureParameters, beam: BeamP
 					data=data,
 					max_iteration = params.iterations,
 					tolerance=params.tolerance / 1000000)
-		cgls.run(verbose=True)
+		cgls.run(params.iterations, verbose=True)
 		rec = cgls.solution
 
 	elif method_name == "SIRT":
@@ -170,7 +170,7 @@ def reconstruct(projections: np.ndarray, capture: CaptureParameters, beam: BeamP
 			data=data,
 			constraint=params.constraint.get(ig),
 			max_iteration=params.iterations)
-		sirt.run(verbose=True)
+		sirt.run(params.iterations, verbose=True)
 
 		# Get the last solution
 		rec = sirt.solution
@@ -194,7 +194,7 @@ def reconstruct(projections: np.ndarray, capture: CaptureParameters, beam: BeamP
 			g=convFunction,
 			max_iteration=params.iterations)
 
-		fista.run(verbose=True)
+		fista.run(params.iterations, verbose=True)
 
 		rec = fista.solution
 
