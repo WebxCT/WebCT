@@ -35,7 +35,7 @@ const projectionErrorMessages = new Map<SimError, string>([
  * @param errorType - Type of error to report
  */
 export function showError(errorType: SimError): void {
-	const message = projectionErrorMessages.has(errorType) ? projectionErrorMessages.get(errorType) as string : "An unexpected error has occurred.<br><b>" + errorType + "</b>";
+	const message = projectionErrorMessages.has(errorType) ? projectionErrorMessages.get(errorType) as string : "An unexpected error has occurred.<br/><b>" + errorType + "</b>";
 
 	console.error(errorType + " : " + message);
 	showAlert(message, AlertType.ERROR);

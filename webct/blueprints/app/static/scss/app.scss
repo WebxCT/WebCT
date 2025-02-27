@@ -247,6 +247,19 @@ main > section > sl-split-panel > .half-pane:has([type="detector"][active]) {
 	box-shadow: 0 0 0 var(--sl-focus-ring-width) var(--sl-color-danger-500);
 }
 
+.warning:not([disabled])::part(form-control-label),
+.warning:not([disabled])::part(form-control-help-text) {
+	color: var(--sl-color-warning-600);
+}
+
+.warning:not([disabled])::part(base) {
+	border-color: var(--sl-color-warning-500);
+}
+
+.warning:focus-within::part(base) {
+	box-shadow: 0 0 0 var(--sl-focus-ring-width) var(--sl-color-warning-500);
+}
+
 ::part(form-control-help-text) {
 	line-height: 1.25;
 	padding-top: 2px;

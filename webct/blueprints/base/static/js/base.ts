@@ -55,7 +55,7 @@ export function showAlert(message: string, type: AlertType, duration = 20): Prom
 			${message}
 			`
 	});
-	if (type == AlertType.ERROR) {
+	if (type == AlertType.ERROR || type == AlertType.WARNING) {
 		// Additionally, dispatch an error event
 		window.dispatchEvent(new CustomEvent("pageError", {
 			bubbles: true,

@@ -9,16 +9,17 @@ import { SlButton, SlCheckbox, SlInput, SlSelect } from "@shoelace-style/shoelac
 import { AlertType, showAlert } from "../../../base/static/js/base";
 import { AlgElement } from "../../../reconstruction/static/js/recon";
 import { BeamResponseRegistry, processResponse, requestBeamData, sendBeamData } from "./api";
-import { BeamConfigError, BeamRequestError, showError } from "./errors";
+import { BeamConfigError, BeamRequestError, showError, showValidationError } from "./errors";
 import { BeamGenerator, BeamProperties, Filter, LabBeam, MedBeam, SourceType, SpectraDisplay, SynchBeam, ViewFormat } from "./types";
-import { validateFilter, validateSpotSize } from "./validation";
+import { SupportedAnodes, validateAngle, validateEnergy, validateExposure, validateFilter, validateFlux, validateIntensity, validateMAs, validateSpotSize, validateVoltage } from "./validation";
+import { Valid } from "../../../base/static/js/validation";
 
 // ====================================================== //
 // ================== Document Elements ================= //
 // ====================================================== //
 let TubeSettings: HTMLDivElement;
 
-let BeamSourceSelectElement: SlSelect;
+export let BeamSourceSelectElement: SlSelect;
 let BeamEnergyElement: SlInput;
 let BeamNoiseElement:SlCheckbox;
 let BeamExposureElement:SlInput;
@@ -30,7 +31,7 @@ let BeamAngleElement:SlInput;
 let BeamHarmonicsElement:SlCheckbox;
 let BeamSpotSizeElement:SlInput;
 
-let BeamMaterialElement:SlInput;
+let BeamMaterialElement:SlSelect;
 
 let FilterSettings: HTMLDivElement;
 let FilterMaterialElement: SlSelect;
@@ -142,15 +143,42 @@ export function setupBeam(): boolean {
 	FilterSettings = filter_settings_element as HTMLDivElement;
 
 	BeamEnergyElement = energy_element as SlInput;
+	BeamEnergyElement.addEventListener("sl-change", () => {
+		validateEnergy(BeamEnergyElement)
+	})
 	BeamNoiseElement = noise_element as SlCheckbox;
 	BeamExposureElement = exposure_element as SlInput;
+	BeamExposureElement.addEventListener("sl-change", () => {
+		validateExposure(BeamExposureElement)
+	})
 	BeamVoltageElement = voltage_element as SlInput;
 	BeamIntensityElement = intensity_element as SlInput;
+	BeamIntensityElement.addEventListener("sl-change", () => {
+		validateIntensity(BeamIntensityElement)
+	})
 	BeamFluxElement = flux_element as SlInput;
+	BeamFluxElement.addEventListener("sl-change", () =>{
+		validateFlux(BeamFluxElement)
+	})
 	BeamMASElement = mas_element as SlInput;
+	BeamMASElement.addEventListener("sl-change", () => {
+		validateMAs(BeamMASElement)
+	})
 	BeamAngleElement = angle_element as SlInput;
+	BeamAngleElement.addEventListener("sl-change", () => {
+		validateAngle(BeamAngleElement)
+	})
 	BeamSpotSizeElement = spot_size as SlInput;
-	BeamMaterialElement = beam_material_element as SlInput;
+	BeamSpotSizeElement.addEventListener("sl-change", () => {
+		validateSpotSize(BeamSpotSizeElement)
+	})
+	BeamMaterialElement = beam_material_element as SlSelect;
+	BeamMaterialElement.addEventListener("sl-change", () => {
+		validateVoltage(BeamVoltageElement, BeamMaterialElement.value as SupportedAnodes)
+	})
+	BeamVoltageElement.addEventListener("sl-change", () => {
+		validateVoltage(BeamVoltageElement, BeamMaterialElement.value as SupportedAnodes)
+	})
 	BeamHarmonicsElement = harmonics_element as SlCheckbox;
 
 	BeamGeneratorElement = beam_generator_element as SlSelect;
@@ -277,15 +305,49 @@ export function setupBeam(): boolean {
 	// 	}
 	// };
 
-	validateBeam();
 	return true;
 }
 
 /**
  * Validate beam parameters and mark as valid/invalid.
  */
-export function validateBeam(): boolean {
-	return true;
+export function validateBeam(): void {
+	let validationResults:Valid[] = []
+	switch (BeamSourceSelectElement.value as SourceType) {
+		case "lab":
+			validationResults = [
+				validateVoltage(BeamVoltageElement, BeamMaterialElement.value as SupportedAnodes),
+				validateExposure(BeamExposureElement),
+				validateIntensity(BeamIntensityElement),
+				validateSpotSize(BeamSpotSizeElement),
+				validateAngle(BeamAngleElement),
+				validateFilter(FilterSizeElement)
+			]
+			break;
+		case "med":
+			validationResults = [
+				validateVoltage(BeamVoltageElement, BeamMaterialElement.value as SupportedAnodes),
+				validateMAs(BeamMASElement),
+				validateSpotSize(BeamSpotSizeElement),
+				validateAngle(BeamAngleElement),
+				validateFilter(FilterSizeElement)
+			]
+			break;
+		case "synch":
+			validationResults = [
+				validateEnergy(BeamEnergyElement),
+				validateFlux(BeamFluxElement),
+				validateExposure(BeamExposureElement)
+			]
+			break;
+	}
+
+	validationResults.forEach(validation => {
+		if (!validation.valid) {
+			// An element is invalid, bubble as an exception
+			throw "<b>Invalid Beam Settings</b><br/> Your " + validation.InvalidReason as BeamConfigError
+		}
+	});
 }
 
 // ====================================================== //
@@ -349,8 +411,12 @@ export function UpdateBeam(): Promise<void> {
  */
 function setBeam(): Promise<void> {
 
-	if (!validateBeam()) {
-		throw BeamConfigError;
+	try {
+		validateBeam()
+	} catch (e) {
+		// Show the error and then re-throw to interrupt future chaining
+		showValidationError(e as BeamConfigError)
+		throw e
 	}
 
 	const beam = getBeamParms();
@@ -430,7 +496,7 @@ export function setBeamParams(beam:BeamProperties) {
 	let params;
 	BeamSourceSelectElement.value = beam.method;
 	BeamNoiseElement.checked = beam.enableNoise;
-	
+
 	switch (beam.method) {
 	case "lab":
 		params = beam as LabBeam;

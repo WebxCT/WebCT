@@ -6,8 +6,10 @@
 import { SlCheckbox, SlInput, SlSelect } from "@shoelace-style/shoelace";
 import { AlertType, showAlert } from "../../../base/static/js/base";
 import { prepareRequest, processResponse, ReconResponseRegistry, requestReconData, requestReconPreview, sendReconData } from "./api";
-import { BoxProximal, CGLSParams, Proximal, ProximalMethod, Differentiable, DiffMethod, FBPParams, FDKParams, FGPTVProximal, FISTAParams, LeastSquaresDiff, ReconstructionParams, ReconstructionPreview, SIRTParams, TGVProximal, TikhonovMethod as TikhonovMethod, TikhonovRegulariser, TVProximal } from "./types";
-import { validateMethod } from "./validation";
+import { BoxProximal, CGLSParams, Proximal, ProximalMethod, Differentiable, DiffMethod, FBPParams, FDKParams, FGPTVProximal, FISTAParams, LeastSquaresDiff, ReconstructionParams, ReconstructionPreview, SIRTParams, TGVProximal, TikhonovMethod as TikhonovMethod, TikhonovRegulariser, TVProximal, ReconMethod } from "./types";
+import { validateAlpha, validateBound, validateBounds, validateGamma, validateIterations, validateMethod, validateTolerance } from "./validation";
+import { ReconstructionConfigError, ReconstructionRequestError, showError, showValidationError } from "./errors";
+import { Valid } from "../../../base/static/js/validation";
 
 // ====================================================== //
 // ================== Document Elements ================= //
@@ -252,19 +254,34 @@ export function setupRecon(): boolean {
 	// CGLS
 	CGLSSettings = cgls_settings as HTMLDivElement;
 	CGLSIterElement = cgls_input_iterations as SlInput;
+	CGLSIterElement.addEventListener("sl-change", () => {
+		validateIterations(CGLSIterElement, "CGLS Iterations", 20)
+	})
 	CGLSToleranceElement = cgls_input_tolerance as SlInput;
+	CGLSToleranceElement.addEventListener("sl-change", () => {
+		validateTolerance(CGLSToleranceElement, "CGLS Tolerance")
+	})
 
 	// SIRT
 	SIRTSettings = sirt_settings as HTMLDivElement;
 	SIRTIterElement = sirt_input_iterations as SlInput;
+	SIRTIterElement.addEventListener("sl-change", () => {
+		validateIterations(SIRTIterElement, "SIRT Iterations", 20)
+	})
 
 	// FISTA
 	FISTASettings = fista_settings as HTMLDivElement;
 	FISTAIterElement = fista_input_iterations as SlInput;
+	FISTAIterElement.addEventListener("sl-change", () => {
+		validateIterations(FISTAIterElement, "FISTA Iterations", 20)
+	})
 
 	// Tikhonov
 	TikSettings = tik_settings as HTMLDivElement;
 	TikAlphaElement = tik_input_alpha as SlInput;
+	TikAlphaElement.addEventListener("sl-change", () => {
+		validateAlpha(TikAlphaElement, "Tikhonov Alpha")
+	})
 	TikBoundElement = tik_select_boundary as SlSelect;
 	TikOpElement = tik_select_operator as SlSelect;
 
@@ -275,12 +292,18 @@ export function setupRecon(): boolean {
 	ConCheckboxLowerElement = con_checkbox_lower as SlCheckbox;
 	ConIsotropicElement = con_checkbox_isotropic as SlCheckbox;
 	ConToleranceElement = con_input_tolerance as SlInput;
+	ConToleranceElement.addEventListener("sl-change", () => {validateProximal()})
 	ConIterElement = con_input_iter as SlInput;
+	ConIterElement.addEventListener("sl-change", () => {validateProximal()})
 	ConUpperElement = con_input_upper as SlInput;
+	ConUpperElement.addEventListener("sl-change", () => {validateProximal()})
 	ConLowerElement = con_input_lower as SlInput;
+	ConLowerElement.addEventListener("sl-change", () => {validateProximal()})
 	ConAlphaElement = con_input_alpha as SlInput;
+	ConAlphaElement.addEventListener("sl-change", () => {validateProximal()})
 	ConNonNegElement = con_checkbox_nonneg as SlCheckbox;
 	ConGammaElement = con_input_gamma as SlInput;
+	ConGammaElement.addEventListener("sl-change", () => {validateProximal()})
 	ConUpperDiv = ConUpperElement.parentElement as HTMLDivElement;
 	ConLowerDiv = ConLowerElement.parentElement as HTMLDivElement;
 
@@ -398,7 +421,6 @@ export function setupRecon(): boolean {
 	AlgElement.addEventListener("sl-change", () => {
 		// Set group type
 		AlgGroup.setAttribute("type", AlgElement.value + "");
-		validateRecon();
 
 		// Hide all settings menus
 		FDKSettings.classList.add("hidden");
@@ -433,6 +455,15 @@ export function setupRecon(): boolean {
 			DiffSettings.classList.remove("hidden");
 			break;
 		}
+
+		try {
+			validateRecon();
+		} catch {
+			// Ignore invalid settings exception, since we don't want to show an
+			// alert popup everytime the user selects FDK while a synchrotron
+			// source is selected. The input box will show why it's invalid already.
+			return
+		}
 	});
 
 	// Run initial component updates
@@ -442,13 +473,111 @@ export function setupRecon(): boolean {
 	TikOpElement.handleValueChange();
 	AlgElement.handleValueChange();
 
-	validateRecon();
 	return true;
 }
 
-export function validateRecon(): boolean {
-	return true;
-	// return validateMethod(AlgElement);
+function validateProximal(): Valid[] {
+	let validations:Valid[] = [];
+
+	switch ((ConOpElement.value as string) as ProximalMethod) {
+		case "box":
+			if (ConCheckboxLowerElement.checked && ConCheckboxUpperElement.checked) {
+				validations.push(validateBounds(ConLowerElement, ConUpperElement, "Indicator Box Lower Proximal", "Indicator Box Upper Proximal"))
+			} else {
+				if (ConCheckboxLowerElement.checked) {
+					validations.push(validateBound(ConLowerElement, "Indicator Box Lower Proximal"))
+				} else if (ConCheckboxUpperElement	.checked) {
+					validations.push(validateBound(ConUpperElement, "Indicator Box Upper Proximal"))
+				}
+			}
+			break;
+		case "tv":
+			if (ConCheckboxLowerElement.checked && ConCheckboxUpperElement.checked) {
+				validations.push(validateBounds(ConLowerElement, ConUpperElement, "Total Variation Lower Proximal", "Total Variation Upper Proximal"))
+			} else if (ConCheckboxLowerElement.checked) {
+				validations.push(validateBound(ConLowerElement, "Total Variation Lower Proximal"))
+			} else if (ConCheckboxUpperElement.checked) {
+				validations.push(validateBound(ConUpperElement, "Total Variation Upper Proximal"))
+			}
+			validations.push(
+				validateIterations(ConIterElement, "TV Iterations", 20),
+				validateAlpha(ConAlphaElement, "Total Variation Alpha"),
+				validateTolerance(ConToleranceElement, "Total Variation Tolerance")
+			)
+			break;
+		case "fgp-tv":
+			validations.push(
+				validateIterations(ConIterElement, "FGP-TV Iterations", 20),
+				validateAlpha(ConAlphaElement, "FGP-TV Alpha"),
+				validateTolerance(ConToleranceElement, "FGP-TV Tolerance")
+			)
+			break;
+		case "tgv":
+			validations.push(
+				validateIterations(ConIterElement, "TGV Iterations", 20),
+				validateAlpha(ConAlphaElement, "TGV Alpha"),
+				validateGamma(ConGammaElement, "TGV Gamma"),
+				validateTolerance(ConToleranceElement, "TGV Tolerance")
+			)
+			break;
+		}
+	return validations;
+}
+
+function validateTikhonov(): Valid[] {
+	let validations:Valid[] = [];
+
+	switch(TikOpElement.value as TikhonovMethod) {
+		case "projection":
+		break;
+		case "gradient":
+		case "identity":
+			validateAlpha(TikAlphaElement, "Tikhonov Alpha")
+		break;
+		}
+
+	return validations;
+}
+
+export function validateRecon(): void {
+	let validations:Valid[] = [];
+	validations.push(validateMethod(AlgElement))
+
+	// Different reconstruction methods have different settings.
+	switch (AlgElement.value as ReconMethod) {
+		case "FDK":
+		case "FBP":
+			// FDK and FBP only have a filter dropdown, no textual inputs.
+		break;
+		case "CGLS":
+			validations.push(
+				validateIterations(CGLSIterElement, "CGLS Iterations", 20),
+				validateTolerance(CGLSToleranceElement, "CGLS Tolerance"),
+				...validateTikhonov()
+			)
+			break;
+		case "SIRT":
+			validations.push(
+				validateIterations(SIRTIterElement, "SIRT Iterations", 50),
+				...validateTikhonov(),
+				...validateProximal()
+			)
+			break;
+		case "FISTA":
+			validations.push(
+				validateIterations(FISTAIterElement, "FISTA Iterations", 50),
+				...validateTikhonov(),
+				...validateProximal()
+			)
+			break;
+		}
+
+	validations.forEach( (validation) => {
+		if (!validation.valid) {
+			// An element is invalid, bubble as an exception
+			throw "<b>Invalid Reconstruction Settings</b><br/> Your " + validation.InvalidReason as ReconstructionConfigError
+		}
+	})
 }
 
 // ====================================================== //
@@ -456,7 +585,6 @@ export function validateRecon(): boolean {
 // ====================================================== //
 
 function MarkLoading(): void {
-	console.log("markloading");
 
 	for (let index = 0; index < ReconImages.length; index++) {
 		const image = ReconImages[index];
@@ -623,7 +751,10 @@ function ToggleConUpper(state: boolean): void {
 		ConUpperElement.type = "text";
 		ConUpperElement.value = "+Infinity";
 		ConUpperElement.disabled = true;
+		// remove lingering helptext from validation
+		ConUpperElement.helpText = ""
 	}
+	validateProximal()
 }
 
 function ToggleConLower(state: boolean): void {
@@ -639,7 +770,10 @@ function ToggleConLower(state: boolean): void {
 		ConLowerElement.type = "text";
 		ConLowerElement.value = "-Infinity";
 		ConLowerElement.disabled = true;
+		// remove lingering helptext from validation
+		ConLowerElement.helpText = ""
 	}
+	validateProximal()
 }
 
 // ====================================================== //
@@ -796,15 +930,17 @@ function TikBoundValue(): "Neumann" | "Periodic" {
  * Send capture parameters to the server.
  */
 function setRecon(): Promise<void> {
-	if (!validateRecon()) {
-		throw Error;
+	try {
+		validateRecon()
+	} catch (e) {
+		// Show the error and then re-throw to interrupt future chaining
+		showValidationError(e as ReconstructionConfigError)
+		throw e
 	}
 
 	let request = undefined;
 	request = prepareRequest(getReconParams());
 
-	console.log("---Sent---");
-	console.log(request);
 	return sendReconData(request).then((response: Response) => {
 		if (response.status == 200) {
 			console.log("Reconstruction updated");
@@ -821,7 +957,9 @@ export function UpdateReconPreview(): Promise<void> {
 		requestReconPreview().then((response: Response) => {
 			console.log("Reconstruction Preview Response Status:" + response.status);
 			if (response.status == 500) {
-				return;
+				showError(ReconstructionRequestError.UNEXPECTED_SERVER_ERROR)
+				MarkError();
+				return
 			}
 
 			// Convert to json

@@ -5,11 +5,12 @@
 
 import { SlButton, SlCheckbox, SlDialog, SlInput, SlSelect } from "@shoelace-style/shoelace";
 import { AlertType, showAlert } from "../../../base/static/js/base";
-import { SetPreviewSize } from "../../../preview/static/js/sim/projection";
+import { MarkLoading, SetPreviewSize } from "../../../preview/static/js/sim/projection";
 import { DetectorResponseRegistry, prepareRequest, processResponse, requestDetectorData, sendDetectorData } from "./api";
-import { DetectorConfigError, DetectorRequestError, showError } from "./errors";
+import { DetectorConfigError, DetectorRequestError, showError, showValidationError } from "./errors";
 import { DetectorProperties, EnergyResponseDisplay, LSF, LSFDisplay, LSFParseEnum, ScintillatorMaterial } from "./types";
-import { validateHeight, validatePixel, validateWidth } from "./validation";
+import { validateHeight, validateHeightPx, validatePixel, validateScintillator, validateWidth, validateWidthPx } from "./validation";
+import { Valid } from "../../../base/static/js/validation";
 
 // ====================================================== //
 // ================== Document Elements ================= //
@@ -140,35 +141,40 @@ export function setupDetector(): boolean {
 	PaneWidthElement = pane_width_element as SlInput;
 	PaneWidthElement.addEventListener("sl-change", () => {
 		LastPanelChange = "width"
-		validateWidth(PaneWidthElement);
-		previewDetector();
+		if (validateWidth(PaneWidthElement).valid && validateWidthPx(PaneWidthPxElement).valid) {
+			previewDetector();
+		}
 	});
 
 	PaneHeightElement = pane_height_element as SlInput;
 	PaneHeightElement.addEventListener("sl-change", () => {
 		LastPanelChange = "width"
-		validateHeight(PaneHeightElement);
-		previewDetector();
+		if (validateHeight(PaneHeightElement).valid && validateHeightPx(PaneHeightPxElement).valid) {
+			previewDetector();
+		}
 	});
 
 	PaneWidthPxElement = pane_width_px_element as SlInput;
 	PaneWidthPxElement.addEventListener("sl-change", () => {
 		LastPanelChange = "px"
-		previewDetector();
-		validateWidth(PaneWidthElement);
+		if (validateWidth(PaneWidthElement).valid && validateWidthPx(PaneWidthPxElement).valid) {
+			previewDetector();
+		}
 	});
 
 	PaneHeightPxElement = pane_height_px_element as SlInput;
 	PaneHeightPxElement.addEventListener("sl-change", () => {
 		LastPanelChange = "px"
-		previewDetector();
-		validateHeight(PaneHeightElement);
+		if (validateHeight(PaneHeightElement).valid && validateHeightPx(PaneHeightPxElement).valid) {
+			previewDetector();
+		}
 	});
 
 	PanePixelSizeElement = pane_pixel_size_element as SlInput;
 	PanePixelSizeElement.addEventListener("sl-change", () => {
-		validatePixel(PanePixelSizeElement);
-		previewDetector();
+		if (validatePixel(PanePixelSizeElement).valid) {
+			previewDetector();
+		}
 	});
 
 	DetectorPreviewElement = detector_preview_element as HTMLDivElement;
@@ -227,6 +233,9 @@ export function setupDetector(): boolean {
 
 	ScintillatorSelectElement = scintillator_select_element as SlSelect;
 	ScintillatorThicknessElement = scintillator_thickness_element as SlInput;
+	ScintillatorThicknessElement.addEventListener("sl-change", () => {
+		validateScintillator(ScintillatorThicknessElement)
+	})
 
 	ScintillatorSelectElement.addEventListener("sl-change", () => {
 		ScintillatorThicknessElement.disabled = (ScintillatorSelectElement.value == "")
@@ -251,10 +260,23 @@ export function setupDetector(): boolean {
 /**
  * Validate detector parameters and mark as valid/invalid.
  */
-export function validateDetector(): boolean {
-	return validateWidth(PaneWidthElement)
-		&& validateHeight(PaneHeightElement)
-		&& validatePixel(PanePixelSizeElement);
+export function validateDetector(): void {
+	let validationResults:Valid[] = []
+	validationResults = [
+		validateWidth(PaneWidthElement),
+		validateHeightPx(PaneHeightPxElement),
+		validateWidthPx(PaneWidthPxElement),
+		validateHeight(PaneHeightElement),
+		validatePixel(PanePixelSizeElement)
+	]
+
+	validationResults.forEach(validation => {
+		if (!validation.valid) {
+			// An element is invalid, bubble as an exception
+			throw "<b>Invalid Detector Settings</b><br/> Your " + validation.InvalidReason as DetectorConfigError
+
+		}
+	});
 }
 
 // ====================================================== //
@@ -283,7 +305,11 @@ function previewDetector(): void {
 		console.log(PaneHeightPxElement);
 	}
 
-	if (!validateDetector()) {
+	try {
+		validateDetector()
+	} catch (e) {
+		// Explicitly don't throw an error when updating detector preview, since
+		// it'll be shown when the user tries to update the page, causing stacking.
 		return;
 	}
 
@@ -298,6 +324,10 @@ function previewDetector(): void {
 	// DetectorPreviewElement.textContent = width + "x" + height + " px"
 	DetectorHorizontalText.textContent = PaneWidthElement.value + "mm (" + width + "px)";
 	DetectorVerticalText.textContent = PaneHeightElement.value + "mm (" + height + "px)";
+
+	// Mark the projection as "loading", helping to indicate the detector has
+	// changed and therefore the projection is out-of-date
+	MarkLoading();
 
 	// Update LSF Graph
 	console.log("preview detector");
@@ -360,8 +390,12 @@ export function UpdateDetector(): Promise<void> {
  */
 function setDetector(): Promise<void> {
 
-	if (!validateDetector()) {
-		throw DetectorConfigError;
+	try {
+		validateDetector()
+	} catch (e) {
+		// Show the error and then re-throw to interrupt future chaining
+		showValidationError(e as DetectorConfigError)
+		throw e
 	}
 
 	const detector = prepareRequest(getDetectorParams());

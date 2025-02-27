@@ -7,11 +7,12 @@ import { SlButton, SlDialog, SlInput, SlProgressBar, SlRadio, SlSelect, SlTab, S
 import { serialize } from "@shoelace-style/shoelace/dist/utilities/form";
 import { AlertType, showAlert } from "../../../base/static/js/base";
 import { prepareSampleRequest, processResponse, requestMaterialList, requestModelList, requestSampleData, SamplesResponseRegistry, sendMaterialData, sendSamplesData, uploadModel, SamplesRequestRegistry, deleteMaterialData } from "./api";
-import { DetectorRequestError, showError } from "./errors";
+import { SampleConfigError, SampleRequestError, showError, showValidationError } from "./errors";
 import { getSelectedMaterial, MixtureInputList, setSelectedMaterial, updateMaterialDialog } from "./materialDialogue";
 
 import { EventNewCategory, Material, MaterialLibrary, SampleProperties, SamplePropertiesID, SampleSettings } from "./types";
 import { markValid } from "../../../base/static/js/validation";
+import { validateScaling } from "./validation";
 
 // ====================================================== //
 // ================== Document Elements ================= //
@@ -164,6 +165,9 @@ export function setupSamples(): boolean {
 
 	RecentMaterials = {"element/aluminium":1};
 	SampleScalingElement = sample_scaling_element as SlInput;
+	SampleScalingElement.addEventListener("sl-change", () => {
+		validateScaling(SampleScalingElement)
+	})
 	UploadCompleteDialog = dialogue_complete_upload as SlDialog;
 	SampleDialog = dialogue_sample_element as SlDialog;
 	SampleDialogSelect = sample_upload_select as SlSelect;
@@ -391,7 +395,7 @@ function resetUpload(): void {
 function updateDialog(): void {
 	if (SampleDialogRadio1.checked) {
 		SampleDialogSubmit.textContent = "Add Sample";
-		
+
 		let exists = false;
 		if (SampleDialogInput.value == "" || SampleDialogInput.value in SessionSamples) {
 			// do not allow empty input or duplicate labels
@@ -458,7 +462,7 @@ function updateDialog(): void {
 		SampleDialogSubmit.removeAttribute("disabled");
 	} else {
 		SampleDialogSubmit.textContent = "Upload Sample";
-		if (UploadData == null) {	
+		if (UploadData == null) {
 			SampleDialogSubmit.setAttribute("disabled", "true");
 			SampleDialogSubmit.onclick = null;
 		} else {
@@ -856,11 +860,30 @@ function idFromMaterial(refMat:Material):string|null {
 	return null;
 }
 
+
+/**
+ * Validate detector parameters and mark as valid/invalid.
+ */
+export function validateSamples(): void {
+	let validation = validateScaling(SampleScalingElement)
+	if (!validation.valid) {
+		// An element is invalid, bubble as an exception
+		throw "<b>Invalid Sample Settings</b><br/> Your " + validation.InvalidReason as SampleConfigError
+	}
+}
+
 /**
  * Send sample parameters to the server.
  */
 function setSamples(): Promise<void> {
-	console.log("setsamples");
+
+	try {
+		validateSamples()
+	} catch (e) {
+		// Show the error and then re-throw to interrupt future chaining
+		showValidationError(e as SampleConfigError)
+		throw e
+	}
 
 	// Ensure current samples are using IDs rather than materials
 	const sampleParams = getSampleParams()
@@ -925,11 +948,11 @@ function setSamples(): Promise<void> {
 			if (response.status == 200) {
 				console.log("Samples updated");
 			} else if (response.status == 500) {
-				showError(DetectorRequestError.UNEXPECTED_SERVER_ERROR);
+				showError(SampleRequestError.UNEXPECTED_SERVER_ERROR);
 			}
 			return;
 		}).catch(() => {
-			showError(DetectorRequestError.SEND_ERROR);
+			showError(SampleRequestError.SEND_ERROR);
 			return;
 		});
 	});

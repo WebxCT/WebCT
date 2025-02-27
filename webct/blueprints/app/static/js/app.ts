@@ -218,8 +218,11 @@ function UpdateProgressTime(seconds:number, segments:number) {
 	}, 1000);
 }
 
+let loadtime = 0
+
 function setPageLoading(loading: boolean, type: LoadingType = "default", source: LongLoadingSource=""): void {
 	if (loading) {
+		loadtime = performance.now()
 		console.log("## Button Loading");
 		LongLoadingCaller = source;
 
@@ -247,7 +250,7 @@ function setPageLoading(loading: boolean, type: LoadingType = "default", source:
 		}
 
 		document.getElementsByTagName("body")[0].style.cursor = "wait";
-	
+
 		if (source == "Capture") {
 			// For all projections, we can make a guess for duration
 			LoadingBar.removeAttribute("indeterminate");
@@ -262,6 +265,19 @@ function setPageLoading(loading: boolean, type: LoadingType = "default", source:
 		LoadingBar.setAttribute("variant", type);
 		LoadingBar.removeAttribute("hidden");
 	} else {
+		// For better user interaction, delay transition from loading state to a
+		// minimum of three seconds, even in the case of client-side validation
+		// issues. This ensures the user is able to notice that the page
+		// updated, but inquire as to why the projections may've not updated.
+
+		// performance.now() returns time in [ms]
+		if (performance.now() - loadtime < 2000) {
+			// less than 3000ms has passed since transitioning to a loading
+			// state. Therefore pause for the remainding time and a little extra
+			setTimeout(() => {setPageLoading(loading, type, source)}, 2500 - (performance.now() - loadtime))
+			return
+		}
+
 		// Check to see if the finish loading source supercedes the caller
 		if (type != "error") {
 			switch (LongLoadingCaller) {
