@@ -95,7 +95,39 @@ ReconMethods = {
 	# }
 }
 
+def get_geometry(capture: CaptureParameters, beam: BeamParameters, detector: DetectorParameters) -> AcquisitionGeometry:
 
+	rotation_axis = [0, 0, 1]
+	if capture.laminography_mode:
+		# Tilt rotation axis to match the object's local 0, 0, 1 axis
+
+		axis = np.array(capture.sample_rotation)
+
+		if (axis == np.zeros(3)).all():
+			axis = rotation_axis
+		else:
+			# normalized rotation vector of sample
+			axis = axis / np.linalg.norm(axis)
+
+		from scipy.spatial.transform import Rotation as R
+
+		# Construct a rotation from the sample rotation's axis in radians, and
+		# apply the transformation to the original rotation axis
+		rotation = R.from_rotvec(np.radians(capture.sample_rotation) * axis)
+		rotation_axis = rotation.apply(rotation_axis)
+
+	geo: Optional[AcquisitionGeometry] = None
+	if beam.projection == PROJECTION.PARALLEL:
+		geo = AcquisitionGeometry.create_Parallel3D(detector_position=capture.detector_position, rotation_axis_direction=rotation_axis)
+	elif beam.projection == PROJECTION.POINT:
+		geo = AcquisitionGeometry.create_Cone3D(source_position=capture.beam_position, detector_position=capture.detector_position, rotation_axis_direction=rotation_axis)
+	assert geo is not None
+
+	# Panel is height x width
+	geo.set_panel(detector.binned_shape[::-1], detector.binned_pixel_size, origin="top-left")
+	geo.set_angles(capture.angles[::-1])
+	geo.set_labels(["angle", "vertical", "horizontal"])
+	return geo
 
 def reconstruct(projections: np.ndarray, capture: CaptureParameters, beam: BeamParameters, detector: DetectorParameters, params: ReconParameters) -> np.ndarray:
 	# Get reconstruction method
@@ -108,18 +140,8 @@ def reconstruct(projections: np.ndarray, capture: CaptureParameters, beam: BeamP
 	if beam.projection not in method["projections"]:
 		raise ValueError(f"{method_name} does not support {beam.projection} beam configurations.")
 
-	geo: Optional[AcquisitionGeometry] = None
-	if beam.projection == PROJECTION.PARALLEL:
-		geo = AcquisitionGeometry.create_Parallel3D(detector_position=capture.detector_position)
-	elif beam.projection == PROJECTION.POINT:
-		geo = AcquisitionGeometry.create_Cone3D(source_position=capture.beam_position, detector_position=capture.detector_position)
-	assert geo is not None
-	# Acquisition geometry
-
-	# Panel is height x width
-	geo.set_panel(projections.shape[1:][::-1], detector.pixel_size, origin="top-left")
-	geo.set_angles(capture.angles[::-1])
-	geo.set_labels(["angle", "vertical", "horizontal"])
+	# geometry
+	geo = get_geometry(capture, beam, detector)
 
 	# Acquisition data
 	acData:AcquisitionData = geo.allocate()
@@ -133,14 +155,18 @@ def reconstruct(projections: np.ndarray, capture: CaptureParameters, beam: BeamP
 
 	# FDK Reconstruction
 	if method_name == "FDK":
-		acData.reorder("tigre")
 		params = cast(FDKParam, params)
+		acData.reorder("tigre")
 		rec = FDK(acData, ig, params.filter).run()
 
 	elif method_name == "FBP":
-		acData.reorder("tigre")
 		params = cast(FBPParam, params)
-		rec = FBP(acData, ig, params.filter).run()
+		if capture.laminography_mode:
+			acData.reorder("astra")
+			rec = FBP(acData, ig, params.filter, backend="astra").run()
+		else:
+			acData.reorder("tigre")
+			rec = FBP(acData, ig, params.filter).run()
 
 	elif method_name == "CGLS":
 		acData.reorder("astra")

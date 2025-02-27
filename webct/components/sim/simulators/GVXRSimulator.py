@@ -34,6 +34,7 @@ def colour_from_string(string:str) -> Tuple[float,float,float]:
 
 class GVXRSimulator(Simulator):
 	total_rotation: Tuple[float, float, float] = (0, 0, 0)
+	laminography: bool = False
 	"""
 	X-Ray simulator implemented using gvirtualxray.
 	"""
@@ -230,19 +231,32 @@ class GVXRSimulator(Simulator):
 		self.beam = self._beam
 
 		# Undo rotations in order to reset scene rotation matrix
-		gvxr.rotateNode("root", -1 * self.total_rotation[2], 0, 0, 1)
-		gvxr.rotateNode("root", -1 * self.total_rotation[1], 0, 1, 0)
-		gvxr.rotateNode("root", -1 * self.total_rotation[0], 1, 0, 0)
+		if self.laminography:
+			gvxr.rotateScene(-1 * self.total_rotation[2], 0, 0, 1)
+			gvxr.rotateScene(-1 * self.total_rotation[1], 0, 1, 0)
+			gvxr.rotateScene(-1 * self.total_rotation[0], 1, 0, 0)
+		else:
+			gvxr.rotateNode("root", -1 * self.total_rotation[2], 0, 0, 1)
+			gvxr.rotateNode("root", -1 * self.total_rotation[1], 0, 1, 0)
+			gvxr.rotateNode("root", -1 * self.total_rotation[0], 1, 0, 0)
+
+		self.laminography = value.laminography_mode
 		self.total_rotation = value.sample_rotation
 
-		gvxr.rotateNode("root", value.sample_rotation[0], 1, 0, 0)
-		gvxr.rotateNode("root", value.sample_rotation[1], 0, 1, 0)
-		gvxr.rotateNode("root", value.sample_rotation[2], 0, 0, 1)
+		if self.laminography:
+			gvxr.rotateScene(value.sample_rotation[0], 1, 0, 0)
+			gvxr.rotateScene(value.sample_rotation[1], 0, 1, 0)
+			gvxr.rotateScene(value.sample_rotation[2], 0, 0, 1)
+		else:
+			gvxr.rotateNode("root", value.sample_rotation[0], 1, 0, 0)
+			gvxr.rotateNode("root", value.sample_rotation[1], 0, 1, 0)
+			gvxr.rotateNode("root", value.sample_rotation[2], 0, 0, 1)
 		self._capture = value
 
 
 	def RenderScene(self) -> Tuple[Tuple[float]]:
 		gvxr.displayScene()
+		# gvxr.renderLoop()
 
 		# Zoom scene
 		dist = np.asarray(gvxr.getDetectorPosition("mm")) - np.asarray(gvxr.getSourcePosition("mm"))

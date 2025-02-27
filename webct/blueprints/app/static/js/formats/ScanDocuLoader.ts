@@ -50,7 +50,7 @@ export const ScanDocuConfig: FormatLoaderStatic = class ScanDocuConfig implement
 		let beam: BeamProperties
 
 		// no filter
-		const filter = {			
+		const filter = {
 			thickness: 0,
 			material: ElementSymbols.Cu,
 		}
@@ -82,7 +82,8 @@ export const ScanDocuConfig: FormatLoaderStatic = class ScanDocuConfig implement
 				detectorPosition: [0, this.geometry.ObjectDetectorDist, 0],
 				numProjections: this.recon.ProjectionCountPer360deg ?? 360,
 				sampleRotation: [0, 0, 0],
-				totalAngle: 360
+				totalAngle: 360,
+				laminographyMode: false
 			}
 		};
 	};
@@ -142,7 +143,7 @@ export const ScanDocuConfig: FormatLoaderStatic = class ScanDocuConfig implement
 			if (prop == "SourceDetectorDist") { geo["SourceDetectorDist"] = parseFloat(value)}
 			else if (prop == "SourceObjectDist") { geo["SourceObjectDist"] = parseFloat(value)}
 			else if (prop == "ObjectDetectorDist") { geo["ObjectDetectorDist"] = parseFloat(value)}
-			
+
 			// Recon
 			else if (prop == "ProjectionCount") { recon["ProjectionCount"] = parseInt(value)}
 			else if (prop == "ProjectionCountPer360deg") { recon["ProjectionCountPer360deg"] = parseInt(value)}

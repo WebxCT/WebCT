@@ -11,6 +11,7 @@ class CaptureParameters:
 	detector_position: Tuple[float, float, float]
 	beam_position: Tuple[float, float, float]
 	sample_rotation: Tuple[float, float, float]
+	laminography_mode: bool
 
 	@property
 	def angles(self) -> np.ndarray:
@@ -34,6 +35,7 @@ class CaptureParameters:
 			or "beam_position" not in json
 			or "detector_position" not in json
 			or "sample_rotation" not in json
+			or "laminography_mode" not in json
 		):
 			raise ValueError("Missing keys.")
 
@@ -42,6 +44,7 @@ class CaptureParameters:
 		tuple(json["beam_position"])
 		tuple(json["detector_position"])
 		tuple(json["sample_rotation"])
+		bool(json["laminography_mode"])
 
 		# Number of projections
 		projections = int(json["projections"])
@@ -73,10 +76,14 @@ class CaptureParameters:
 			raise ValueError(f"Sample rotation must contain three axis. ({len(sample_rot)} was given).")
 		sample_rot = [float(x) for x in sample_rot]
 
+		# Laminography mode (rotate around sample's axis)
+		laminography = bool(json["laminography_mode"])
+
 		return CaptureParameters(
 			projections=projections,
 			capture_angle=capture_angle,
 			detector_position=detector_pos,
 			beam_position=beam_pos,
 			sample_rotation=sample_rot,
+			laminography_mode=laminography,
 		)
