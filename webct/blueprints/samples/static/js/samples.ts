@@ -12,7 +12,7 @@ import { getSelectedMaterial, MixtureInputList, setSelectedMaterial, updateMater
 
 import { EventNewCategory, Material, MaterialLibrary, SampleProperties, SamplePropertiesID, SampleSettings } from "./types";
 import { markValid } from "../../../base/static/js/validation";
-import { validateScaling } from "./validation";
+import { validateSampleLabel, validateScaling } from "./validation";
 
 // ====================================================== //
 // ================== Document Elements ================= //
@@ -25,9 +25,6 @@ let MaterialViewButton: SlButton;
 let MaterialSubmitButton: SlButton;
 let MaterialSaveButton: SlButton;
 let MaterialTab: SlTabGroup;
-
-let UploadCompleteDialog: SlDialog;
-let UploadCloseButton: SlButton;
 
 let SampleDialog: SlDialog;
 let AddSampleButton: SlButton;
@@ -82,9 +79,6 @@ export function setupSamples(): boolean {
 
 	const sample_scaling_element = document.getElementById("inputSampleScaling");
 
-	const dialogue_complete_upload = document.getElementById("dialogueUploadComplete");
-	const button_complete_close = document.getElementById("buttonUploadClose");
-
 	const dialogue_material_library = document.getElementById("dialogueMaterial");
 	const button_material_close = document.getElementById("buttonMaterialClose");
 	const button_material_open = document.getElementById("buttonViewMaterials");
@@ -115,10 +109,8 @@ export function setupSamples(): boolean {
 		button_material_open == null ||
 		dialogue_material_library == null ||
 		button_material_close == null ||
-		button_complete_close == null ||
 		button_material_submit == null ||
 		button_material_save == null ||
-		dialogue_complete_upload == null ||
 		dialogue_sample_element == null ||
 		button_sample_add == null ||
 		samples_div == null ||
@@ -141,8 +133,6 @@ export function setupSamples(): boolean {
 		console.log(button_material_open);
 		console.log(button_material_submit);
 		console.log(tab_material);
-		console.log(button_complete_close);
-		console.log(dialogue_complete_upload);
 		console.log(dialogue_sample_element);
 		console.log(button_sample_add);
 		console.log(samples_div);
@@ -168,7 +158,6 @@ export function setupSamples(): boolean {
 	SampleScalingElement.addEventListener("sl-change", () => {
 		validateScaling(SampleScalingElement)
 	})
-	UploadCompleteDialog = dialogue_complete_upload as SlDialog;
 	SampleDialog = dialogue_sample_element as SlDialog;
 	SampleDialogSelect = sample_upload_select as SlSelect;
 	SampleDialogInput = sample_upload_label as SlInput;
@@ -184,8 +173,6 @@ export function setupSamples(): boolean {
 		SampleDialogRadio1.click()
 		updateDialog();
 	});
-	UploadCloseButton = button_complete_close as SlButton;
-	UploadCloseButton.onclick = () => { UploadCompleteDialog.hide(); };
 	MaterialCloseButton.onclick = () => { MaterialDialog.hide(); };
 	MaterialSaveButton = button_material_save as SlButton;
 	MaterialSaveButton.onclick = () => {
@@ -241,6 +228,7 @@ export function setupSamples(): boolean {
 
 	AddSampleButton = button_sample_add as SlButton;
 	AddSampleButton.onclick = () => {
+		resetUpload();
 		updateDialog();
 		SampleDialog.show();
 	};
@@ -275,8 +263,29 @@ export function setupSamples(): boolean {
 				UpdateModelList();
 
 				SampleDialog.hide();
-				UploadCompleteDialog.show();
+
+				if (SampleUploadInput.files == null) {
+					// Managed to somehow upload nothing? then ignore and quit early.
+					resetUpload()
+					return
+				}
+
+				// Add uploaded model as a new sample sample to sample
+				let label = SampleDialogInput.value
+				SessionSamples[label] = {
+					label: label,
+					modelPath: SampleUploadInput?.files[0].name,
+					materialID: DefaultMaterial,
+					sizeUnit: "mm",
+				};
+
+				if (DefaultMaterial in RecentMaterials) {
+					RecentMaterials[DefaultMaterial] += 1;
+				} else {
+					RecentMaterials[DefaultMaterial] = 1;
+				}
 				resetUpload();
+				updateSampleCards();
 			} else {
 				SampleUploadBar.classList.add("fail");
 				SampleUploadBar.textContent = "😢 Error During Upload";
@@ -385,6 +394,7 @@ function resetUpload(): void {
 	SampleDialogSelect.removeAttribute("disabled");
 	SampleDialogSubmit.removeAttribute("loading");
 	SampleDialogRadio1.removeAttribute("disabled");
+	SampleDialogInput.removeAttribute("disabled");
 	SampleDialogSubmit.variant = "success";
 
 	UploadRequest = null;
@@ -393,23 +403,28 @@ function resetUpload(): void {
 }
 
 function updateDialog(): void {
+	console.log("updateDialog()");
+
+	// Disable button
+	SampleDialogSubmit.setAttribute("disabled", "true");
+	// Sample must have a unique label
+	let valid = validateSampleLabel(SampleDialogInput, SessionSamples)
+
+	if (!valid.valid) {
+		// if the input is invalid, leave button disabled.
+		console.log(valid);
+		return
+	}
+
+	// After validation passes, re-enable the button.
+	SampleDialogSubmit.removeAttribute("disabled");
+
+	// If we are adding a pre-existing model
 	if (SampleDialogRadio1.checked) {
+		console.log("SampleDialogRadio1.checked");
 		SampleDialogSubmit.textContent = "Add Sample";
 
 		let exists = false;
-		if (SampleDialogInput.value == "" || SampleDialogInput.value in SessionSamples) {
-			// do not allow empty input or duplicate labels
-			markValid(SampleDialogInput, false);
-			if (SampleDialogInput.value == "") {
-				SampleDialogInput.helpText = "Sample must have a label";
-			} else {
-				SampleDialogInput.helpText = "Label already exists";
-			}
-		} else {
-			markValid(SampleDialogInput, true);
-			SampleDialogInput.helpText = "";
-		}
-
 		if (SampleDialogInput.value != "") {
 			for (let index = 0; index < AvailableModels.length; index++) {
 				const model = AvailableModels[index];
@@ -421,30 +436,27 @@ function updateDialog(): void {
 		}
 
 		if (!exists) {
-			console.log("no exist!");
-
+			// If for some reason the remote sample doesn't exist but exists in
+			// the menu, then disable the button.
+			console.log("samle doesn't exist!");
 			SampleDialogSubmit.setAttribute("disabled", "true");
 			SampleDialogSubmit.onclick = null;
 			return;
 		}
 
+
 		SampleDialogSubmit.onclick = () => {
 			let label = SampleDialogInput.value
-			if (label == "") {
-				// if no sample label, don't do anything!
-				return;
-			}
-
-			if (label in SessionSamples) {
-				// sample with that name already exists, don't do anything
-				// technically we could overwrite it, but better make that explicitly required.
-				return;
+			let valid = validateSampleLabel(SampleDialogInput, SessionSamples)
+			if (!valid.valid) {
+				// if label is invalid, stop.
+				return
 			}
 
 			// value is a valid model!
 			// We want to add it to the existing material list
 			SessionSamples[label] = {
-				label: SampleDialogInput.value,
+				label: label,
 				modelPath: SampleDialogSelect.value as string,
 				materialID: DefaultMaterial,
 				sizeUnit: "mm",
@@ -459,9 +471,17 @@ function updateDialog(): void {
 			SampleDialog.hide();
 			updateSampleCards();
 		};
-		SampleDialogSubmit.removeAttribute("disabled");
+
 	} else {
+		console.log("! SampleDialogRadio1.checked");
+
 		SampleDialogSubmit.textContent = "Upload Sample";
+		let valid = validateSampleLabel(SampleDialogInput, SessionSamples)
+		if (!valid.valid) {
+			// if label is invalid, stop.
+			return
+		}
+
 		if (UploadData == null) {
 			SampleDialogSubmit.setAttribute("disabled", "true");
 			SampleDialogSubmit.onclick = null;
@@ -472,6 +492,7 @@ function updateDialog(): void {
 				SampleDialogSubmit.setAttribute("loading", "true");
 				SampleDialogRadio1.setAttribute("disabled", "true");
 				SampleDialogSelect.setAttribute("disabled", "true");
+				SampleDialogInput.setAttribute("disabled", "true");
 
 				// Start upload
 				UploadRequest?.send(UploadData);
