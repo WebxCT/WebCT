@@ -3,13 +3,13 @@
  * @author Iwan Mitchell
  */
 
-import { SlButton, SlDropdown, SlInput, SlRange, SlSelect } from "@shoelace-style/shoelace";
+import { SlButton, SlCheckbox, SlDropdown, SlInput, SlRange, SlSelect } from "@shoelace-style/shoelace";
 import { AlertType, showAlert } from "../../../base/static/js/base";
 import { PanePixelSizeElement, PaneWidthElement, validateDetector } from "../../../detector/static/js/detector";
 import { CaptureResponseRegistry, processResponse, requestCaptureData, sendCaptureData, prepareRequest, requestCapturePreview } from "./api";
 import { CaptureConfigError, CaptureRequestError, showError, showValidationError } from "./errors";
 import { CapturePreview, CaptureProperties } from "./types";
-import { validateSourcePosition, validateProjections, validateRotation, validateDetectorPosition } from "./validation";
+import { validateSourcePosition, validateProjections, validateRotation, validateDetectorPosition, validateSceneRotation } from "./validation";
 import { UpdatePage } from "../../../app/static/js/app";
 import { Valid } from "../../../base/static/js/validation";
 
@@ -37,6 +37,8 @@ let ButtonRotateCounterClock45Element: SlButton;
 
 let PreviewImages: NodeListOf<HTMLImageElement>;
 let PreviewOverlays: NodeListOf<HTMLDivElement>;
+
+let CheckboxLaminographyElement: SlCheckbox;
 
 let NyquistRange: SlRange;
 
@@ -81,6 +83,7 @@ export function setupCapture(): boolean {
 	const sample_rotate_counter_clock_45_element = document.getElementById("buttonSampleRotateCounterClock45");
 	const sample_rotate_clock_45_element = document.getElementById("buttonSampleRotateClock45");
 
+	const laminography_enabled_element = document.getElementById("checkboxLaminographyEnabled");
 	const range_nyquist = document.getElementById("rangeNyquist");
 
 	if (total_rotation_element == null ||
@@ -100,6 +103,7 @@ export function setupCapture(): boolean {
 		detector_posx_element == null ||
 		detector_posy_element == null ||
 		detector_posz_element == null ||
+		laminography_enabled_element == null ||
 		range_nyquist == null) {
 
 		console.log(total_rotation_element);
@@ -123,6 +127,9 @@ export function setupCapture(): boolean {
 
 		console.log(sample_rotate_clock_45_element);
 		console.log(sample_rotate_counter_clock_45_element);
+
+		console.log(laminography_enabled_element)
+
 		console.log(range_nyquist);
 
 		showAlert("Capture setup failure", AlertType.ERROR);
@@ -168,6 +175,9 @@ export function setupCapture(): boolean {
 			validateRotation(element);
 		})
 	});
+
+	CheckboxLaminographyElement = laminography_enabled_element as SlCheckbox;
+
 	ButtonRotateClock45Element = sample_rotate_clock_45_element as SlButton;
 	ButtonRotateCounterClock45Element = sample_rotate_counter_clock_45_element as SlButton;
 
@@ -251,9 +261,9 @@ export function validateCapture(): void {
 	let validationResults:Valid[] = []
 	validationResults = [
 		validateProjections(TotalProjectionsElement),
-		validateRotation(SampleRotateXElement),
 
 		// sample rotation
+		validateRotation(SampleRotateXElement),
 		validateRotation(SampleRotateYElement),
 		validateRotation(SampleRotateZElement),
 		// panel positon
@@ -489,6 +499,7 @@ export function getCaptureParams():CaptureProperties {
 		beamPosition: [parseFloat(BeamPosXElement.value), parseFloat(BeamPosYElement.value), parseFloat(BeamPosZElement.value)],
 		detectorPosition: [parseFloat(DetectorPosXElement.value), parseFloat(DetectorPosYElement.value), parseFloat(DetectorPosZElement.value)],
 		sampleRotation: [parseFloat(SampleRotateXElement.value), parseFloat(SampleRotateYElement.value), parseFloat(SampleRotateZElement.value)],
+		laminographyMode: CheckboxLaminographyElement.checked,
 	};
 }
 
@@ -509,6 +520,8 @@ export function setCaptureParams(properties:CaptureProperties) {
 	SampleRotateXElement.value = properties.sampleRotation[0] + "";
 	SampleRotateYElement.value = properties.sampleRotation[1] + "";
 	SampleRotateZElement.value = properties.sampleRotation[2] + "";
+
+	CheckboxLaminographyElement.checked = properties.laminographyMode;
 
 	let pct = ((properties.beamPosition[1] * -1) / ((properties.beamPosition[1]* -1) + properties.detectorPosition[1])) * 100
 	console.log(properties);

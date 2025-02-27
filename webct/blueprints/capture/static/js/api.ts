@@ -39,6 +39,7 @@ export interface CaptureResponseRegistry {
 		detector_position: [number, number, number];
 		beam_position: [number, number, number];
 		sample_rotation: [number, number, number];
+		laminography_mode: boolean;
 	};
 	/**
 	 * Response given when retrieving a preview of the capture plan.
@@ -68,6 +69,7 @@ export interface CaptureRequestRegistry {
 		detector_position: [number, number, number];
 		beam_position: [number, number, number];
 		sample_rotation: [number, number, number];
+		laminography_mode: boolean;
 	}
 }
 
@@ -133,6 +135,7 @@ export function processResponse(data: CaptureResponseRegistry[keyof CaptureRespo
 			beamPosition: data.beam_position,
 			detectorPosition: data.detector_position,
 			sampleRotation: data.sample_rotation,
+			laminographyMode: data.laminography_mode,
 		};
 	}
 }
@@ -148,5 +151,6 @@ export function prepareRequest(data: CaptureProperties): CaptureRequestRegistry[
 		beam_position:data.beamPosition,
 		detector_position:data.detectorPosition,
 		sample_rotation:data.sampleRotation,
+		laminography_mode: data.laminographyMode,
 	};
 }

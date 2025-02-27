@@ -141,7 +141,8 @@ export const XTEKCTConfig: FormatLoaderStatic = class XTEKCTConfig implements Fo
 				detectorPosition: [0, this.config.SrcToDetector - this.config.SrcToObject, 0],
 				numProjections: this.config.Projections ?? 360,
 				sampleRotation: [0, 0, 0],
-				totalAngle: this.config.AngularStep * this.config.Projections < 270 ? 180 : 360
+				totalAngle: this.config.AngularStep * this.config.Projections < 270 ? 180 : 360,
+				laminographyMode: false
 			}
 		};
 	};
@@ -227,7 +228,7 @@ DICOMTags=${this.config.DICOMTags}
 		if (data.beam.method == "synch") {
 			throw "Nikon XTEKCT does not support synchrotron sources."
 		}
-		
+
 		let sdd = (data.capture.beamPosition[1] *-1) + data.capture.detectorPosition[1]
 		let sod = data.capture.beamPosition[1] * -1
 		let VoxelSize = sod  / sdd * data.detector.pixelSize
@@ -320,7 +321,7 @@ DICOMTags=${this.config.DICOMTags}
 			let prop = line.split("=")[0]
 			let value = line.split("=")[1]
 			console.log(prop +": " + value);
-			
+
 			// File metadata
 			if (prop == "Name") { config["Name"] = value }
 

@@ -28,7 +28,7 @@ const RotationValidator:Validator = {
 	message: "Rotation must be a number."
 }
 /**
- * Validate Rotation text input.
+ * Validate Sample Rotation text input.
  * @param RotationElement - Rotation input to validate.
  * @returns True if input is valid, False otherwise. Side Effect: passed element will have help-text displaying the validation failure reason.
  */
@@ -36,6 +36,14 @@ export function validateRotation(RotationElement: SlInput): Valid {
 	return validateInput(RotationElement, "Sample Rotation", RotationValidator);
 }
 
+/**
+ * Validate Scene Rotation text input.
+ * @param RotationElement - Rotation input to validate.
+ * @returns True if input is valid, False otherwise. Side Effect: passed element will have help-text displaying the validation failure reason.
+ */
+export function validateSceneRotation(RotationElement: SlInput): Valid {
+	return validateInput(RotationElement, "Scene Rotation", RotationValidator);
+}
 /**
  * Position Validator
  */

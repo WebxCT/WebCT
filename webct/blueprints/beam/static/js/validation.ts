@@ -40,9 +40,8 @@ const VoltageValidators = new Map<string, Validator>([
 ]);
 
 /**
- * Validate Voltage input of X-Ray Tube.
- * @param VoltageElement - Tube Voltage Input to validate.
- * @param material - Material of X-Ray Tube.
+ * Validate Spot Size Thickness text input.
+ * @param SpotSizeElement - Spot Size Thickness input to validate.
  * @returns True if input is valid, false otherwise. Side effect: Passed element will have help-text displaying the validation failure reason.
  */
 export function validateVoltage(VoltageElement: SlInput, material: SupportedAnodes): Valid {
@@ -66,6 +65,7 @@ const AngleValidator: Validator = {
 	message: "Anode Angle must be larger than 0, and less than 179 degrees."
 };
 
+
 /**
  * Validate Anode Angle text input.
  * @param AngleElement - Angle Input to validate.
@@ -84,6 +84,7 @@ const FilterValidator: Validator = {
 	type: "number",
 	message: "Filter thickness cannot be negative. Set to 0mm to disable."
 };
+
 
 /**
  * Validate Filter Thickness text input.

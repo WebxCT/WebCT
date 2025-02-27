@@ -28,6 +28,10 @@ export interface CaptureProperties {
 	 * Rotation of sample in degrees.
 	 */
 	sampleRotation: [number, number, number];
+	/**
+	 * Enable laminography mode (rotation followes model axis)
+	 */
+	laminographyMode: boolean;
 }
 
 export interface CapturePreview {

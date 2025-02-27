@@ -17,7 +17,7 @@ from webct import Element
 from webct.components.Beam import (BEAM_GENERATOR, PROJECTION, BeamParameters, Filter, LabBeam, Spectra, generateSpectra)
 from webct.components.Capture import CaptureParameters
 from webct.components.Detector import DEFAULT_LSF, SCINTILLATOR_MATERIAL, DetectorParameters, Scintillator
-from webct.components.Reconstruction import (FDKParam, ReconParameters, reconstruct)
+from webct.components.Reconstruction import (FDKParam, ReconParameters, reconstruct, get_geometry)
 from webct.components.Samples import RenderedSampleSettings, Sample, SampleSettings
 from webct.components.sim.Download import DownloadManager
 from webct.components.sim.clients.SimClient import SimClient, SimThreadError, SimTimeoutError
@@ -88,7 +88,7 @@ class SimSession:
 				Sample("Dragon Model", "welsh-dragon-small.stl", "mm", "element/aluminium"),
 			),
 		)
-		self.capture = CaptureParameters(360, 360, (0, 100, 0), (0, -400, 0), (0, 0, 90))
+		self.capture = CaptureParameters(360, 360, (0, 100, 0), (0, -400, 0), (0, 0, 90), False)
 		self.recon = FDKParam(filter="ram-lak")
 
 	@property
@@ -276,16 +276,7 @@ class SimSession:
 			return self._projections
 
 	def layout(self) -> np.ndarray:
-		geo: Optional[AcquisitionGeometry] = None
-		if self.beam.projection == PROJECTION.PARALLEL:
-			geo = AcquisitionGeometry.create_Parallel3D(detector_position=self.capture.detector_position)
-		elif self.beam.projection == PROJECTION.POINT:
-			geo = AcquisitionGeometry.create_Cone3D(source_position=self.capture.beam_position, detector_position=self.capture.detector_position)
-		assert geo is not None
-		# Aquisition geometry
-		geo.set_panel([l // self.detector.pixel_size for l in self.detector.shape][::-1], self.detector.pixel_size)
-		geo.set_angles(self.capture.angles)
-
+		geo = get_geometry(self.capture, self.beam, self.detector)
 		# Obtain canvas from figure
 		fig: Figure = show_geometry(geo, figsize=(8, 6)).figure
 
