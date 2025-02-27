@@ -48,6 +48,16 @@ video[src=""] {
 	padding-right: .2rem;
 }
 
+.overlay.overlay-capture span {
+	background-color: var(--sl-color-warning-700);
+	border-radius: var(--sl-border-radius-small);
+	border: solid var(--sl-color-warning-700);
+	margin: 0.2rem;
+	color: white;
+	padding-left: .2rem;
+	padding-right: .2rem;
+}
+
 .overlay.update {
 	display: flex;
 	opacity: 1;
