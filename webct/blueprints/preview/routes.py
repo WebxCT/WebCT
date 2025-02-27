@@ -28,7 +28,7 @@ def saveGif(array: np.ndarray) -> None:
 def getHistImage(array:np.ndarray, bins:List[float]) -> str:
 	# create a mask of pixels < bin[5]
 	# 0 - 1 - 2 - 3 - 4 - 5 - 6
-	mask = array < bins[5]
+	mask = array < bins[6]
 
 	# create rgb image
 	array = (array - array.min()) / (array.max() - array.min())

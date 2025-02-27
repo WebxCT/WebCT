@@ -48,7 +48,7 @@ export class TransmissionDisplay {
 	}
 
 	public displayTransmission(): void {
-
+		let num_px = this.previewData.projection.height * this.previewData.projection.width
 		let title = "Image Transmission";
 		let label = "Transmission";
 
@@ -87,7 +87,7 @@ export class TransmissionDisplay {
 					},
 					title: {
 						display: true,
-						text: "Image Percentage",
+						text: "% of Total pixels",
 					},
 				}
 			},
@@ -105,7 +105,7 @@ export class TransmissionDisplay {
 						// 	return tooltipItem.dataset.label + ": " + tooltipItem.parsed.y.toFixed(2) + "keV"
 						// },
 						title: (tooltipItems) => {
-							return tooltipItems[0].parsed.y.toFixed(0) + "% Transmission: " + tooltipItems[0].parsed.x.toFixed(2) + "% of pixels.";
+							return tooltipItems[0].parsed.y.toFixed(0) + "% Transmission: " + (tooltipItems[0].parsed.x * num_px).toFixed(0) + "px";
 						},
 					}
 				}
