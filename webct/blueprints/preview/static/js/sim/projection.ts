@@ -174,6 +174,11 @@ export function setupPreview(): void {
 	PreviewSettingsButton.onclick = () => {
 		SettingsDiv.toggleAttribute("active");
 
+		PreviewSettingsButton.innerHTML = "<sl-icon name=\"chevron-compact-down\"></sl-icon>";
+		if (SettingsDiv.attributes.getNamedItem("active")) {;
+			PreviewSettingsButton.innerHTML = "<sl-icon name=\"chevron-compact-up\"></sl-icon>";
+		}
+
 		// ! workaround for chart resize issues inside flexboxes with chart.js
 		updateImageDisplay();
 	};

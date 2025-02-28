@@ -162,6 +162,8 @@ img.image-layout {
 	transition: all 0.5s;
 	overflow: hidden;
 	padding: 0;
+	border-color: var(--sl-color-primary-500);
+	background-color: var(--sl-color-neutral-100);
 }
 
 #settingsPane {
@@ -171,7 +173,6 @@ img.image-layout {
 	padding-top: 0.5rem;
 	width: 14rem;
 	border-radius: 0.9rem;
-	background-color: var(--sl-color-primary-50);
 	border-color: var(--sl-color-primary-500);
 	border-style: groove;
 	border-width: 1px;
@@ -180,26 +181,53 @@ img.image-layout {
 	flex-grow: 1;
 }
 
+#settingsPane > div {
+	background-color: var(--sl-color-neutral-100);
+}
+
+#settingsPane:not([active]) > div {
+	background-color: var(--sl-color-primary-50);
+}
+
 #settingsPane > button {
 	margin-top: 0;
 	padding: 0;
 	height: 1rem;
 	width: 100%;
-	background-color: var(--sl-color-primary-500);
 	border: 0;
 	border-bottom-left-radius: 0.9rem;
-	display: block;
+	display: flex;
 	border-bottom-right-radius: 0.9rem;
 	z-index: 100;
+	align-items: center;
+	justify-content: center;
+	padding-top: 0rem;
+	color: white;
+	font-size: large;
+	stroke: white;
+	transition: all 0.25s ease-in;
+	background-color: var(--sl-color-neutral-500);
 }
 
 #settingsPane:not([active]) > button {
 	height: 3rem;
 	opacity: 100;
+	padding-top: 1.7rem;
+	background-color: var(--sl-color-primary-500);
+}
+
+#settingsPane > #previewSettingsButton > sl-icon {
+	// duplicate in order to enforce selector priority
+	height: inherit;
+	opacity: inherit;
 }
 
 #settingsPane > button:hover {
-	background-color: var(--sl-color-primary-600);
+	background-color: var(--sl-color-neutral-400);
 	box-shadow: inset;
 	transition: background-color 0.5s ease-in-out;
+}
+
+#settingsPane:not([active]) > button:hover {
+	background-color: var(--sl-color-primary-600);
 }
