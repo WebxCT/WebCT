@@ -28,6 +28,11 @@ div.tooltip {
 	z-index: 900;
 }
 
+abbr {
+	// text-decoration-style: dashed;
+	text-decoration-line: none;
+}
+
 #imagebar {
 	background-color: var(--sl-color-gray-500);
 	border-right: solid 1px rgb(var(--sl-color-neutral-200));
@@ -40,6 +45,11 @@ div.tooltip {
 	transition: transform 250ms ease-out;
 	width: 63px;
 	z-index: 1;
+}
+
+.derived {
+	text-align: center;
+	color: var(--sl-color-neutral-500);
 }
 
 .content {

@@ -4,7 +4,7 @@ img.image-projection {
 	border-style: solid;
 	transition: all 0.5s ease-out;
 	object-position: center center;
-	object-fit: cover;
+	object-fit: none;
 }
 
 .image-scene {
@@ -17,6 +17,7 @@ img.image-projection {
 video.updating,
 img.updating {
 	border-color: var(--sl-color-yellow-300);
+	background-color: var(--sl-color-yellow-300);
 }
 
 video.error,

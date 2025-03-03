@@ -24,20 +24,22 @@
 
 		<sl-checkbox id="checkboxNoiseEnabled" advanced>Enable Noise</sl-checkbox>
 
-		<sl-input type="number" label="Photon Flux" step="0.1" value="1.8" id="inputBeamFlux">
-			{% include "./units/photon_flux.html.j2" %}
-		</sl-input>
-
-		<sl-input type="number" label="Exposure" step="0.01" value="1" id="inputBeamExposure">
-			{% include "./units/exposure.html.j2" %}
-		</sl-input>
-
 		<sl-input type="number" label="Intensity" step="0.01" value="1" id="inputBeamIntensity">
 			{% include "./units/intensity.html.j2" %}
 		</sl-input>
 
+		<p class="derived"><abbr title="Power = Voltage * Intensity"><span id="textTubePower">140W Source Power</span></abbr></p>
+
+		<sl-input type="number" label="Photon Flux" step="0.1" value="1.8" id="inputBeamFlux">
+			{% include "./units/photon_flux.html.j2" %}
+		</sl-input>
+
 		<sl-input type="number" label="Milliampere-seconds" step="0.001" value="1" id="inputBeamMAS">
 			{% include "./units/mas.html.j2" %}
+		</sl-input>
+
+		<sl-input type="number" label="Exposure" step="0.01" value="1" id="inputBeamExposure">
+			{% include "./units/exposure.html.j2" %}
 		</sl-input>
 
 		<sl-checkbox id="checkboxBeamHarmonics" advanced>Beam Harmonics</sl-checkbox>

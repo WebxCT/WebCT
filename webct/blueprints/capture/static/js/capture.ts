@@ -9,7 +9,7 @@ import { PanePixelSizeElement, PaneWidthElement, validateDetector } from "../../
 import { CaptureResponseRegistry, processResponse, requestCaptureData, sendCaptureData, prepareRequest, requestCapturePreview } from "./api";
 import { CaptureConfigError, CaptureRequestError, showError, showValidationError } from "./errors";
 import { CapturePreview, CaptureProperties } from "./types";
-import { validateSourcePosition, validateProjections, validateRotation, validateDetectorPosition, validateSceneRotation } from "./validation";
+import { validateSourcePosition, validateProjections, validateRotation, validateDetectorPosition, validateSceneRotation, validateSourceYPosition, validateDetectorYPosition } from "./validation";
 import { UpdatePage } from "../../../app/static/js/app";
 import { Valid } from "../../../base/static/js/validation";
 
@@ -41,6 +41,9 @@ let PreviewOverlays: NodeListOf<HTMLDivElement>;
 let CheckboxLaminographyElement: SlCheckbox;
 
 let NyquistRange: SlRange;
+
+let MagnificationTextElement: HTMLParagraphElement;
+let VoxelSizeTextElement: HTMLParagraphElement;
 
 // ====================================================== //
 // ======================= Globals ====================== //
@@ -86,6 +89,9 @@ export function setupCapture(): boolean {
 	const laminography_enabled_element = document.getElementById("checkboxLaminographyEnabled");
 	const range_nyquist = document.getElementById("rangeNyquist");
 
+	const magnification_text_element = document.getElementById("textMagnification");
+	const voxel_size_text_element = document.getElementById("textVoxelSize");
+
 	if (total_rotation_element == null ||
 		total_projections_element == null ||
 		beam_posx_element == null ||
@@ -104,7 +110,9 @@ export function setupCapture(): boolean {
 		detector_posy_element == null ||
 		detector_posz_element == null ||
 		laminography_enabled_element == null ||
-		range_nyquist == null) {
+		range_nyquist == null || 
+		magnification_text_element == null ||
+		voxel_size_text_element == null) {
 
 		console.log(total_rotation_element);
 		console.log(total_projections_element);
@@ -132,9 +140,14 @@ export function setupCapture(): boolean {
 
 		console.log(range_nyquist);
 
+		console.log(magnification_text_element);
+		console.log(voxel_size_text_element);
 		showAlert("Capture setup failure", AlertType.ERROR);
 		return false;
 	}
+
+	VoxelSizeTextElement = voxel_size_text_element as HTMLParagraphElement;
+	MagnificationTextElement = magnification_text_element as HTMLParagraphElement;
 
 	TotalRotationElement = total_rotation_element as SlSelect;
 	TotalProjectionsElement = total_projections_element as SlInput;
@@ -148,20 +161,26 @@ export function setupCapture(): boolean {
 	DetectorPosXElement = detector_posx_element as SlInput;
 	DetectorPosYElement = detector_posy_element as SlInput;
 	DetectorPosZElement = detector_posz_element as SlInput;
-	[BeamPosXElement, BeamPosYElement, BeamPosZElement].forEach(element => {
+	[BeamPosXElement,BeamPosZElement].forEach(element => {
 		element.addEventListener("sl-change", () => {
 			validateSourcePosition(element);
 		})
 	});
+	BeamPosYElement.addEventListener("sl-change", () => {
+		validateSourceYPosition(BeamPosYElement)
+	});
 
-	// The only reason this is seperate from the above BeamPos event listeners
-	// is to inform the user seperately if the source or detector positions are
-	// incorrect.
-	[DetectorPosXElement, DetectorPosYElement, DetectorPosZElement].forEach(element => {
+	[DetectorPosXElement, DetectorPosZElement].forEach(element => {
 		element.addEventListener("sl-change", () => {
 			validateDetectorPosition(element);
 		})
 	});
+	// Y is the main imaging axis, and therefore cannot be 0 or flipped in
+	// either source position or detector position.
+	DetectorPosYElement.addEventListener("sl-change", () => {
+		validateDetectorYPosition(DetectorPosYElement)
+	});
+
 
 	SamplePosElement = sample_position_element as SlRange;
 	SampleSDDElement = sample_position_sdd as HTMLParagraphElement;
@@ -199,6 +218,7 @@ export function setupCapture(): boolean {
 
 		BeamPosYElement.value = (sod * -1).toFixed(2)
 		DetectorPosYElement.value = odd.toFixed(2)
+		validateCapture()
 	});
 
 	BeamPosYElement.addEventListener("sl-change", () => {
@@ -268,11 +288,11 @@ export function validateCapture(): void {
 		validateRotation(SampleRotateZElement),
 		// panel positon
 		validateSourcePosition(DetectorPosXElement),
-		validateSourcePosition(DetectorPosYElement),
+		validateDetectorYPosition(DetectorPosYElement),
 		validateSourcePosition(DetectorPosZElement),
 		// beam position
 		validateSourcePosition(BeamPosXElement),
-		validateSourcePosition(BeamPosYElement),
+		validateSourceYPosition(BeamPosYElement),
 		validateSourcePosition(BeamPosZElement)
 	]
 
@@ -296,9 +316,17 @@ function updateSamplePositionBar():[number, number, number] {
 
 	sod = sdd * (SamplePosElement.value / 100)
 	odd = sdd - sod
+
+	// let mag = sod / sdd
+	let mag = sdd / sod
+	let voxel_size = parseFloat(PanePixelSizeElement.value) / mag
+
 	SampleODDElement.textContent = odd.toFixed(2) + "mm"
 	SampleSODElement.textContent = sod.toFixed(2) + "mm"
 	SampleSDDElement.textContent = sdd.toFixed(2) + "mm"
+
+	MagnificationTextElement.textContent = mag.toFixed(4) + " Magnification"
+	VoxelSizeTextElement.textContent = voxel_size.toFixed(2) + "μm³ Voxel Size"
 	return [sod, odd, sdd]
 }
 

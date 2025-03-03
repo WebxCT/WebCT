@@ -41,6 +41,7 @@ let BeamGeneratorElement: SlSelect;
 
 let SpectraCanvas: HTMLCanvasElement;
 
+let TubePowerElement:HTMLParagraphElement;
 
 let spectraNormNoneButton: SlButton;
 let spectraNorm01Button: SlButton;
@@ -92,6 +93,8 @@ export function setupBeam(): boolean {
 	const spectra_norm01_button = document.getElementById("buttonSpectra01");
 	const spectra_norm_percent_button = document.getElementById("buttonSpectraPercent");
 
+	const tube_power_text = document.getElementById("textTubePower");
+
 	if (tube_settings_element == null ||
 		source_select_element == null ||
 		energy_element == null ||
@@ -112,7 +115,8 @@ export function setupBeam(): boolean {
 		spectra_canvas == null ||
 		spectra_norm_none_button == null ||
 		spectra_norm01_button == null ||
-		spectra_norm_percent_button == null
+		spectra_norm_percent_button == null ||
+		tube_power_text == null
 	) {
 		console.log(tube_settings_element);
 		console.log(source_select_element);
@@ -135,9 +139,12 @@ export function setupBeam(): boolean {
 		console.log(spectra_norm_none_button);
 		console.log(spectra_norm01_button);
 		console.log(spectra_norm_percent_button);
+		console.log(tube_power_text);
 		showAlert("Beam setup failure", AlertType.ERROR);
 		return false;
 	}
+
+	TubePowerElement = tube_power_text as HTMLParagraphElement;
 
 	TubeSettings = tube_settings_element as HTMLDivElement;
 	FilterSettings = filter_settings_element as HTMLDivElement;
@@ -155,6 +162,7 @@ export function setupBeam(): boolean {
 	BeamIntensityElement = intensity_element as SlInput;
 	BeamIntensityElement.addEventListener("sl-change", () => {
 		validateIntensity(BeamIntensityElement)
+		updatePowerText()
 	})
 	BeamFluxElement = flux_element as SlInput;
 	BeamFluxElement.addEventListener("sl-change", () =>{
@@ -178,6 +186,7 @@ export function setupBeam(): boolean {
 	})
 	BeamVoltageElement.addEventListener("sl-change", () => {
 		validateVoltage(BeamVoltageElement, BeamMaterialElement.value as SupportedAnodes)
+		updatePowerText()
 	})
 	BeamHarmonicsElement = harmonics_element as SlCheckbox;
 
@@ -202,6 +211,7 @@ export function setupBeam(): boolean {
 		BeamHarmonicsElement.classList.add("hidden");
 		FilterSettings.classList.add("hidden");
 		BeamGeneratorElement.classList.add("hidden");
+		TubePowerElement.classList.add("hidden")
 
 		switch (BeamSourceSelectElement.value as SourceType) {
 		case "lab":
@@ -211,6 +221,7 @@ export function setupBeam(): boolean {
 			TubeSettings.classList.remove("hidden");
 			FilterSettings.classList.remove("hidden");
 			BeamGeneratorElement.classList.remove("hidden");
+			TubePowerElement.classList.remove("hidden");
 
 			if (AlgElement.value == "FBP") {
 				AlgElement.value = "FDK";
@@ -291,6 +302,7 @@ export function setupBeam(): boolean {
 		Spectra.viewFormat = "Percentage";
 	};
 
+
 	// BeamTypeElement.onclick = () => {
 	// 	const alg = AlgElement.value as ReconMethod;
 
@@ -306,6 +318,13 @@ export function setupBeam(): boolean {
 	// };
 
 	return true;
+}
+
+/**
+ * Update source power [W] text using BeamVoltageElement and BeamIntensityElement inputs.
+ */
+function updatePowerText(): void {
+	TubePowerElement.textContent = (parseFloat(BeamVoltageElement.value) * 1000 * parseFloat(BeamIntensityElement.value) * 0.000001).toFixed(2) + "W Source Power"
 }
 
 /**
@@ -507,6 +526,7 @@ export function setBeamParams(beam:BeamProperties) {
 		BeamGeneratorElement.value = params.generator;
 		BeamMaterialElement.value = params.material+"";
 		BeamSpotSizeElement.value = params.spotSize+"";
+		updatePowerText();
 		break;
 	case "med":
 		params = beam as MedBeam;
