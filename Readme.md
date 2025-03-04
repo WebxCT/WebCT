@@ -32,7 +32,7 @@ WebCT does however, aim to facilitate the above with config and dataset exportin
 > [!IMPORTANT]
 > Hosting WebCT requires a NVIDIA graphics card, as a dependency for tomographic reconstruction.
 
-[![**Click here to download WebCT for windows**](doc/download.png)](https://github.com/WebxCT/WebCT/releases/download/v0.1.4/WebCT-v0.1.4.zip)
+[![**Click here to download WebCT for windows**](doc/download.png)](https://github.com/WebxCT/WebCT/releases/download/v1.0.0/WebCT-v1.0.0.zip)
 
 Download and extract the folder, double-click WebCT.exe to launch!
 
