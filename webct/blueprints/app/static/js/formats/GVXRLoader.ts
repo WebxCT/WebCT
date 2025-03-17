@@ -36,7 +36,7 @@ type BeamShape = ParallelBeam | PointBeam
 interface BeamEnergy {
 	Energy:number,
 	Unit:EnergyUnit,
-	Count:number,
+	PhotonCount:number,
 }
 
 interface GateMacro {
@@ -137,19 +137,19 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 			beam = [{
 				Unit:"keV" as EnergyUnit,
 				Energy: synchBeam.energy,
-				Count: !synchBeam.harmonics ? totalCount : totalCount * 0.96,
+				PhotonCount: !synchBeam.harmonics ? totalCount : totalCount * 0.96,
 			}];
 
 			if (synchBeam.harmonics) {
 				beam.push({
 					Unit: "keV" as EnergyUnit,
 					Energy: synchBeam.energy * 2,
-					Count: totalCount * 0.03,
+					PhotonCount: totalCount * 0.03,
 				});
 				beam.push({
 					Unit: "keV" as EnergyUnit,
 					Energy: synchBeam.energy * 3,
-					Count: totalCount * 0.01,
+					PhotonCount: totalCount * 0.01,
 				});
 			}
 		} else {
@@ -347,7 +347,7 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 				throw "Missing detector properties; require two of [Size, Spacing, NumberOfPixels] to determine detector."
 			} else {
 				let resolution: [number, number] = this.Detector.NumberOfPixels;
-				
+
 				if (this.Detector.Spacing == undefined) {
 					// only compute on one axis, since square pixels are assumed
 					pixelSize = paneHeight / resolution[0]
