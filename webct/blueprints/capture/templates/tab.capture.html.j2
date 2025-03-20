@@ -73,6 +73,14 @@
 		<sl-input advanced type="number" max="1000" step="0.1" min="-1000" id="inputDetectorPosX" label=""><span slot="prefix">X</span>0<span slot="suffix">mm</span></sl-input>
 		<sl-input type="number" max="1000" step="0.1" min="-1000" id="inputDetectorPosY"><span slot="prefix">Y</span>0<span slot="suffix">mm</span></sl-input>
 		<sl-input advanced type="number" max="1000" step="0.1" min="-1000" id="inputDetectorPosZ"><span slot="prefix">Z</span>-144.92<span slot="suffix">mm</span></sl-input>
+
+		<p advanced>Detector Rotation</p>
+		<div advanced style="grid-template-columns: repeat(3, minmax(0, 1fr)); display: grid;">
+			<sl-input label="Pitch" type="number" min="0" max="360" step="0.1" id="inputDetectorRotateX"></sl-input>
+			<sl-input label="Yaw" type="number" min="0" max="360" step="0.1"   id="inputDetectorRotateY"></sl-input>
+			<sl-input label="Roll" type="number" min="0" max="360" step="0.1"  id="inputDetectorRotateZ"></sl-input>
+		</div>
+		<small id="textDetectorRotationWarning"></small>
 	</div>
 	<button></button>
 </div>

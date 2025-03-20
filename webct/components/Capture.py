@@ -9,6 +9,7 @@ class CaptureParameters:
 	projections: int # Number of projections around an object.
 	capture_angle: int # Total rotation around the sample in degrees.
 	detector_position: Tuple[float, float, float]
+	detector_rotation: Tuple[float, float, float]
 	beam_position: Tuple[float, float, float]
 	sample_rotation: Tuple[float, float, float]
 	laminography_mode: bool
@@ -35,6 +36,7 @@ class CaptureParameters:
 			or "beam_position" not in json
 			or "detector_position" not in json
 			or "sample_rotation" not in json
+			or "detector_rotation" not in json
 			or "laminography_mode" not in json
 		):
 			raise ValueError("Missing keys.")
@@ -44,6 +46,7 @@ class CaptureParameters:
 		tuple(json["beam_position"])
 		tuple(json["detector_position"])
 		tuple(json["sample_rotation"])
+		tuple(json["detector_rotation"])
 		bool(json["laminography_mode"])
 
 		# Number of projections
@@ -76,6 +79,11 @@ class CaptureParameters:
 			raise ValueError(f"Sample rotation must contain three axis. ({len(sample_rot)} was given).")
 		sample_rot = [float(x) for x in sample_rot]
 
+		detector_rot = tuple(json["detector_rotation"])
+		if len(detector_rot) != 3:
+			raise ValueError(f"Detector rotation must contain three axis. ({len(detector_rot)} was given).")
+		detector_rot = [float(x) for x in detector_rot]
+
 		# Laminography mode (rotate around sample's axis)
 		laminography = bool(json["laminography_mode"])
 
@@ -86,4 +94,5 @@ class CaptureParameters:
 			beam_position=beam_pos,
 			sample_rotation=sample_rot,
 			laminography_mode=laminography,
+			detector_rotation=detector_rot,
 		)

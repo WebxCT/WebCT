@@ -4,7 +4,7 @@
  */
 
 import { SlInput } from "@shoelace-style/shoelace";
-import { Valid, validateInput, Validator } from "../../../base/static/js/validation";
+import { isValid, markValid, Valid, validateInput, Validator } from "../../../base/static/js/validation";
 
 /**
  * Validator for projection count.
@@ -34,6 +34,69 @@ const RotationValidator:Validator = {
  */
 export function validateRotation(RotationElement: SlInput): Valid {
 	return validateInput(RotationElement, "Sample Rotation", RotationValidator);
+}
+
+/**
+ * Validate Sample Rotation text input.
+ * @param RotationElement - Rotation input to validate.
+ * @returns True if input is valid, False otherwise. Side Effect: passed element will have help-text displaying the validation failure reason.
+ */
+export function validateDetectorRotation(RotationElementX: SlInput, RotationElementY: SlInput, RotationElementZ: SlInput, helpTextElement:HTMLParagraphElement): Valid {
+	let validX = isValid(RotationElementX as unknown as HTMLInputElement, RotationValidator)
+	let validY = isValid(RotationElementY as unknown as HTMLInputElement, RotationValidator)
+	let validZ = isValid(RotationElementZ as unknown as HTMLInputElement, RotationValidator)
+
+	if (!validX.valid) {
+		validX = {valid: false, InvalidReason: "Detector Rotation X " + validX.InvalidReason + ". <br/>" + RotationValidator.message}
+	} else if (!validY.valid) {
+		validY = {valid: false, InvalidReason: "Detector Rotation Y " + validY.InvalidReason + ". <br/>" + RotationValidator.message}
+	} else if (!validZ.valid) {
+		validZ = {valid: false, InvalidReason: "Detector Rotation Z " + validZ.InvalidReason + ". <br/>" + RotationValidator.message}
+	}
+
+	// * Special-case: Detector rotation is guarenteed to cause reconstruction
+	// * artefacts. Therefore, enable a warning state if the value is not 0.
+	let allZero = true;
+	[[RotationElementX, validX], [RotationElementY, validY], [RotationElementZ, validZ]].forEach( (set) => {
+		let element = set[0] as SlInput
+		let valid = set[1] as Valid
+
+		element.classList.remove("warning");
+
+		if (valid.valid) {
+			if (parseFloat(element.value) !== 0) {
+				// Element is valid, but isn't the recommended value of zero (0)
+				// change help-text to indicate as such, and mark input element as warning
+				element.classList.add("warning")
+				helpTextElement.classList.add("warning")
+				helpTextElement.textContent = "Detector rotation will cause reconstruction artefacts."
+				allZero = false
+			} else {
+				// element is valid, and is also zero
+				element.helpText = ""
+				markValid(element, valid.valid)
+			}
+		} else {
+			// element is invalid
+			markValid(element, valid.valid)
+			element.helpText = RotationValidator.message == undefined ? "Must be a number." : RotationValidator.message
+		}
+	})
+
+	if (allZero) {
+		// If all boxes are zero, remove the rotation warning
+		helpTextElement.textContent = ""
+	}
+
+	if (!validX.valid) {
+		return validX
+	} else if (!validY.valid) {
+		return validY
+	} else if (!validZ.valid) {
+		return validZ
+	} else {
+		return {valid:true}
+	}
 }
 
 /**

@@ -21,6 +21,10 @@ export interface CaptureProperties {
 	 */
 	detectorPosition: [number, number, number];
 	/**
+	 * Rotation of detector in degrees.
+	 */
+	detectorRotation: [number, number, number];
+	/**
 	 * Beam Position relative to sample origin
 	 */
 	beamPosition: [number, number, number];

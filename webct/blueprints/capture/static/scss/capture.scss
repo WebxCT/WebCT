@@ -124,3 +124,10 @@ sl-range::part(tooltip) {
 	color: var(--sl-color-neutral-500);
 	font-size: var(--sl-font-size-x-small);
 }
+
+#textDetectorRotationWarning {
+	line-height: 1.25;
+	padding-top: 2px;
+	font-size: var(--sl-input-help-text-font-size-medium);
+	color: var(--sl-color-warning-600);
+}

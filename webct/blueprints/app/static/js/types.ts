@@ -137,6 +137,10 @@ export class WebCTConfig {
 		}
 
 		if (keys.capture && config.capture !== undefined) {
+			// v1.0.1 - Detector Rotation
+			if (!Object.prototype.hasOwnProperty.call(config.detector, "detectorRotation")) {
+				config.capture.detectorRotation = [0, 0, 0]
+			}
 			setCaptureParams(config.capture);
 		}
 
@@ -153,7 +157,7 @@ export class WebCTConfig {
 
 	static to_python(keys:ConfigKeys, options:ExportOptions):string {
 		// Create a python file to locally simulate and reconstruct WebCT
-		
+
 		// In all cases, we still need gvxr's scan parameters
 		options.gvxrIncludeScan = true;
 		let config = this.to_json(WEBCT_FULL_CONFIG, options) as configFull
@@ -225,7 +229,7 @@ def reconstruct(out_folder:Path):
 
     # Reconstruct
     recon_data = method.run()
-    
+
     # Save to TIFF
     TIFFWriter(recon_data, out_folder).write()
 ` : ""}
