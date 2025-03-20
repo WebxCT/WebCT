@@ -73,7 +73,7 @@ I. T. Mitchell, J. M. Létang, L. M. Evans, F. P. Vidal, WebCT – OpenSource we
 Or as Bibtex:
 ```bibtex
 @article{MITCHELL2025100057,
-title = {WebCT – OpenSource web-based GUI for real-time X-ray simulation},
+title = {{WebCT} – OpenSource web-based {GUI} for real-time {X-ray} simulation},
 journal = {Tomography of Materials and Structures},
 volume = {8},
 year = {2025},
