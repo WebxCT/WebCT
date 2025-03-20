@@ -60,3 +60,25 @@ https://github.com/user-attachments/assets/915f300f-aa59-42ff-bb4b-5e89871ff650
 6. Visit the local url in a browser! (This should open automatically)
 
 Any issues with installing? [Please feel free to open an issue!](https://github.com/WebxCT/WebCT/issues)
+
+## Citing WebCT
+
+If you use WebCT in an academic context, please cite our paper! [We have an open-access academic paper in Tomography of Materials and Structures.](https://doi.org/10.1016/j.tmater.2025.100057)
+
+Cite as text:
+```
+I. T. Mitchell, J. M. Létang, L. M. Evans, F. P. Vidal, WebCT – OpenSource web-based GUI for real-time X-ray simulation, Tomography of Materials and Structures 8 (2025). doi:10.1016/j.tmater.2025.100057
+```
+
+Or as Bibtex:
+```bibtex
+@article{MITCHELL2025100057,
+title = {WebCT – OpenSource web-based GUI for real-time X-ray simulation},
+journal = {Tomography of Materials and Structures},
+volume = {8},
+year = {2025},
+doi = {10.1016/j.tmater.2025.100057},
+author = {Iwan T. Mitchell and Jean Michel Létang and Llion Marc Evans and Franck P. Vidal},
+keywords = {X-ray Simulation, Computational modelling, X-ray computed tomography (XCT), Non-destructive testing (NDT), Synchrotron tomography, User Interface (UI), Experimental Planning},
+}
+```
