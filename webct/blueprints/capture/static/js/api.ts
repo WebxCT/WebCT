@@ -37,6 +37,7 @@ export interface CaptureResponseRegistry {
 		projections: number;
 		capture_angle: number;
 		detector_position: [number, number, number];
+		detector_rotation: [number, number, number];
 		beam_position: [number, number, number];
 		sample_rotation: [number, number, number];
 		laminography_mode: boolean;
@@ -67,6 +68,7 @@ export interface CaptureRequestRegistry {
 		projections: number;
 		capture_angle: number,
 		detector_position: [number, number, number];
+		detector_rotation: [number, number, number];
 		beam_position: [number, number, number];
 		sample_rotation: [number, number, number];
 		laminography_mode: boolean;
@@ -134,6 +136,7 @@ export function processResponse(data: CaptureResponseRegistry[keyof CaptureRespo
 			totalAngle: data.capture_angle as 180 | 360,
 			beamPosition: data.beam_position,
 			detectorPosition: data.detector_position,
+			detectorRotation: data.detector_rotation,
 			sampleRotation: data.sample_rotation,
 			laminographyMode: data.laminography_mode,
 		};
@@ -150,6 +153,7 @@ export function prepareRequest(data: CaptureProperties): CaptureRequestRegistry[
 		projections:data.numProjections,
 		beam_position:data.beamPosition,
 		detector_position:data.detectorPosition,
+		detector_rotation: data.detectorRotation,
 		sample_rotation:data.sampleRotation,
 		laminography_mode: data.laminographyMode,
 	};
