@@ -88,7 +88,7 @@ class SimSession:
 				Sample("Dragon Model", "welsh-dragon-small.stl", "mm", "element/aluminium"),
 			),
 		)
-		self.capture = CaptureParameters(360, 360, (0, 100, 0), (0, -400, 0), (0, 0, 90), False)
+		self.capture = CaptureParameters(360, 360, (0, 100, 0), (0, 0, 0),(0, -400, 0), (0, 0, 90), False)
 		self.recon = FDKParam(filter="ram-lak")
 
 	@property

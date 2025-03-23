@@ -9,7 +9,7 @@ import { PanePixelSizeElement, PaneWidthElement, validateDetector } from "../../
 import { CaptureResponseRegistry, processResponse, requestCaptureData, sendCaptureData, prepareRequest, requestCapturePreview } from "./api";
 import { CaptureConfigError, CaptureRequestError, showError, showValidationError } from "./errors";
 import { CapturePreview, CaptureProperties } from "./types";
-import { validateSourcePosition, validateProjections, validateRotation, validateDetectorPosition, validateSceneRotation, validateSourceYPosition, validateDetectorYPosition } from "./validation";
+import { validateSourcePosition, validateProjections, validateRotation, validateDetectorPosition, validateSceneRotation, validateSourceYPosition, validateDetectorYPosition, validateDetectorRotation } from "./validation";
 import { UpdatePage } from "../../../app/static/js/app";
 import { Valid } from "../../../base/static/js/validation";
 
@@ -24,6 +24,10 @@ let BeamPosZElement: SlInput;
 let DetectorPosXElement: SlInput;
 let DetectorPosYElement: SlInput;
 let DetectorPosZElement: SlInput;
+let DetectorRotateXElement: SlInput;
+let DetectorRotateYElement: SlInput;
+let DetectorRotateZElement: SlInput;
+let DetectorRotateWarning: HTMLParagraphElement;
 
 let SamplePosElement: SlRange;
 let SampleSDDElement: HTMLParagraphElement;
@@ -74,6 +78,11 @@ export function setupCapture(): boolean {
 	const detector_posy_element = document.getElementById("inputDetectorPosY");
 	const detector_posz_element = document.getElementById("inputDetectorPosZ");
 
+	const detector_rotatex_element = document.getElementById("inputDetectorRotateX");
+	const detector_rotatey_element = document.getElementById("inputDetectorRotateY");
+	const detector_rotatez_element = document.getElementById("inputDetectorRotateZ");
+	const detector_rotate_warning = document.getElementById("textDetectorRotationWarning")
+
 	const sample_position_element = document.getElementById("rangeSamplePosition");
 	const sample_position_sdd = document.getElementById("textSDD")
 	const sample_position_sod = document.getElementById("textSOD")
@@ -109,8 +118,12 @@ export function setupCapture(): boolean {
 		detector_posx_element == null ||
 		detector_posy_element == null ||
 		detector_posz_element == null ||
+		detector_rotatex_element == null ||
+		detector_rotatey_element == null ||
+		detector_rotatez_element == null ||
+		detector_rotate_warning == null ||
 		laminography_enabled_element == null ||
-		range_nyquist == null || 
+		range_nyquist == null ||
 		magnification_text_element == null ||
 		voxel_size_text_element == null) {
 
@@ -124,6 +137,11 @@ export function setupCapture(): boolean {
 		console.log(detector_posx_element);
 		console.log(detector_posy_element);
 		console.log(detector_posz_element);
+
+		console.log(detector_rotatex_element);
+		console.log(detector_rotatey_element);
+		console.log(detector_rotatez_element);
+		console.log(detector_rotate_warning);
 
 		console.log(sample_position_element);
 		console.log(sample_position_sdd);
@@ -192,6 +210,16 @@ export function setupCapture(): boolean {
 	[SampleRotateXElement, SampleRotateYElement, SampleRotateZElement].forEach(element => {
 		element.addEventListener("sl-change", () => {
 			validateRotation(element);
+		})
+	});
+
+	DetectorRotateWarning = detector_rotate_warning as HTMLParagraphElement;
+	DetectorRotateXElement = detector_rotatex_element as SlInput;
+	DetectorRotateYElement = detector_rotatey_element as SlInput;
+	DetectorRotateZElement = detector_rotatez_element as SlInput;
+	[DetectorRotateXElement, DetectorRotateYElement, DetectorRotateZElement].forEach(element => {
+		element.addEventListener("sl-change", () => {
+			validateDetectorRotation(DetectorRotateXElement, DetectorRotateYElement, DetectorRotateZElement, DetectorRotateWarning)
 		})
 	});
 
@@ -290,6 +318,8 @@ export function validateCapture(): void {
 		validateSourcePosition(DetectorPosXElement),
 		validateDetectorYPosition(DetectorPosYElement),
 		validateSourcePosition(DetectorPosZElement),
+		// panel rotation
+		validateDetectorRotation(DetectorRotateXElement, DetectorRotateYElement, DetectorRotateZElement, DetectorRotateWarning),
 		// beam position
 		validateSourcePosition(BeamPosXElement),
 		validateSourceYPosition(BeamPosYElement),
@@ -526,6 +556,7 @@ export function getCaptureParams():CaptureProperties {
 		totalAngle: parseInt(TotalRotationElement.value as string) as 180 | 360,
 		beamPosition: [parseFloat(BeamPosXElement.value), parseFloat(BeamPosYElement.value), parseFloat(BeamPosZElement.value)],
 		detectorPosition: [parseFloat(DetectorPosXElement.value), parseFloat(DetectorPosYElement.value), parseFloat(DetectorPosZElement.value)],
+		detectorRotation: [parseFloat(DetectorRotateXElement.value), parseFloat(DetectorRotateYElement.value), parseFloat(DetectorRotateZElement.value)],
 		sampleRotation: [parseFloat(SampleRotateXElement.value), parseFloat(SampleRotateYElement.value), parseFloat(SampleRotateZElement.value)],
 		laminographyMode: CheckboxLaminographyElement.checked,
 	};
@@ -544,6 +575,10 @@ export function setCaptureParams(properties:CaptureProperties) {
 	DetectorPosXElement.value = properties.detectorPosition[0] + "";
 	DetectorPosYElement.value = properties.detectorPosition[1] + "";
 	DetectorPosZElement.value = properties.detectorPosition[2] + "";
+
+	DetectorRotateXElement.value = properties.detectorRotation[0] + "";
+	DetectorRotateYElement.value = properties.detectorRotation[1] + "";
+	DetectorRotateZElement.value = properties.detectorRotation[2] + "";
 
 	SampleRotateXElement.value = properties.sampleRotation[0] + "";
 	SampleRotateYElement.value = properties.sampleRotation[1] + "";

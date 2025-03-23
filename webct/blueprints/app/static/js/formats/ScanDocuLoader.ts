@@ -83,7 +83,8 @@ export const ScanDocuConfig: FormatLoaderStatic = class ScanDocuConfig implement
 				numProjections: this.recon.ProjectionCountPer360deg ?? 360,
 				sampleRotation: [0, 0, 0],
 				totalAngle: 360,
-				laminographyMode: false
+				laminographyMode: false,
+				detectorRotation: [0, 0, 0],
 			}
 		};
 	};

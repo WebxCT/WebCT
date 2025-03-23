@@ -230,6 +230,17 @@ class GVXRSimulator(Simulator):
 		# parallel or point mode. We re-set the beam value to fix this.
 		self.beam = self._beam
 
+		# Tilt detector based on rotation
+		from scipy.spatial.transform import Rotation as R
+
+		default_up_rotation = R.from_euler('xyz', [0, 0, -180], degrees=True)
+		rotation = R.from_euler('xyz', [value.detector_rotation], degrees=True)
+		up_vector = (default_up_rotation * rotation).as_rotvec().squeeze() / np.pi
+
+		print(F"Up Vector: {up_vector}")
+		gvxr.setDetectorUpVector(*up_vector)
+		gvxr.renderLoop()
+
 		# Undo rotations in order to reset scene rotation matrix
 		if self.laminography:
 			gvxr.rotateScene(-1 * self.total_rotation[2], 0, 0, 1)
