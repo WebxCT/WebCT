@@ -55,6 +55,11 @@ export interface Filter {
 
 
 export interface BeamProperties {
+	/**
+	 * Name of the source's digital twin
+	 */
+	twin: string
+
 	method: SourceType;
 	/**
 	 * Filters applied to the resultant beam after generation
@@ -75,27 +80,20 @@ export interface TubeBeam {
 }
 
 export class LabBeam implements BeamProperties, TubeBeam {
+	twin: string;
 	method = "lab" as const
-
-	voltage: number
-
+	voltage: number;
 	enableNoise: boolean;
-
-	exposure: number
-
-	intensity: number
-
-	filters: Array<Filter>
-
+	exposure: number;
+	intensity: number;
+	filters: Array<Filter>;
 	spotSize: number;
-
 	material:number;
-
 	anodeAngle: number;
-
 	generator: BeamGenerator;
 
-	constructor(voltage: number, enableNoise:boolean, exposure:number, intensity:number, spotSize:number, material:number,generator:BeamGenerator, anodeAngle:number, filters:Array<Filter>) {
+	constructor(twin:string, voltage: number, enableNoise:boolean, exposure:number, intensity:number, spotSize:number, material:number,generator:BeamGenerator, anodeAngle:number, filters:Array<Filter>) {
+		this.twin = twin;
 		this.voltage = voltage;
 		this.enableNoise = enableNoise;
 		this.exposure = exposure;
@@ -109,6 +107,7 @@ export class LabBeam implements BeamProperties, TubeBeam {
 }
 
 export class SynchBeam implements BeamProperties {
+	twin: string
 	method = "synch" as const
 	enableNoise: boolean
 	energy: number
@@ -117,7 +116,8 @@ export class SynchBeam implements BeamProperties {
 	harmonics:boolean
 	filters: Array<Filter>
 
-	constructor(energy:number, enableNoise:boolean, exposure:number, flux:number, harmonics:boolean, filters:Array<Filter>) {
+	constructor(twin:string, energy:number, enableNoise:boolean, exposure:number, flux:number, harmonics:boolean, filters:Array<Filter>) {
+		this.twin = twin;
 		this.energy = energy;
 		this.enableNoise = enableNoise;
 		this.exposure = exposure;
@@ -128,6 +128,7 @@ export class SynchBeam implements BeamProperties {
 }
 
 export class MedBeam implements BeamProperties, TubeBeam {
+	twin:string
 	method = "med" as const
 	enableNoise:boolean
 	voltage: number
@@ -138,7 +139,8 @@ export class MedBeam implements BeamProperties, TubeBeam {
 	anodeAngle: number;
 	generator: BeamGenerator;
 
-	constructor(voltage: number, enableNoise:boolean, mas:number, spotSize:number, material:number,generator:BeamGenerator, anodeAngle:number, filters:Array<Filter>) {
+	constructor(twin:string, voltage: number, enableNoise:boolean, mas:number, spotSize:number, material:number,generator:BeamGenerator, anodeAngle:number, filters:Array<Filter>) {
+		this.twin = twin;
 		this.voltage = voltage;
 		this.enableNoise = enableNoise;
 		this.mas = mas;

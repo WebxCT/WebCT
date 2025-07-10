@@ -7,11 +7,35 @@
 
 <div class="group">
 	<div>
+		<sl-select label="Digital Twin" value="dthe" id="selectTwin">
+			<sl-menu-item value="">None</sl-menu-item>
+
+			<sl-divider></sl-divider>
+
+			<sl-menu-label>Lab CT Sources</sl-menu-label>
+
+			<sl-menu-item value="dthe">DTHE
+				<span> Dual Tomograph for High Energy (Source 2) </span>
+				{% include "./tags/insa-lyon.html.j2" %}
+				{% include "./tags/full.html.j2" %}
+			</sl-menu-item>
+
+			<sl-divider></sl-divider>
+
+
+			<sl-menu-label>Synchrotron Sources</sl-menu-label>
+
+			<sl-menu-item value="diad">DIAD
+				<span> K11 DIAD: Dual Imaging and Diffraction </span>
+				{% include "./tags/diamond.html.j2" %}
+				{% include "./tags/full.html.j2" %}
+			</sl-menu-item>
+		</sl-select>
+
 		<sl-select label="Source Type" value="lab" id="selectBeamSource">
 			<sl-menu-item value="synch">Synchrotron</sl-menu-item>
 			<sl-menu-item value="lab">Lab CT</sl-menu-item>
 			<sl-menu-item value="med">Medical Device</sl-menu-item>
-			<!-- <sl-menu-item disabled>MC</sl-menu-item> -->
 		</sl-select>
 
 		<sl-input type="number" label="Spectra Energy" step="1" value="80" id="inputBeamEnergy">

@@ -62,7 +62,7 @@ class SimSession:
 
 	def init_default_parameters(self) -> None:
 		# Instantiate default values
-		self.beam = LabBeam(method="lab", projection=PROJECTION.POINT,
+		self.beam = LabBeam(twin="", method="lab", projection=PROJECTION.POINT,
 			filters=(Filter(Element.Cu,2),),
 			voltage=70,
 			enableNoise=True,

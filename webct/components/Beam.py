@@ -64,25 +64,26 @@ def parseFilters(pfilters: List[dict]) -> Tuple[Filter, ...]:
 
 @dataclass(frozen=True)
 class BeamParameters:
+	twin: str
 	method: str
 	filters: Tuple[Filter, ...]
 	projection: PROJECTION
 	spotSize: float
 	enableNoise: bool
 
-
 	def to_json(self) -> dict:
 		return self.__dict__
 
 	@staticmethod
 	def from_json(json:dict):
+		twin = str(json["twin"])
 		method = str(json["method"])
 		filters = parseFilters(json["filters"])
 		projection = PROJECTION(json["projection"])
 		spotSize = float(json["spotSize"])
 		enableNoise = bool(json["enableNoise"])
 
-		return BeamParameters(method, filters, projection, spotSize, enableNoise)
+		return BeamParameters(twin, method, filters, projection, spotSize, enableNoise)
 
 	def getSpectra(self) -> Tuple[Spectra, Spectra]:
 		raise NotImplementedError("Cannot create a beam spectra from BeamParamaters.")
@@ -110,6 +111,7 @@ class LabBeam(BeamParameters, TubeBeam):
 
 	@staticmethod
 	def from_json(json:dict):
+		twin = str(json["twin"])
 		voltage = float(json["voltage"])
 		enableNoise = bool(json["enableNoise"])
 		exposure = float(json["exposure"])
@@ -122,6 +124,7 @@ class LabBeam(BeamParameters, TubeBeam):
 		filters = parseFilters(json["filters"])
 
 		return LabBeam(
+			twin = twin,
 			method="lab",
 			enableNoise=enableNoise,
 			projection=PROJECTION.POINT,
@@ -148,6 +151,7 @@ class MedBeam(BeamParameters, TubeBeam):
 
 	@staticmethod
 	def from_json(json:dict):
+		twin = str(json["twin"])
 		voltage = float(json["voltage"])
 		mas = float(json["mas"])
 		enableNoise = bool(json["enableNoise"])
@@ -161,7 +165,9 @@ class MedBeam(BeamParameters, TubeBeam):
 		intensity=1
 		exposure=1
 
-		return MedBeam(method="med",
+		return MedBeam(
+			twin = twin,
+			method="med",
 			projection=PROJECTION.POINT,
 			enableNoise = enableNoise,
 			filters=filters,
@@ -189,6 +195,7 @@ class SynchBeam(BeamParameters):
 
 	@staticmethod
 	def from_json(json:dict):
+		twin = str(json["twin"])
 		energy = float(json["energy"])
 		enableNoise = bool(json["enableNoise"])
 		exposure = float(json["exposure"])
@@ -198,18 +205,30 @@ class SynchBeam(BeamParameters):
 		filters = parseFilters(json["filters"])
 
 		return SynchBeam(
-		method="synch",
-		projection=PROJECTION.PARALLEL,
-		enableNoise=enableNoise,
-		filters=filters,
-		energy=energy,
-		exposure=exposure,
-		flux=flux,
-		harmonics=harmonics,
-		spotSize=0)
+			twin = twin,
+			method="synch",
+			projection=PROJECTION.PARALLEL,
+			enableNoise=enableNoise,
+			filters=filters,
+			energy=energy,
+			exposure=exposure,
+			flux=flux,
+			harmonics=harmonics,
+			spotSize=0)
 
 	def getSpectra(self) -> Tuple[Spectra, Spectra]:
 		return generateSpectra(self)
+
+
+@dataclass(frozen=True)
+class TwinBeam(BeamParameters):
+	flux:float
+
+@dataclass(frozen=True)
+class TwinSynchBeam(TwinBeam, SynchBeam): ...
+
+@dataclass(frozen=True)
+class TwinTubeBeam(TwinBeam, TubeBeam): ...
 
 def BeamFromJson(json:dict) -> BeamParameters:
 	if "method" not in json:

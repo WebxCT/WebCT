@@ -245,6 +245,7 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 			// setup synch properties
 			const configBeam = this.Source.Beam as BeamEnergy[];
 			beam = new SynchBeam(
+				"",
 				configBeam[0].Energy,
 				true,
 				1,1,false,[]
@@ -260,6 +261,7 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 				}];
 			}
 			beam = new LabBeam(
+				"",
 				configBeam.kvp,
 				true,
 				1,

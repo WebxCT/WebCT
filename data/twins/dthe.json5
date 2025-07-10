@@ -1,0 +1,178 @@
+{
+	// Name of the system, can include spaces
+	"name": "DTHE",
+	// Description of the system, mention the source, detector, affiliations,
+	// etc
+	"description": "",
+	// Date of data collection used to create the digital twin.
+	"date": "",
+
+
+	// X-ray emission source
+	"beam": {
+		"type": "tube",
+
+		// X-ray tube limits, [minimum, maximum] in kV.
+		//
+		// Required.
+		"keV": [60, 260],
+
+		// X-ray tube amperage limits, [minimum, maximum] in uA.
+		//
+		// Required.
+		"uA": [50, 500],
+
+		// Electron target material.
+		//
+		// Required.
+		"target": "W",
+
+		// Electron target angle
+		// Required.
+		"target_angle": 12.0,
+
+		// Internal filtration of the source, cannot be changed by operators.
+		//
+		// Optional, leave as [[]] if empty.
+		"inherent_filteration": [["Al", 0.5]],
+
+		// Coefficients for [W] to determine size of focal spot in [um].
+		//
+		// Optional, leave as [] if empty.
+		"focal_spot_curve": [],
+
+		// Lookup table of [voltage, amperage, t_amp] used for calculating the
+		// amperage of the target at any given amperage.
+		//
+		// Optional, leave as [[]] if empty.
+		"target_amperage_correction": [
+			[60,  50,  45.70],
+			[60,  200, 176.43],
+			[60,  350, 263.63],
+			[60,  500, 326.53],
+			[100, 50,  46.30],
+			[100, 200, 185.63],
+			[100, 350, 298.0],
+			[100, 500, 358.97],
+			[140, 50,  46.5],
+			[140, 200, 180.47],
+			[140, 350, 268.10],
+			[140, 500, 328.90],
+			[180, 50,  46.80],
+			[180, 200, 182.87],
+			[180, 350, 262.97],
+			[180, 500, 315.90],
+			[220, 50,  46.80],
+			[220, 200, 180.10],
+			[220, 350, 259.70],
+			[220, 500, 315.53],
+			[260, 50,  46.90],
+			[260, 200, 187.13],
+			[260, 350, 255.57],
+			[260, 500, 302.33]
+		],
+
+		// Source flux determination for representative noise Note: This takes
+		// into account end-to-end effects, not just raw flux from tube.
+		//
+		// Optional, leave curve as [] if empty.
+		"flux": {
+			// Coefficients for [kV] to calculate photonic flux per at 1 [mAs].
+			"curve": [1.093188874588107973e-04, -7.160507751053481196e-02, 1.599238854101443152e+01, -4.046496475979173510e+02],
+			// Distance at which curve is calibrated.
+			"distance": 860,
+			// Correction factors for flux estimation from experimental validation.
+			//
+			// Optional, leave as {} if empty.
+			"correction": {}
+		}
+	},
+
+	// X-ray detection
+	"detector": {
+
+		// List of exposures [s] the detector supports.
+		//
+		// Required
+		"exposures": [0.067, 0.083, 0.111, 0.167, 0.333, 0.500],
+
+		// List of panel resolutions [px] in [height, width].
+		//
+		// Required
+		"resolutions": [
+			[2880, 2880],
+			[1920, 1920],
+			[1440, 1440],
+			[1440, 2880],
+			[480, 2880],
+			[1920, 2880],
+			[960, 2880]
+		],
+
+		// Size of pixels in [um].
+		//
+		// Required
+		"pixelsize": 150,
+
+		// Line spread function measured from the detector's response
+		//
+		// Optional, leave [] if empty.
+		"lsf": [0.0008053905668450113, 0.0008914892324136197, 0.0009921696520217237, 0.0011109204324144253, 0.0012523393908846134, 0.0014225852841862287, 0.0016300596545880822, 0.0018864631667440937, 0.002208481269682588, 0.002620566967993606, 0.0031597190090202356, 0.0038840735518039407, 0.004889223884259982, 0.006341345067954339, 0.008550156911634835, 0.012147087628342552, 0.01858208565239897, 0.03176738195964982, 0.06459866061164164, 0.1560970646667503, 0.2548827182549442, 0.20661169386362763, 0.0904711212989907, 0.04089899669098858, 0.022552275706787462, 0.014195314653894564, 0.009738328803324755, 0.00709022945333095, 0.0053910817272959394, 0.004236585603019802, 0.0034167081302229983, 0.0028136455465970303, 0.0023571978508804313, 0.0020034297617654642, 0.001723707172206742, 0.0014987222580483482, 0.0013150728631445765, 0.001163220633991841, 0.0010362276148865302, 0.0009289497528022897, 0.0008375077980185749],
+
+		// Detector Scintillation.
+		//
+		// Optional, Leave material as "" if empty.
+		"scintillator": {
+			// Material of the scintillator, "CsI", "Gadox", etc
+			"material": "Gd2O2S DRZ-Plus",
+			// Thickness of the scintillator in [um].
+			"thickness": 210
+		},
+
+		// Detector gain to convert 0.0-1.0 to 0-65536. In cases where only one
+		// gain is supported, gains should be [1], and k the corrective factor.
+		//
+		// Optional, Leave k as 0 if empty, images will be kept in
+		// floating-point format.
+		"gain": {
+			// Detector-specific gain multiplier characteristic for detector
+			// electronics.
+			"k": 1.1332057597925645e-05,
+			// Gain values in e-/ADU
+			"gains": [29, 57, 114, 229, 457, 686, 914]
+		}
+	},
+
+	// Source and detector positioning
+	"stage": {
+		// [minimum, maximum] Distance source can move towards or away from the sample in [mm]
+		//
+		// Optional, set to [] if unconstrained, or [0, 0] if fixed.
+		"source": {
+			// Left-right movement
+			"x": [0, 0],
+			// up-down movement
+			"y": [0, 0],
+			// forward-backwards movement
+			"z": [0, 1000]
+		},
+
+		// If true, The detector will be fixed at the source's maximum distance
+		// away from the detector, with the sample moving between [minimum,
+		// maximum] E.g, setting source to [10, 120] will ensure SDD is always
+		// 120mm, and allow SOD between 10mm to 120mm.
+		"fixedSourceDetectorDistance": false,
+
+		// [minimum, maximum] Distance detector can move towards or away from the sample in [mm]
+		//
+		// Optional, set to [] if unconstrained, or [0, 0] if fixed.
+		"detector": {
+			// Left-right movement
+			"x": [0, 0],
+			// up-down movement
+			"y": [0, 0],
+			// forward-backwards movement
+			"z": [0, 1000]
+		}
+	}
+}

@@ -20,6 +20,7 @@ import { Valid } from "../../../base/static/js/validation";
 let TubeSettings: HTMLDivElement;
 
 export let BeamSourceSelectElement: SlSelect;
+export let TwinSelectElement: SlSelect;
 let BeamEnergyElement: SlInput;
 let BeamNoiseElement:SlCheckbox;
 let BeamExposureElement:SlInput;
@@ -63,6 +64,7 @@ let Spectra: SpectraDisplay;
  */
 export function setupBeam(): boolean {
 	console.log("setupBeam");
+	const twin_select_element = document.getElementById("selectTwin");
 
 	const tube_settings_element = document.getElementById("settingsTube");
 
@@ -199,6 +201,9 @@ export function setupBeam(): boolean {
 		BeamMASElement.disabled = !BeamNoiseElement.checked;
 	});
 
+	TwinSelectElement = twin_select_element as SlSelect;
+	TwinSelectElement.addEventListener("sl-change", () => {});
+
 	BeamSourceSelectElement = source_select_element as SlSelect;
 	BeamSourceSelectElement.addEventListener("sl-change", () => {
 		TubeSettings.classList.add("hidden");
@@ -254,6 +259,8 @@ export function setupBeam(): boolean {
 		}
 	});
 	BeamSourceSelectElement.handleValueChange();
+
+	TwinSelectElement.handleValueChange();
 
 
 	FilterMaterialElement = filter_material_element as SlSelect;
@@ -459,6 +466,7 @@ export function getBeamParms():BeamProperties {
 	switch (BeamType) {
 	case "lab":
 		beam = new LabBeam(
+			TwinSelectElement.value as string,
 			parseFloat(BeamVoltageElement.value as string),
 			BeamNoiseElement.checked,
 			parseFloat(BeamExposureElement.value as string),
@@ -477,6 +485,7 @@ export function getBeamParms():BeamProperties {
 		break;
 	case "med":
 		beam = new MedBeam(
+			TwinSelectElement.value as string,
 			parseFloat(BeamVoltageElement.value as string),
 			BeamNoiseElement.checked,
 			parseFloat(BeamMASElement.value as string),
@@ -494,6 +503,7 @@ export function getBeamParms():BeamProperties {
 		break;
 	case "synch":
 		beam = new SynchBeam(
+			TwinSelectElement.value as string,
 			parseFloat(BeamEnergyElement.value as string),
 			BeamNoiseElement.checked,
 			parseFloat(BeamExposureElement.value as string),
@@ -514,6 +524,7 @@ export function getBeamParms():BeamProperties {
 export function setBeamParams(beam:BeamProperties) {
 	let params;
 	BeamSourceSelectElement.value = beam.method;
+	TwinSelectElement.value = beam.twin;
 	BeamNoiseElement.checked = beam.enableNoise;
 
 	switch (beam.method) {

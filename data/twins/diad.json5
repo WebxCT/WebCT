@@ -1,0 +1,39 @@
+{
+	"name": "Diad",
+	"description": "",
+	"date": "",
+
+	"beam": {
+		"type": "synchrotron",
+		"keV": [0, 250],
+
+		"flux": {
+			"curve": [],
+			"distance": 0,
+			"correction": {}
+		}
+	},
+
+	"detector": {
+		"resolutions": [[]],
+
+		"pixelsize": 0,
+		"lsf": [],
+
+		"scintillator": {
+			"material": "",
+			"thickness": 0
+		},
+
+		"gain": {
+			"k": 123,
+			"gains": [1, 2, 3]
+		}
+	},
+
+	"stage": {
+		"detector": [10, 100],
+		"source": [10, 100]
+	}
+
+}

@@ -121,7 +121,7 @@ export const XTEKCTConfig: FormatLoaderStatic = class XTEKCTConfig implements Fo
 			thickness: this.config.Filter_ThicknessMM ?? 0,
 			material: ElementSymbols[this.config.Filter_Material as keyof typeof ElementSymbols ?? "Cu"] ?? ElementSymbols.Cu,
 		}
-		beam = new LabBeam(this.config.XraykV, true, 1, this.config.XrayuA, 0, ElementSymbols.W, "spekpy", 12, [filter])
+		beam = new LabBeam("", this.config.XraykV, true, 1, this.config.XrayuA, 0, ElementSymbols.W, "spekpy", 12, [filter])
 
 		let pixelSize = this.config.DetectorPixelSizeX
 

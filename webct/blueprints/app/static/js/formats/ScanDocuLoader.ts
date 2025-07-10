@@ -55,7 +55,7 @@ export const ScanDocuConfig: FormatLoaderStatic = class ScanDocuConfig implement
 			material: ElementSymbols.Cu,
 		}
 
-		beam = new LabBeam(this.scanparameter.Voltage, true, (this.scanparameter.IntegrationTime / 1000) * this.scanparameter.Framebinning, this.scanparameter.Current, 0, ElementSymbols.W, "spekpy", 12, [filter])
+		beam = new LabBeam("", this.scanparameter.Voltage, true, (this.scanparameter.IntegrationTime / 1000) * this.scanparameter.Framebinning, this.scanparameter.Current, 0, ElementSymbols.W, "spekpy", 12, [filter])
 
 		let pixelSize = this.recon.ProjectionPixelSizeX
 
