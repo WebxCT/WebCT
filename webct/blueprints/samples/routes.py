@@ -7,7 +7,7 @@ from werkzeug.utils import secure_filename
 from webct.blueprints.samples import bp
 from pathlib import Path
 from webct.components.Material import MaterialEncoder, MaterialFromJson, MATERIALS
-from webct.components.Samples import Sample, SampleSettings
+from webct.components.Samples import SampleSettings
 
 from webct.components.sim.SimSession import Sim
 import logging as log
@@ -114,7 +114,7 @@ def uploadModel() -> Response:
 	if file.filename is None or file.filename == "":
 		# no file?
 		return Response(None, 400)
-	
+
 	if file and file.filename.split(".")[-1] == "stl":
 		filename = secure_filename(file.filename)
 		path = Path(model_folder + filename)
@@ -182,6 +182,7 @@ def setMaterial() -> Response:
 	matID = add_material_file(str(cat), nPath)
 
 	return jsonify({"catID":str(cat),"matID":str(matID)})
+
 
 @bp.route("/material/delete", methods=["DELETE"])
 def deleteMaterial() -> Response:

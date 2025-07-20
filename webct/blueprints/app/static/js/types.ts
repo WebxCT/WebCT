@@ -12,62 +12,62 @@ import { UpdatePage } from "./app";
 import { GVXRConfig } from "./formats/GVXRLoader";
 
 // Shorthand for ConfigKeys with all values as true
-export const WEBCT_FULL_CONFIG:ConfigKeys = {beam:true, capture:true, detector:true, recon:true, samples:true}
+export const WEBCT_FULL_CONFIG: ConfigKeys = { beam: true, capture: true, detector: true, recon: true, samples: true }
 
 export interface configSubset {
-	beam?:BeamProperties;
-	detector?:DetectorProperties;
-	samples?:SampleSettings
-	capture?:CaptureProperties;
-	recon?:ReconstructionParams;
+	beam?: BeamProperties;
+	detector?: DetectorProperties;
+	samples?: SampleSettings
+	capture?: CaptureProperties;
+	recon?: ReconstructionParams;
 }
 
 export interface configFull extends configSubset {
-	beam:BeamProperties;
-	detector:DetectorProperties;
-	samples:SampleSettings
-	capture:CaptureProperties;
-	recon:ReconstructionParams;
+	beam: BeamProperties;
+	detector: DetectorProperties;
+	samples: SampleSettings
+	capture: CaptureProperties;
+	recon: ReconstructionParams;
 }
 
-export function getConfigKeys(subset:configSubset) {
+export function getConfigKeys(subset: configSubset) {
 	return {
-		beam:Object.prototype.hasOwnProperty.call(subset, "beam"),
-		detector:Object.prototype.hasOwnProperty.call(subset, "detector"),
-		samples:Object.prototype.hasOwnProperty.call(subset, "samples"),
-		capture:Object.prototype.hasOwnProperty.call(subset, "capture"),
-		recon:Object.prototype.hasOwnProperty.call(subset, "recon"),
+		beam: Object.prototype.hasOwnProperty.call(subset, "beam"),
+		detector: Object.prototype.hasOwnProperty.call(subset, "detector"),
+		samples: Object.prototype.hasOwnProperty.call(subset, "samples"),
+		capture: Object.prototype.hasOwnProperty.call(subset, "capture"),
+		recon: Object.prototype.hasOwnProperty.call(subset, "recon"),
 	};
 }
 
 
 export interface ExportOptions {
 	// Export material as an ID, if available
-	MatasId:boolean
+	MatasId: boolean
 
 	// Folder to save projections
-	ProjectionFolder:string
+	ProjectionFolder: string
 
 	// Folder to save reconstruction
-	ReconstructionFolder:string
+	ReconstructionFolder: string
 
 	// Include gVXR CT scan simulation
-	gvxrIncludeScan:boolean
+	gvxrIncludeScan: boolean
 
 	// Include python CIL reconstruction
-	pythonIncludeReconstruction:boolean
+	pythonIncludeReconstruction: boolean
 }
 
 
 export class WebCTConfig {
-	static to_json(keys:ConfigKeys, options:ExportOptions):configSubset {
+	static to_json(keys: ConfigKeys, options: ExportOptions): configSubset {
 
 		// Options
 		console.log(options);
 		console.log(keys);
 
 		// Materials as IDs - If true, materials will be refrences, rather than data
-		const subset:configSubset = {};
+		const subset: configSubset = {};
 
 		if (keys.beam) {
 			const beamParams = getBeamParms();
@@ -88,12 +88,12 @@ export class WebCTConfig {
 			if (options.MatasId == false) {
 				// Resolve sample materials
 				for (let key in sampleParams.samples) {
-					const sample:SampleProperties = sampleParams.samples[key];
+					const sample: SampleProperties = sampleParams.samples[key];
 					const matsplit = sample.materialID?.split("/");
 					if (matsplit !== undefined) {
 						sample.material = structuredClone(MaterialLib[matsplit[0]][matsplit[1]]);
 
-						const s:any = sample;
+						const s: any = sample;
 						delete s.materialID;
 						delete s.material.element;
 						delete s.material.weights;
@@ -117,11 +117,11 @@ export class WebCTConfig {
 		return subset;
 	}
 
-	static parse_json(data:unknown):configSubset {
+	static parse_json(data: unknown): configSubset {
 		return data as configSubset;
 	}
 
-	static apply(config:configSubset) {
+	static apply(config: configSubset) {
 		const keys = getConfigKeys(config);
 
 		if (keys.beam && config.beam !== undefined) {
@@ -147,13 +147,13 @@ export class WebCTConfig {
 		UpdatePage();
 	}
 
-	static to_text(keys:ConfigKeys, options:ExportOptions):string {
+	static to_text(keys: ConfigKeys, options: ExportOptions): string {
 		return JSON.stringify(this.to_json(keys, options), undefined, 4)
 	}
 
-	static to_python(keys:ConfigKeys, options:ExportOptions):string {
+	static to_python(keys: ConfigKeys, options: ExportOptions): string {
 		// Create a python file to locally simulate and reconstruct WebCT
-		
+
 		// In all cases, we still need gvxr's scan parameters
 		options.gvxrIncludeScan = true;
 		let config = this.to_json(WEBCT_FULL_CONFIG, options) as configFull
@@ -225,7 +225,7 @@ def reconstruct(out_folder:Path):
 
     # Reconstruct
     recon_data = method.run()
-    
+
     # Save to TIFF
     TIFFWriter(recon_data, out_folder).write()
 ` : ""}
@@ -246,11 +246,11 @@ ${keys.recon ? `
 }
 
 export interface ConfigKeys {
-	beam:boolean,
-	detector:boolean,
-	samples:boolean,
-	capture:boolean,
-	recon:boolean,
+	beam: boolean,
+	detector: boolean,
+	samples: boolean,
+	capture: boolean,
+	recon: boolean,
 }
 
 export enum ExportModes {

@@ -3,88 +3,93 @@
 	"name": "DTHE",
 	// Description of the system, mention the source, detector, affiliations,
 	// etc
-	"description": "",
+	"description": "Dual Tomograph for High Energy (Source 2)\nA machine with two x-ray sources",
+	"facility": "INSA-Lyon",
 	// Date of data collection used to create the digital twin.
-	"date": "",
+	"date": "2023-07-05",
 
 
 	// X-ray emission source
-	"beam": {
-		"type": "tube",
+	"beams": {
+		"X-ray 2": {
+			"beam_type": "tube",
+			"shape": "point",
 
-		// X-ray tube limits, [minimum, maximum] in kV.
-		//
-		// Required.
-		"keV": [60, 260],
-
-		// X-ray tube amperage limits, [minimum, maximum] in uA.
-		//
-		// Required.
-		"uA": [50, 500],
-
-		// Electron target material.
-		//
-		// Required.
-		"target": "W",
-
-		// Electron target angle
-		// Required.
-		"target_angle": 12.0,
-
-		// Internal filtration of the source, cannot be changed by operators.
-		//
-		// Optional, leave as [[]] if empty.
-		"inherent_filteration": [["Al", 0.5]],
-
-		// Coefficients for [W] to determine size of focal spot in [um].
-		//
-		// Optional, leave as [] if empty.
-		"focal_spot_curve": [],
-
-		// Lookup table of [voltage, amperage, t_amp] used for calculating the
-		// amperage of the target at any given amperage.
-		//
-		// Optional, leave as [[]] if empty.
-		"target_amperage_correction": [
-			[60,  50,  45.70],
-			[60,  200, 176.43],
-			[60,  350, 263.63],
-			[60,  500, 326.53],
-			[100, 50,  46.30],
-			[100, 200, 185.63],
-			[100, 350, 298.0],
-			[100, 500, 358.97],
-			[140, 50,  46.5],
-			[140, 200, 180.47],
-			[140, 350, 268.10],
-			[140, 500, 328.90],
-			[180, 50,  46.80],
-			[180, 200, 182.87],
-			[180, 350, 262.97],
-			[180, 500, 315.90],
-			[220, 50,  46.80],
-			[220, 200, 180.10],
-			[220, 350, 259.70],
-			[220, 500, 315.53],
-			[260, 50,  46.90],
-			[260, 200, 187.13],
-			[260, 350, 255.57],
-			[260, 500, 302.33]
-		],
-
-		// Source flux determination for representative noise Note: This takes
-		// into account end-to-end effects, not just raw flux from tube.
-		//
-		// Optional, leave curve as [] if empty.
-		"flux": {
-			// Coefficients for [kV] to calculate photonic flux per at 1 [mAs].
-			"curve": [1.093188874588107973e-04, -7.160507751053481196e-02, 1.599238854101443152e+01, -4.046496475979173510e+02],
-			// Distance at which curve is calibrated.
-			"distance": 860,
-			// Correction factors for flux estimation from experimental validation.
+			// X-ray tube limits, [minimum, maximum] in kV.
 			//
-			// Optional, leave as {} if empty.
-			"correction": {}
+			// Required.
+			"keV": [60, 260],
+
+			// X-ray tube amperage limits, [minimum, maximum] in uA.zz
+			//
+			// Required.
+			"uA": [50, 500],
+
+			// Electron target material.
+			//
+			// Required.
+			"target": "W",
+
+			// Electron target angle
+			// Required.
+			"target_angle": 12.0,
+
+			// Internal filtration of the source, cannot be changed by operators.
+			//
+			// Optional, leave as [] if empty.
+			"inherent_filteration": [["Al", 0.5]],
+
+			// External filtration, changed by operators.
+			//
+			// Optional, leave as [] if any filter is allowed.
+			"filters": [],
+
+			// Coefficients for [W] to determine size of focal spot in [um].
+			//
+			// Optional, leave as [] if empty.
+			"focal_spot_curve": [],
+
+			// Lookup table of [voltage, amperage, t_amp] used for calculating the
+			// amperage of the target at any given amperage.
+			//
+			// Optional, leave as [[]] if empty.
+			"target_amperage_correction": [
+				[60,  50,  45.70],
+				[60,  200, 176.43],
+				[60,  350, 263.63],
+				[60,  500, 326.53],
+				[100, 50,  46.30],
+				[100, 200, 185.63],
+				[100, 350, 298.0],
+				[100, 500, 358.97],
+				[140, 50,  46.5],
+				[140, 200, 180.47],
+				[140, 350, 268.10],
+				[140, 500, 328.90],
+				[180, 50,  46.80],
+				[180, 200, 182.87],
+				[180, 350, 262.97],
+				[180, 500, 315.90],
+				[220, 50,  46.80],
+				[220, 200, 180.10],
+				[220, 350, 259.70],
+				[220, 500, 315.53],
+				[260, 50,  46.90],
+				[260, 200, 187.13],
+				[260, 350, 255.57],
+				[260, 500, 302.33]
+			],
+
+			// Source flux determination for representative noise Note: This takes
+			// into account end-to-end effects, not just raw flux from tube.
+			//
+			// Optional, leave curve as [] if empty.
+			"flux": {
+				// Coefficients for [kV] to calculate photonic flux per at 1 [mAs].
+				"curve": [1.093188874588107973e-04, -7.160507751053481196e-02, 1.599238854101443152e+01, -4.046496475979173510e+02],
+				// Distance at which curve is calibrated.
+				"distance": 860
+			}
 		}
 	},
 
@@ -109,10 +114,10 @@
 			[960, 2880]
 		],
 
-		// Size of pixels in [um].
+		// Pitch of pixels in [um].
 		//
 		// Required
-		"pixelsize": 150,
+		"pixel_pitch": 150,
 
 		// Line spread function measured from the detector's response
 		//
@@ -124,7 +129,7 @@
 		// Optional, Leave material as "" if empty.
 		"scintillator": {
 			// Material of the scintillator, "CsI", "Gadox", etc
-			"material": "Gd2O2S DRZ-Plus",
+			"material": "Gadox DRZ-Plus",
 			// Thickness of the scintillator in [um].
 			"thickness": 210
 		},
@@ -161,7 +166,7 @@
 		// away from the detector, with the sample moving between [minimum,
 		// maximum] E.g, setting source to [10, 120] will ensure SDD is always
 		// 120mm, and allow SOD between 10mm to 120mm.
-		"fixedSourceDetectorDistance": false,
+		"static_sdd": false,
 
 		// [minimum, maximum] Distance detector can move towards or away from the sample in [mm]
 		//

@@ -1,27 +1,27 @@
-from enum import Enum
+import logging
 from random import Random
 from threading import Semaphore
 from typing import List, Optional, Tuple
-import logging
-log = logging.getLogger("SimSession")
 
 import numpy as np
-from cil.framework import AcquisitionGeometry
 from cil.utilities.display import show_geometry
 from flask import session
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.figure import Figure
-from PIL import Image
 
 from webct import Element
-from webct.components.Beam import (BEAM_GENERATOR, PROJECTION, BeamParameters, Filter, LabBeam, Spectra, generateSpectra)
+from webct.components.Beam import BEAM_GENERATOR, PROJECTION, BeamParameters, Filter, LabBeam, Spectra, generateSpectra
 from webct.components.Capture import CaptureParameters
 from webct.components.Detector import DEFAULT_LSF, SCINTILLATOR_MATERIAL, DetectorParameters, Scintillator
-from webct.components.Reconstruction import (FDKParam, ReconParameters, reconstruct, get_geometry)
 from webct.components.Samples import RenderedSampleSettings, Sample, SampleSettings
-from webct.components.sim.Download import DownloadManager
 from webct.components.sim.clients.SimClient import SimClient, SimThreadError, SimTimeoutError
+from webct.components.sim.Download import DownloadManager
 from webct.components.sim.SimManager import getClient
+
+from webct.components.Reconstruction import FDKParam, ReconParameters, get_geometry, reconstruct
+
+log = logging.getLogger("SimSession")
+
 
 class SimSession:
 	"""
@@ -62,7 +62,7 @@ class SimSession:
 
 	def init_default_parameters(self) -> None:
 		# Instantiate default values
-		self.beam = LabBeam(twin="", method="lab", projection=PROJECTION.POINT,
+		self.beam = LabBeam(twin="none", method="lab", projection=PROJECTION.POINT,
 			filters=(Filter(Element.Cu,2),),
 			voltage=70,
 			enableNoise=True,

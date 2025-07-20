@@ -10,6 +10,7 @@ import spekpy as sp
 import xpecgen.xpecgen as xp
 import numpy as np
 import logging as log
+from gvxrPython3 import gvxr
 
 # Type aliases
 KeV = float
@@ -41,6 +42,7 @@ class PROJECTION(str, Enum):
 class BEAM_GENERATOR(str, Enum):
 	SPEKPY = "spekpy"
 	XPECGEN = "xpecgen"
+	STATIC = "static"
 
 
 @dataclass(frozen=True)
@@ -350,6 +352,8 @@ def generateSpectra(beam: BeamParameters) -> Tuple[Spectra, Spectra]:
 				))
 
 			raise NotImplementedError("XPECGEN is currently not implemented.")
+		elif params.generator == BEAM_GENERATOR.STATIC:
+			gvxr.filter
 		else:
 			raise NotImplementedError("Other beam spectra generators are not implemented.")
 	else:

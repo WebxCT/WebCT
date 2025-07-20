@@ -1,9 +1,15 @@
 from dataclasses import dataclass
 from typing import Dict, Literal, Tuple, Type, Union, cast
 
-from cil.framework import AcquisitionData, ImageGeometry, BlockDataContainer
-from cil.optimisation.operators import (Operator, IdentityOperator, BlockOperator, GradientOperator)
-from cil.plugins.astra.operators import ProjectionOperator
+from cil.framework import AcquisitionData, BlockDataContainer, ImageGeometry
+from cil.optimisation.operators import BlockOperator, GradientOperator, IdentityOperator, Operator
+
+import webct
+
+if webct.HAS_CUDA:
+	from cil.plugins.astra.operators import ProjectionOperator
+else:
+	class ProjectionOperator(): ...
 
 class IterativeBlockParams():
 	...

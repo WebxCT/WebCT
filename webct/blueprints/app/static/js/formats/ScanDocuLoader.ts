@@ -1,35 +1,35 @@
 import { AlertType, showAlert } from "../../../../base/static/js/base";
 import { ElementSymbols } from "../../../../base/static/js/elements";
-import { BeamProperties, Filter, LabBeam, SynchBeam, TubeBeam } from "../../../../beam/static/js/types";
+import { BeamProperties, LabBeam } from "../../../../beam/static/js/types";
 import { configFull, configSubset, ExportOptions } from "../types";
 import { FormatLoader, FormatLoaderStatic } from "./FormatLoader";
 
 interface geometrie {
-	SourceDetectorDist:number
-	SourceObjectDist:number
-	ObjectDetectorDist:number
-	Magnification:number
+	SourceDetectorDist: number
+	SourceObjectDist: number
+	ObjectDetectorDist: number
+	Magnification: number
 }
 
 interface recon {
-	ReconstructionMode:string
-	ProjectionCount:number
-	ProjectionCountPer360deg:number
-	ProjectionDimX:number
-	ProjectionDimY:number
-	ProjectionPixelSizeX:number
-	ProjectionPixelSizeY:number
+	ReconstructionMode: string
+	ProjectionCount: number
+	ProjectionCountPer360deg: number
+	ProjectionDimX: number
+	ProjectionDimY: number
+	ProjectionPixelSizeX: number
+	ProjectionPixelSizeY: number
 }
 
 interface scanparameter {
-	Voltage:number
-	Current:number
-	Power:number
-	Pixelbinning:number
-	DetectorPixelX:number
-	DetectorPixelY:number
-	IntegrationTime:number
-	Framebinning:number
+	Voltage: number
+	Current: number
+	Power: number
+	Pixelbinning: number
+	DetectorPixelX: number
+	DetectorPixelY: number
+	IntegrationTime: number
+	Framebinning: number
 }
 
 export const ScanDocuConfig: FormatLoaderStatic = class ScanDocuConfig implements FormatLoader {
@@ -37,12 +37,12 @@ export const ScanDocuConfig: FormatLoaderStatic = class ScanDocuConfig implement
 	recon: recon;
 	scanparameter: scanparameter;
 
-	constructor(geo: geometrie, recon:recon, scan:scanparameter) {
+	constructor(geo: geometrie, recon: recon, scan: scanparameter) {
 		this.geometry = geo;
 		this.recon = recon;
 		this.scanparameter = scan;
 	}
-	to_text():string {
+	to_text(): string {
 		return "Not Implemented"
 	};
 
@@ -51,8 +51,8 @@ export const ScanDocuConfig: FormatLoaderStatic = class ScanDocuConfig implement
 
 		// no filter
 		const filter = {
-			thickness: 0,
 			material: ElementSymbols.Cu,
+			thickness: 0,
 		}
 
 		beam = new LabBeam("", this.scanparameter.Voltage, true, (this.scanparameter.IntegrationTime / 1000) * this.scanparameter.Framebinning, this.scanparameter.Current, 0, ElementSymbols.W, "spekpy", 12, [filter])
@@ -88,9 +88,9 @@ export const ScanDocuConfig: FormatLoaderStatic = class ScanDocuConfig implement
 		};
 	};
 
-	static from_config(data:configFull, options:ExportOptions) {
+	static from_config(data: configFull, options: ExportOptions) {
 
-		if (data.beam.method == "synch") {
+		if (data.beam.method === "synch") {
 			throw "ScanDocu Format does not support synchrotron sources."
 		}
 
@@ -99,7 +99,7 @@ export const ScanDocuConfig: FormatLoaderStatic = class ScanDocuConfig implement
 			SourceObjectDist: data.capture.beamPosition[1] * -1,
 			SourceDetectorDist: (data.capture.beamPosition[1] * -1) + data.capture.detectorPosition[1],
 			Magnification: (data.capture.beamPosition[1] * -1) + data.capture.detectorPosition[1] / data.capture.beamPosition[1] * -1
-		},{
+		}, {
 			ProjectionCount: data.capture.numProjections,
 			ProjectionCountPer360deg: (data.capture.numProjections / data.capture.totalAngle) * data.capture.numProjections,
 			ProjectionDimX: data.detector.paneHeight / data.detector.pixelSize,
@@ -107,7 +107,7 @@ export const ScanDocuConfig: FormatLoaderStatic = class ScanDocuConfig implement
 			ProjectionPixelSizeX: data.detector.pixelSize,
 			ProjectionPixelSizeY: data.detector.pixelSize,
 			ReconstructionMode: "NormalCt-VerticalFov",
-		},{
+		}, {
 			Current: (data.beam as LabBeam).intensity,
 			Voltage: (data.beam as LabBeam).voltage,
 			DetectorPixelX: data.detector.paneHeight / data.detector.pixelSize,
@@ -137,31 +137,31 @@ export const ScanDocuConfig: FormatLoaderStatic = class ScanDocuConfig implement
 			// split into property and value
 			let prop = line.split(">")[0].substring(1)
 			let value = line.split(">")[1].split("<")[0]
-			console.log(prop +": " + value);
+			console.log(prop + ": " + value);
 
 			// Geometrie
-			if (prop == "SourceDetectorDist") { geo["SourceDetectorDist"] = parseFloat(value)}
-			else if (prop == "SourceObjectDist") { geo["SourceObjectDist"] = parseFloat(value)}
-			else if (prop == "ObjectDetectorDist") { geo["ObjectDetectorDist"] = parseFloat(value)}
+			if (prop === "SourceDetectorDist") { geo["SourceDetectorDist"] = parseFloat(value) }
+			else if (prop === "SourceObjectDist") { geo["SourceObjectDist"] = parseFloat(value) }
+			else if (prop === "ObjectDetectorDist") { geo["ObjectDetectorDist"] = parseFloat(value) }
 
 			// Recon
-			else if (prop == "ProjectionCount") { recon["ProjectionCount"] = parseInt(value)}
-			else if (prop == "ProjectionCountPer360deg") { recon["ProjectionCountPer360deg"] = parseInt(value)}
-			else if (prop == "ProjectionDimX") { recon["ProjectionDimX"] = parseInt(value)}
-			else if (prop == "ProjectionDimY") { recon["ProjectionDimY"] = parseInt(value)}
-			else if (prop == "ProjectionPixelSizeX") { recon["ProjectionPixelSizeX"] = parseFloat(value)}
-			else if (prop == "ProjectionPixelSizeY") { recon["ProjectionPixelSizeY"] = parseFloat(value)}
-			else if (prop == "ReconstructionMode") { recon["ReconstructionMode"] = value}
+			else if (prop === "ProjectionCount") { recon["ProjectionCount"] = parseInt(value) }
+			else if (prop === "ProjectionCountPer360deg") { recon["ProjectionCountPer360deg"] = parseInt(value) }
+			else if (prop === "ProjectionDimX") { recon["ProjectionDimX"] = parseInt(value) }
+			else if (prop === "ProjectionDimY") { recon["ProjectionDimY"] = parseInt(value) }
+			else if (prop === "ProjectionPixelSizeX") { recon["ProjectionPixelSizeX"] = parseFloat(value) }
+			else if (prop === "ProjectionPixelSizeY") { recon["ProjectionPixelSizeY"] = parseFloat(value) }
+			else if (prop === "ReconstructionMode") { recon["ReconstructionMode"] = value }
 
 			// Scan Parameter
-			else if (prop == "Current") { scan["Current"] = parseFloat(value)}
-			else if (prop == "Voltage") { scan["Voltage"] = parseFloat(value)}
-			else if (prop == "DetectorPixelX") { scan["DetectorPixelX"] = parseInt(value)}
-			else if (prop == "DetectorPixelY") { scan["DetectorPixelY"] = parseInt(value)}
-			else if (prop == "Framebinning") { scan["Framebinning"] = parseInt(value)}
-			else if (prop == "IntegrationTime") { scan["IntegrationTime"] = parseFloat(value)}
-			else if (prop == "Pixelbinning") { scan["Pixelbinning"] = parseInt(value)}
-			else if (prop == "Power") { scan["Power"] = parseFloat(value)}
+			else if (prop === "Current") { scan["Current"] = parseFloat(value) }
+			else if (prop === "Voltage") { scan["Voltage"] = parseFloat(value) }
+			else if (prop === "DetectorPixelX") { scan["DetectorPixelX"] = parseInt(value) }
+			else if (prop === "DetectorPixelY") { scan["DetectorPixelY"] = parseInt(value) }
+			else if (prop === "Framebinning") { scan["Framebinning"] = parseInt(value) }
+			else if (prop === "IntegrationTime") { scan["IntegrationTime"] = parseFloat(value) }
+			else if (prop === "Pixelbinning") { scan["Pixelbinning"] = parseInt(value) }
+			else if (prop === "Power") { scan["Power"] = parseFloat(value) }
 
 		}
 

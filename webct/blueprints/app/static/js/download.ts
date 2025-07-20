@@ -1,41 +1,42 @@
-import { SlButton, SlDialog, SlDropdown, SlIconButton, SlMenuItem, SlProgressBar} from "@shoelace-style/shoelace";
+import { SlButton, SlDialog, SlDropdown, SlIconButton, SlMenuItem, SlProgressBar } from "@shoelace-style/shoelace";
 import { getCaptureParams, UpdateCapturePreview } from "../../../capture/static/js/capture";
 import { getDetectorParams } from "../../../detector/static/js/detector";
 import { UpdateReconPreview } from "../../../reconstruction/static/js/recon";
 import { DownloadFormat, DownloadResource, DownloadStatus, requestStatus, sendPrepare, DownloadRequest, DownloadFormatNames, startDownload } from "./download.api";
+import { SupportsReconstruction } from "./app";
 
-let DownloadButton:SlIconButton;
-let CloseDialogButton:SlButton;
-let DownloadDialog:SlDialog;
+let DownloadButton: SlIconButton;
+let CloseDialogButton: SlButton;
+let DownloadDialog: SlDialog;
 
 
 
-let RadiographDownloadButton:SlButton;
-let RadiographFormatDropdown:SlDropdown;
-let RadiographSmall:HTMLElement;
+let RadiographDownloadButton: SlButton;
+let RadiographFormatDropdown: SlDropdown;
+let RadiographSmall: HTMLElement;
 
-let ProjectionsDownloadButton:SlButton;
-let ProjectionsFormatDropdown:SlDropdown;
-let ProjectionsSmall:HTMLElement;
+let ProjectionsDownloadButton: SlButton;
+let ProjectionsFormatDropdown: SlDropdown;
+let ProjectionsSmall: HTMLElement;
 
-let ReconCentreDownloadButton:SlButton;
-let ReconCentreFormatDropdown:SlDropdown;
-let ReconCentreSmall:HTMLElement;
+let ReconCentreDownloadButton: SlButton;
+let ReconCentreFormatDropdown: SlDropdown;
+let ReconCentreSmall: HTMLElement;
 
-let ReconDownloadButton:SlButton;
-let ReconFormatDropdown:SlDropdown;
-let ReconSmall:HTMLElement;
+let ReconDownloadButton: SlButton;
+let ReconFormatDropdown: SlDropdown;
+let ReconSmall: HTMLElement;
 
-let StatusDownloadPanel:HTMLDivElement;
-let StatusDownloadSpan:HTMLSpanElement;
-let StatusDownloadBar:SlProgressBar;
+let StatusDownloadPanel: HTMLDivElement;
+let StatusDownloadSpan: HTMLSpanElement;
+let StatusDownloadBar: SlProgressBar;
 
-let SelectedReconFormat:DownloadFormat;
-let SelectedRadiographFormat:DownloadFormat;
-let SelectedReconCentreFormat:DownloadFormat;
-let SelectedProjectionsFormat:DownloadFormat;
+let SelectedReconFormat: DownloadFormat;
+let SelectedRadiographFormat: DownloadFormat;
+let SelectedReconCentreFormat: DownloadFormat;
+let SelectedProjectionsFormat: DownloadFormat;
 
-export function setupDownload():boolean {
+export function setupDownload(): boolean {
 	console.log("setupDownload");
 
 	const button_download = document.getElementById("buttonDownload");
@@ -79,12 +80,12 @@ export function setupDownload():boolean {
 
 	DownloadDialog = dialog_download as SlDialog;
 	CloseDialogButton = button_download_close as SlButton;
-	CloseDialogButton.onclick=()=>{
+	CloseDialogButton.onclick = () => {
 		DownloadDialog.hide();
 	};
 
 	DownloadButton = button_download as SlIconButton;
-	DownloadButton.onclick=()=> {
+	DownloadButton.onclick = () => {
 		DownloadDialog.show();
 	};
 
@@ -116,7 +117,7 @@ export function setupDownload():boolean {
 		if (SelectedRadiographFormat == DownloadFormat.TIFF_STACK) {
 			typeText = "TIFF Image";
 		}
-		RadiographFormatDropdown.getElementsByTagName("sl-button")[0].textContent = "Format: "+typeText;
+		RadiographFormatDropdown.getElementsByTagName("sl-button")[0].textContent = "Format: " + typeText;
 		UpdateStats();
 	});
 
@@ -128,58 +129,60 @@ export function setupDownload():boolean {
 		item.checked = true;
 		SelectedProjectionsFormat = DownloadFormat[item.value as DownloadFormat];
 		const typeText = DownloadFormatNames[SelectedProjectionsFormat] + "";
-		ProjectionsFormatDropdown.getElementsByTagName("sl-button")[0].textContent = "Format: "+typeText;
+		ProjectionsFormatDropdown.getElementsByTagName("sl-button")[0].textContent = "Format: " + typeText;
 		UpdateStats();
 	});
 
-	ReconFormatDropdown.addEventListener("sl-select", event => {
-		const item = (event as any).detail.item as SlMenuItem;
-		ReconFormatDropdown.getMenu()?.getAllItems().forEach((item) => {
-			item.checked = false;
+	if (SupportsReconstruction) {
+		ReconFormatDropdown.addEventListener("sl-select", event => {
+			const item = (event as any).detail.item as SlMenuItem;
+			ReconFormatDropdown.getMenu()?.getAllItems().forEach((item) => {
+				item.checked = false;
+			});
+			item.checked = true;
+			SelectedReconFormat = DownloadFormat[item.value as DownloadFormat];
+			const typeText = DownloadFormatNames[SelectedReconFormat] + "";
+			ReconFormatDropdown.getElementsByTagName("sl-button")[0].textContent = "Format: " + typeText;
+			UpdateStats();
 		});
-		item.checked = true;
-		SelectedReconFormat = DownloadFormat[item.value as DownloadFormat];
-		const typeText = DownloadFormatNames[SelectedReconFormat] + "";
-		ReconFormatDropdown.getElementsByTagName("sl-button")[0].textContent = "Format: "+typeText;
-		UpdateStats();
-	});
 
-	ReconCentreFormatDropdown.addEventListener("sl-select", event => {
-		const item = (event as any).detail.item as SlMenuItem;
-		ReconCentreFormatDropdown.getMenu()?.getAllItems().forEach((item) => {
-			item.checked = false;
+		ReconCentreFormatDropdown.addEventListener("sl-select", event => {
+			const item = (event as any).detail.item as SlMenuItem;
+			ReconCentreFormatDropdown.getMenu()?.getAllItems().forEach((item) => {
+				item.checked = false;
+			});
+			item.checked = true;
+			SelectedReconCentreFormat = DownloadFormat[item.value as DownloadFormat];
+			let typeText = DownloadFormatNames[SelectedReconCentreFormat] + "";
+			if (SelectedReconCentreFormat == DownloadFormat.TIFF_STACK) {
+				typeText = "TIFF Image";
+			}
+			ReconCentreFormatDropdown.getElementsByTagName("sl-button")[0].textContent = "Format: " + typeText;
+			UpdateStats();
 		});
-		item.checked = true;
-		SelectedReconCentreFormat = DownloadFormat[item.value as DownloadFormat];
-		let typeText = DownloadFormatNames[SelectedReconCentreFormat] + "";
-		if (SelectedReconCentreFormat == DownloadFormat.TIFF_STACK) {
-			typeText = "TIFF Image";
-		}
-		ReconCentreFormatDropdown.getElementsByTagName("sl-button")[0].textContent = "Format: "+typeText;
-		UpdateStats();
-	});
+	}
 
 	RadiographDownloadButton.onclick = () => {
-		prepDownload({resource:DownloadResource.PROJECTION, format: SelectedRadiographFormat});
+		prepDownload({ resource: DownloadResource.PROJECTION, format: SelectedRadiographFormat });
 	};
 
 	ProjectionsDownloadButton.onclick = () => {
-		prepDownload({resource:DownloadResource.ALL_PROJECTION, format: SelectedProjectionsFormat});
+		prepDownload({ resource: DownloadResource.ALL_PROJECTION, format: SelectedProjectionsFormat });
 	};
 
-	ReconCentreDownloadButton.onclick = () => {
-		prepDownload({resource:DownloadResource.RECON_SLICE, format: SelectedReconCentreFormat});
-	};
-
-	ReconDownloadButton.onclick = () => {
-		prepDownload({resource:DownloadResource.RECONSTRUCTION, format: SelectedReconFormat});
-	};
-
+	if (SupportsReconstruction) {
+		ReconCentreDownloadButton.onclick = () => {
+			prepDownload({ resource: DownloadResource.RECON_SLICE, format: SelectedReconCentreFormat });
+		};
+		ReconDownloadButton.onclick = () => {
+			prepDownload({ resource: DownloadResource.RECONSTRUCTION, format: SelectedReconFormat });
+		};
+	}
 	UpdateStats();
 	return true;
 }
 
-function prepDownload(downloadRequest:DownloadRequest) {
+function prepDownload(downloadRequest: DownloadRequest) {
 
 	window.dispatchEvent(new CustomEvent("startLongLoadingDownload", {
 		bubbles: true,
@@ -188,11 +191,11 @@ function prepDownload(downloadRequest:DownloadRequest) {
 	}));
 
 	lockUI(true);
-	sendPrepare(downloadRequest).then((response:Response) => {
+	sendPrepare(downloadRequest).then((response: Response) => {
 		if (response.status == 200) {
 			startDownload(downloadRequest);
 		}
-	}).finally(()=>{
+	}).finally(() => {
 		lockUI(false);
 		window.dispatchEvent(new CustomEvent("stopLoadingDownload", {
 			bubbles: true,
@@ -203,7 +206,7 @@ function prepDownload(downloadRequest:DownloadRequest) {
 
 	function GetStatus() {
 
-		requestStatus().then((status:Response) => {
+		requestStatus().then((status: Response) => {
 			if (status.status == 200) {
 				// Download is done!
 				updateDownloadStatus(DownloadStatus.DONE);
@@ -226,7 +229,7 @@ function prepDownload(downloadRequest:DownloadRequest) {
 			} else if (status.status == 425) {
 				// Still processing download on backend
 				const result = status.text();
-				result.then((backendStatus:string) => {
+				result.then((backendStatus: string) => {
 					if (backendStatus == "PACKAGING") {
 						updateDownloadStatus(DownloadStatus.PACKAGING);
 					} else {
@@ -254,59 +257,61 @@ function prepDownload(downloadRequest:DownloadRequest) {
 	updateDownloadStatus(DownloadStatus.WAITING);
 }
 
-function updateDownloadStatus(status:DownloadStatus) {
+function updateDownloadStatus(status: DownloadStatus) {
 	StatusDownloadBar.classList.remove("fail");
 	StatusDownloadBar.classList.remove("success");
 	StatusDownloadBar.textContent = "";
 
 	switch (status) {
-	case DownloadStatus.DONE:
-		StatusDownloadPanel.removeAttribute("active");
-		StatusDownloadBar.value = 100;
-		StatusDownloadSpan.textContent = "✅ Download Ready!";
-		StatusDownloadBar.classList.add("success");
-		break;
-	case DownloadStatus.SIMULATING:
-		StatusDownloadPanel.setAttribute("active", "");
-		StatusDownloadBar.value = 25;
-		StatusDownloadSpan.textContent = "Simulating...";
-		break;
-	case DownloadStatus.PACKAGING:
-		StatusDownloadPanel.setAttribute("active", "");
-		StatusDownloadBar.value = 75;
-		StatusDownloadSpan.textContent = "Packaging files...";
-		break;
-	case DownloadStatus.WAITING:
-		// Just started
-		StatusDownloadPanel.setAttribute("active", "");
-		StatusDownloadBar.value = 0;
-		StatusDownloadSpan.textContent = "Requesting Download...";
-		break;
-	case DownloadStatus.ERROR:
-		// Something broke...
-		StatusDownloadBar.value = 100;
-		StatusDownloadBar.classList.add("fail");
-		StatusDownloadBar.textContent = "😢 Error During Download Preparation";
-		StatusDownloadSpan.textContent = "❌ Download failed.";
-
-		// Force show error, and delay hiding
-		StatusDownloadPanel.setAttribute("active", "");
-		setTimeout(() => {
+		case DownloadStatus.DONE:
 			StatusDownloadPanel.removeAttribute("active");
-		}, 5000);
-		break;
+			StatusDownloadBar.value = 100;
+			StatusDownloadSpan.textContent = "✅ Download Ready!";
+			StatusDownloadBar.classList.add("success");
+			break;
+		case DownloadStatus.SIMULATING:
+			StatusDownloadPanel.setAttribute("active", "");
+			StatusDownloadBar.value = 25;
+			StatusDownloadSpan.textContent = "Simulating...";
+			break;
+		case DownloadStatus.PACKAGING:
+			StatusDownloadPanel.setAttribute("active", "");
+			StatusDownloadBar.value = 75;
+			StatusDownloadSpan.textContent = "Packaging files...";
+			break;
+		case DownloadStatus.WAITING:
+			// Just started
+			StatusDownloadPanel.setAttribute("active", "");
+			StatusDownloadBar.value = 0;
+			StatusDownloadSpan.textContent = "Requesting Download...";
+			break;
+		case DownloadStatus.ERROR:
+			// Something broke...
+			StatusDownloadBar.value = 100;
+			StatusDownloadBar.classList.add("fail");
+			StatusDownloadBar.textContent = "😢 Error During Download Preparation";
+			StatusDownloadSpan.textContent = "❌ Download failed.";
+
+			// Force show error, and delay hiding
+			StatusDownloadPanel.setAttribute("active", "");
+			setTimeout(() => {
+				StatusDownloadPanel.removeAttribute("active");
+			}, 5000);
+			break;
 	}
 }
 
-function lockUI(lock:boolean) {
+function lockUI(lock: boolean) {
 	RadiographDownloadButton.disabled = lock;
 	ProjectionsDownloadButton.disabled = lock;
-	ReconDownloadButton.disabled = lock;
-	ReconCentreDownloadButton.disabled = lock;
 	RadiographFormatDropdown.disabled = lock;
 	ProjectionsFormatDropdown.disabled = lock;
-	ReconCentreFormatDropdown.disabled = lock;
-	ReconFormatDropdown.disabled = lock;
+	if (SupportsReconstruction) {
+		ReconDownloadButton.disabled = lock;
+		ReconCentreDownloadButton.disabled = lock;
+		ReconCentreFormatDropdown.disabled = lock;
+		ReconFormatDropdown.disabled = lock;
+	}
 }
 
 export function UpdateStats() {
@@ -327,57 +332,61 @@ export function UpdateStats() {
 	const recon = (w_px * w_px * h_px * 4) / 1000 / 1000;
 	const slice = (w_px * w_px * 4) / 1000 / 1000;
 
-	RadiographDownloadButton.textContent = "Single Radiograph (~"+radiograph.toFixed(0)+"MB)";
+	RadiographDownloadButton.textContent = "Single Radiograph (~" + radiograph.toFixed(0) + "MB)";
 	switch (SelectedRadiographFormat) {
-	case DownloadFormat.TIFF_STACK:
-		RadiographSmall.textContent = "Single 32bit float .tiff ("+w_px+"x"+h_px+")";
-		break;
-	case DownloadFormat.JPEG:
-		RadiographSmall.textContent = "Single compressed 0-255 JPEG ("+w_px+"x"+h_px+")";
-		RadiographDownloadButton.textContent = "Single Radiograph (~"+(radiograph/4).toFixed(0)+"MB)";
-		break;
-	case DownloadFormat.NUMPY:
-		RadiographSmall.textContent = "Raw 32bit 2D Numpy Array ("+w_px+", "+h_px+")";
-		break;
+		case DownloadFormat.TIFF_STACK:
+			RadiographSmall.textContent = "Single 32bit float .tiff (" + w_px + "x" + h_px + ")";
+			break;
+		case DownloadFormat.JPEG:
+			RadiographSmall.textContent = "Single compressed 0-255 JPEG (" + w_px + "x" + h_px + ")";
+			RadiographDownloadButton.textContent = "Single Radiograph (~" + (radiograph / 4).toFixed(0) + "MB)";
+			break;
+		case DownloadFormat.NUMPY:
+			RadiographSmall.textContent = "Raw 32bit 2D Numpy Array (" + w_px + ", " + h_px + ")";
+			break;
 	}
 
-	ReconCentreSmall.textContent = "Reconstruction Center Slice (~"+slice.toFixed(0)+"MB)";
-	switch (SelectedReconCentreFormat) {
-	case DownloadFormat.TIFF_STACK:
-		ReconCentreSmall.textContent = "Single 32bit float .tiff ("+w_px+"x"+w_px+")";
-		break;
-	case DownloadFormat.JPEG:
-		ReconCentreSmall.textContent = "Single compressed 0-255 JPEG ("+w_px+"x"+w_px+")";
-		ReconCentreDownloadButton.textContent = "Reconstruction Centre Slice (~"+(slice/4).toFixed(0)+"MB)";
-		break;
-	case DownloadFormat.NUMPY:
-		ReconCentreSmall.textContent = "Raw 32bit 2D Numpy Array ("+w_px+", "+w_px+")";
-		break;
+	if (SupportsReconstruction) {
+		ReconCentreSmall.textContent = "Reconstruction Center Slice (~" + slice.toFixed(0) + "MB)";
+		switch (SelectedReconCentreFormat) {
+			case DownloadFormat.TIFF_STACK:
+				ReconCentreSmall.textContent = "Single 32bit float .tiff (" + w_px + "x" + w_px + ")";
+				break;
+			case DownloadFormat.JPEG:
+				ReconCentreSmall.textContent = "Single compressed 0-255 JPEG (" + w_px + "x" + w_px + ")";
+				ReconCentreDownloadButton.textContent = "Reconstruction Centre Slice (~" + (slice / 4).toFixed(0) + "MB)";
+				break;
+			case DownloadFormat.NUMPY:
+				ReconCentreSmall.textContent = "Raw 32bit 2D Numpy Array (" + w_px + ", " + w_px + ")";
+				break;
+		}
 	}
 
-	ProjectionsDownloadButton.textContent = "All Projections (~"+projections.toFixed(0)+"MB)";
+	ProjectionsDownloadButton.textContent = "All Projections (~" + projections.toFixed(0) + "MB)";
 	switch (SelectedProjectionsFormat) {
-	case DownloadFormat.TIFF_STACK:
-		ProjectionsSmall.textContent = "Single 32bit float .tiff stack with "+n+" ("+w_px+"x"+h_px+") projections";
-		break;
-	case DownloadFormat.TIFF_ZIP:
-		ProjectionsSmall.textContent = "Zip File containing "+n+" separate 32bit float .tiff ("+w_px+"x"+h_px+") images";
-		break;
-	case DownloadFormat.NUMPY:
-		ProjectionsSmall.textContent = "Raw 32bit 3D Numpy Array ("+n+", "+w_px+", "+h_px+")";
-		break;
+		case DownloadFormat.TIFF_STACK:
+			ProjectionsSmall.textContent = "Single 32bit float .tiff stack with " + n + " (" + w_px + "x" + h_px + ") projections";
+			break;
+		case DownloadFormat.TIFF_ZIP:
+			ProjectionsSmall.textContent = "Zip File containing " + n + " separate 32bit float .tiff (" + w_px + "x" + h_px + ") images";
+			break;
+		case DownloadFormat.NUMPY:
+			ProjectionsSmall.textContent = "Raw 32bit 3D Numpy Array (" + n + ", " + w_px + ", " + h_px + ")";
+			break;
 	}
 
-	ReconDownloadButton.textContent = "Full Reconstruction (~"+recon.toFixed(0)+"MB)";
-	switch (SelectedReconFormat) {
-	case DownloadFormat.TIFF_STACK:
-		ReconSmall.textContent = "Single 32bit float .tiff stack with "+h_px+" ("+w_px+"x"+w_px+") projections";
-		break;
-	case DownloadFormat.TIFF_ZIP:
-		ReconSmall.textContent = "Zip File containing "+h_px+" separate 32bit float .tiff ("+w_px+"x"+w_px+") images";
-		break;
-	case DownloadFormat.NUMPY:
-		ReconSmall.textContent = "Raw 32bit 3D Numpy Array ("+h_px+", "+w_px+", "+w_px+")";
-		break;
+	if (SupportsReconstruction) {
+		ReconDownloadButton.textContent = "Full Reconstruction (~" + recon.toFixed(0) + "MB)";
+		switch (SelectedReconFormat) {
+			case DownloadFormat.TIFF_STACK:
+				ReconSmall.textContent = "Single 32bit float .tiff stack with " + h_px + " (" + w_px + "x" + w_px + ") projections";
+				break;
+			case DownloadFormat.TIFF_ZIP:
+				ReconSmall.textContent = "Zip File containing " + h_px + " separate 32bit float .tiff (" + w_px + "x" + w_px + ") images";
+				break;
+			case DownloadFormat.NUMPY:
+				ReconSmall.textContent = "Raw 32bit 3D Numpy Array (" + h_px + ", " + w_px + ", " + w_px + ")";
+				break;
+		}
 	}
 }

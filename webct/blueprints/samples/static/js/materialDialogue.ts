@@ -448,7 +448,7 @@ function createCategoryPanel(rootPanel: HTMLElement, categoryKey: string, blank=
 
 export function getSelectedMaterial(): [string, string, HTMLFormElement?] {
 	// bug: if sample has changed its ID and the UI hasn't been updated, the old ID is used, causing a not-found issue later on.
-	// This can be fixed by doing a UI refresh before running this function, as done in 
+	// This can be fixed by doing a UI refresh before running this function, as done in
 	const catID = (document.querySelector("#tabMaterial > sl-tab[active]") as unknown as SlTab).getAttribute("catID");
 	const matID = (document.querySelector("#tabMaterial > sl-tab-panel[active] > sl-tab-group > sl-tab[active]") as unknown as SlTab).getAttribute("materialid");
 	const form = document.querySelector("#tabMaterial > sl-tab-panel[active] > sl-tab-group > sl-tab-panel[active] > form") as HTMLFormElement;
@@ -476,8 +476,8 @@ export function setSelectedMaterial(catID: string, matID: string) {
 			// Ensure tab and panels are synced, especially just after adding
 			// new tabs and selecting them.
 			catGroup.requestUpdate();
-			catGroup.syncTabsAndPanels();
-			catGroup.setActiveTab(tab, { emitEvents: true, scrollBehavior: "smooth" });
+			(catGroup as any).syncTabsAndPanels();
+			(catGroup as any).setActiveTab(tab, { emitEvents: true, scrollBehavior: "smooth" });
 			break;
 		}
 	}
@@ -494,9 +494,9 @@ export function setSelectedMaterial(catID: string, matID: string) {
 			// Ensure tab and panels are synced, especially just after adding
 			// new tabs and selecting them.
 			matGroup.requestUpdate();
-			matGroup.syncTabsAndPanels();
+			(matGroup as any).syncTabsAndPanels();
 
-			matGroup.setActiveTab(tab, { emitEvents: true, scrollBehavior: "smooth" });
+			(matGroup as any).setActiveTab(tab, { emitEvents: true, scrollBehavior: "smooth" });
 			break;
 		}
 	}

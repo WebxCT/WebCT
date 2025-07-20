@@ -11,6 +11,9 @@ Chart.register(...registerables);
 
 export type SourceType = "lab" | "synch" | "med"
 
+export type EmissionShape = "point" | "parallel"
+
+
 export type BeamGenerator = "spekpy" | "xpecgen"
 
 /**
@@ -20,11 +23,11 @@ export interface SpectraData {
 	/**
 	 * Photon energies (mid-bin) [keV]
 	 */
-	energies: Array<number>;
+	energies: number[];
 	/**
 	 * Photon energy spectrum [Normalised]
 	 */
-	photons: Array<number>;
+	photons: number[];
 	/**
 	 * Air Kerma calculated from spectrum [uGy]
 	 */
@@ -61,20 +64,21 @@ export interface BeamProperties {
 	twin: string
 
 	method: SourceType;
+	shape: EmissionShape;
 	/**
 	 * Filters applied to the resultant beam after generation
 	 */
-	filters: Array<Filter>;
+	filters: Filter[];
 	/**
 	 * Enable poisson noise, disabling in high-flux situations drastically increases performance.
 	 */
-	enableNoise:boolean;
+	enableNoise: boolean;
 }
 
 export interface TubeBeam {
 	voltage: number;
 	spotSize: number;
-	material:number;
+	material: number;
 	anodeAngle: number;
 	generator: BeamGenerator;
 }
@@ -82,17 +86,18 @@ export interface TubeBeam {
 export class LabBeam implements BeamProperties, TubeBeam {
 	twin: string;
 	method = "lab" as const
+	shape = "point" as const
 	voltage: number;
 	enableNoise: boolean;
 	exposure: number;
 	intensity: number;
-	filters: Array<Filter>;
+	filters: Filter[];
 	spotSize: number;
-	material:number;
+	material: number;
 	anodeAngle: number;
 	generator: BeamGenerator;
 
-	constructor(twin:string, voltage: number, enableNoise:boolean, exposure:number, intensity:number, spotSize:number, material:number,generator:BeamGenerator, anodeAngle:number, filters:Array<Filter>) {
+	constructor(twin: string, voltage: number, enableNoise: boolean, exposure: number, intensity: number, spotSize: number, material: number, generator: BeamGenerator, anodeAngle: number, filters: Array<Filter>) {
 		this.twin = twin;
 		this.voltage = voltage;
 		this.enableNoise = enableNoise;
@@ -109,14 +114,15 @@ export class LabBeam implements BeamProperties, TubeBeam {
 export class SynchBeam implements BeamProperties {
 	twin: string
 	method = "synch" as const
+	shape = "parallel" as const
 	enableNoise: boolean
 	energy: number
 	exposure: number
 	flux: number
-	harmonics:boolean
-	filters: Array<Filter>
+	harmonics: boolean
+	filters: Filter[]
 
-	constructor(twin:string, energy:number, enableNoise:boolean, exposure:number, flux:number, harmonics:boolean, filters:Array<Filter>) {
+	constructor(twin: string, energy: number, enableNoise: boolean, exposure: number, flux: number, harmonics: boolean, filters: Array<Filter>) {
 		this.twin = twin;
 		this.energy = energy;
 		this.enableNoise = enableNoise;
@@ -128,18 +134,19 @@ export class SynchBeam implements BeamProperties {
 }
 
 export class MedBeam implements BeamProperties, TubeBeam {
-	twin:string
+	twin: string
 	method = "med" as const
-	enableNoise:boolean
+	shape = "point" as const
+	enableNoise: boolean
 	voltage: number
 	mas: number
-	filters: Array<Filter>
+	filters: Filter[]
 	spotSize: number;
-	material:number;
+	material: number;
 	anodeAngle: number;
 	generator: BeamGenerator;
 
-	constructor(twin:string, voltage: number, enableNoise:boolean, mas:number, spotSize:number, material:number,generator:BeamGenerator, anodeAngle:number, filters:Array<Filter>) {
+	constructor(twin: string, voltage: number, enableNoise: boolean, mas: number, spotSize: number, material: number, generator: BeamGenerator, anodeAngle: number, filters: Array<Filter>) {
 		this.twin = twin;
 		this.voltage = voltage;
 		this.enableNoise = enableNoise;
@@ -177,8 +184,8 @@ export class SpectraDisplay {
 	}
 
 
-	public set viewFormat(v: ViewFormat) {
-		this._viewFormat = v;
+	public set viewFormat(format: ViewFormat) {
+		this._viewFormat = format;
 		this.displaySpectra();
 	}
 
@@ -211,21 +218,21 @@ export class SpectraDisplay {
 		const filter = this.normaliseSpectra(this.filteredSpectra.photons, this.viewFormat);
 		const unfilter = this.normaliseSpectra(this.unfilteredSpectra.photons, this.viewFormat);
 
-		let title:string;
+		let title: string;
 		let prop;
 		switch (this.beam.method) {
-		case "lab":
-			prop = this.beam as LabBeam;
-			title = ElementNames[prop.material] + " beam @ " + prop.voltage + "kV";
-			break;
-		case "med":
-			prop = this.beam as MedBeam;
-			title = prop.voltage + "kV beam @ " + prop.mas + "mAs";
-			break;
-		case "synch":
-			prop = this.beam as SynchBeam;
-			title = prop.energy + "keV synchrotron beam @ " + prop.flux + "x10¹⁰ photons/s/cm²";
-			break;
+			case "lab":
+				prop = this.beam as LabBeam;
+				title = ElementNames[prop.material] + " beam @ " + prop.voltage + "kV";
+				break;
+			case "med":
+				prop = this.beam as MedBeam;
+				title = prop.voltage + "kV beam @ " + prop.mas + "mAs";
+				break;
+			case "synch":
+				prop = this.beam as SynchBeam;
+				title = prop.energy + "keV synchrotron beam @ " + prop.flux + "x10¹⁰ photons/s/cm²";
+				break;
 		}
 
 		const chartOptions: ChartOptions = {
@@ -322,21 +329,21 @@ export class SpectraDisplay {
 	private normaliseSpectra(spectra: number[], format: ViewFormat): number[] {
 		const max: number = Math.max(...spectra);
 		const min: number = Math.min(...spectra);
-		const total: number = spectra.reduce((previousValue:number, currentValue:number) => {
+		const total: number = spectra.reduce((previousValue: number, currentValue: number) => {
 			return previousValue + currentValue;
 		});
 
 		switch (format) {
-		case "0-1 Normalisation":
-			return spectra.map((value: number) => {
-				return (value - min) / (max - min);
-			});
-		case "Percentage":
-			return spectra.map((value: number) => {
-				return (value / total) * 100;
-			});
-		default:
-			return spectra;
+			case "0-1 Normalisation":
+				return spectra.map((value: number) => {
+					return (value - min) / (max - min);
+				});
+			case "Percentage":
+				return spectra.map((value: number) => {
+					return (value / total) * 100;
+				});
+			default:
+				return spectra;
 		}
 	}
 }

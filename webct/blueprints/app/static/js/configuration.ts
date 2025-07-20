@@ -4,14 +4,16 @@ import { GVXRConfig } from "./formats/GVXRLoader";
 import { configFull, configSubset, ExportModes as ExportMode, ExportOptions, getConfigKeys, WEBCT_FULL_CONFIG, WebCTConfig } from "./types";
 import { XTEKCTConfig } from "./formats/XTEKCTLoader";
 import { ScanDocuConfig } from "./formats/ScanDocuLoader";
+import { SupportsReconstruction } from "./app";
+import { ReconstructionRequestError } from "../../../reconstruction/static/js/errors";
 
-let ConfigButton:SlIconButton;
-let CloseDialogButton:SlButton;
-let ConfigDialog:SlDialog;
-let JsonSettingsPanel:HTMLDivElement;
-let GvxrSettingsPanel:HTMLDivElement;
-let DownloadConfigButton:SlButton;
-let UploadConfigButton:SlButton;
+let ConfigButton: SlIconButton;
+let CloseDialogButton: SlButton;
+let ConfigDialog: SlDialog;
+let JsonSettingsPanel: HTMLDivElement;
+let GvxrSettingsPanel: HTMLDivElement;
+let DownloadConfigButton: SlButton;
+let UploadConfigButton: SlButton;
 
 let ModeButton: SlButton;
 let ModeJson: SlMenuItem;
@@ -30,13 +32,13 @@ let OptionMatasIDCheckbox: SlCheckbox;
 let OptionReconstructionFolderInput: SlInput;
 let OptionProjectionFolderInput: SlInput;
 
-let CodePreview:HTMLPreElement;
+let CodePreview: HTMLPreElement;
 
 // Used for exporting to files
-let ConfigContent:string;
-let ConfigFormat:ExportMode;
+let ConfigContent: string;
+let ConfigFormat: ExportMode;
 
-export function setupConfig():boolean {
+export function setupConfig(): boolean {
 	const button_config = document.getElementById("buttonConfig");
 	const button_config_close = document.getElementById("buttonConfigClose");
 	const dialog_config = document.getElementById("dialogueConfig");
@@ -89,10 +91,10 @@ export function setupConfig():boolean {
 		console.log(dialog_config);
 		console.log(button_config_close);
 		console.log(preview_code);
-		
+
 		console.log(settings_panel_json);
 		console.log(settings_panel_gvxr);
-		
+
 		console.log(button_config_download);
 		console.log(button_config_upload);
 
@@ -118,7 +120,7 @@ export function setupConfig():boolean {
 
 	ConfigDialog = dialog_config as SlDialog;
 	CloseDialogButton = button_config_close as SlButton;
-	CloseDialogButton.onclick=()=>{
+	CloseDialogButton.onclick = () => {
 		ConfigDialog.hide();
 	};
 
@@ -141,11 +143,11 @@ export function setupConfig():boolean {
 
 
 	ModeButton.onclick = updateConfigPreview;
-	ModeJson.onclick = () => {setMode(ExportMode.JSON);};
-	ModeGVXR.onclick = () => {setMode(ExportMode.GVXR);};
-	ModeXTEK.onclick = () => {setMode(ExportMode.XTEK);};
-	ModePython.onclick = () => {setMode(ExportMode.PYTHON);};
-	ModeDiondo.onclick = () => {setMode(ExportMode.DIONDO);}
+	ModeJson.onclick = () => { setMode(ExportMode.JSON); };
+	ModeGVXR.onclick = () => { setMode(ExportMode.GVXR); };
+	ModeXTEK.onclick = () => { setMode(ExportMode.XTEK); };
+	ModePython.onclick = () => { setMode(ExportMode.PYTHON); };
+	ModeDiondo.onclick = () => { setMode(ExportMode.DIONDO); }
 
 	BeamCheckbox = checkbox_config_beam as SlCheckbox;
 	DetectorCheckbox = checkbox_config_detector as SlCheckbox;
@@ -153,7 +155,7 @@ export function setupConfig():boolean {
 	CaptureCheckbox = checkbox_config_capture as SlCheckbox;
 	ReconCheckbox = checkbox_config_recon as SlCheckbox;
 
-	BeamCheckbox.addEventListener("sl-change",updateConfigPreview);
+	BeamCheckbox.addEventListener("sl-change", updateConfigPreview);
 	DetectorCheckbox.addEventListener("sl-change", updateConfigPreview);
 	SampleCheckbox.addEventListener("sl-change", updateConfigPreview);
 	CaptureCheckbox.addEventListener("sl-change", updateConfigPreview);
@@ -181,7 +183,7 @@ export function setupConfig():boolean {
 	return true;
 }
 
-function setMode(mode:ExportMode) {
+function setMode(mode: ExportMode) {
 	ModeGVXR.checked = false;
 	ModeJson.checked = false;
 	ModeXTEK.checked = false;
@@ -189,31 +191,31 @@ function setMode(mode:ExportMode) {
 	ModeDiondo.checked = false;
 
 	switch (mode) {
-	case ExportMode.JSON:
-		ModeButton.textContent = "Format: JSON";
-		ModeJson.checked = true;
-		ConfigFormat = ExportMode.JSON;
-		break;
-	case ExportMode.GVXR:
-		ModeButton.textContent = "Format: gVXR";
-		ModeGVXR.checked = true;
-		ConfigFormat = ExportMode.GVXR;
-		break;
-	case ExportMode.XTEK:
-		ModeButton.textContent = "Format: XtekCT";
-		ModeXTEK.checked = true;
-		ConfigFormat = ExportMode.XTEK;
-		break;
-	case ExportMode.PYTHON:
-		ModeButton.textContent = "Format: Python";
-		ModePython.checked = true;
-		ConfigFormat = ExportMode.PYTHON;
-		break;
-	case ExportMode.DIONDO:
-		ModeButton.textContent = "Format: XML (Diondo)";
-		ModeDiondo.checked = true;
-		ConfigFormat = ExportMode.DIONDO;
-		break;
+		case ExportMode.JSON:
+			ModeButton.textContent = "Format: JSON";
+			ModeJson.checked = true;
+			ConfigFormat = ExportMode.JSON;
+			break;
+		case ExportMode.GVXR:
+			ModeButton.textContent = "Format: gVXR";
+			ModeGVXR.checked = true;
+			ConfigFormat = ExportMode.GVXR;
+			break;
+		case ExportMode.XTEK:
+			ModeButton.textContent = "Format: XtekCT";
+			ModeXTEK.checked = true;
+			ConfigFormat = ExportMode.XTEK;
+			break;
+		case ExportMode.PYTHON:
+			ModeButton.textContent = "Format: Python";
+			ModePython.checked = true;
+			ConfigFormat = ExportMode.PYTHON;
+			break;
+		case ExportMode.DIONDO:
+			ModeButton.textContent = "Format: XML (Diondo)";
+			ModeDiondo.checked = true;
+			ConfigFormat = ExportMode.DIONDO;
+			break;
 	}
 
 	// Config preview will update the config to the new mode.
@@ -226,34 +228,35 @@ function updateConfigPreview() {
 	DetectorCheckbox.disabled = false;
 	SampleCheckbox.disabled = false;
 	CaptureCheckbox.disabled = false;
-	ReconCheckbox.disabled = false;
+	ReconCheckbox.disabled = !SupportsReconstruction;
+
 	JsonSettingsPanel.classList.add("hidden");
 	GvxrSettingsPanel.classList.add("hidden");
 	GvxrSettingsPanel.setAttribute("mode", "gvxr");
 
 	// Call independent mode update functions
-	let content:string;
+	let content: string;
 	CaptureCheckbox.innerHTML = "<sl-icon name=\"camera-reels\"></sl-icon> Capture Plan"
 	ReconCheckbox.innerHTML = "<sl-icon name=\"box\"></sl-icon> Reconstruction"
 
 	switch (ConfigFormat) {
-	case ExportMode.JSON:
-		content = updateJsonConfig();
-		break;
-	case ExportMode.GVXR:
-		content = updateGvxrConfig();
-		break;
-	case ExportMode.XTEK:
-		content = updateXtekConfig();
-		break;
-	case ExportMode.PYTHON:
-		content = updatePythonConfig();
-		CaptureCheckbox.innerHTML = "<sl-icon name=\"camera-reels\"></sl-icon> Simulate X-ray Scan"
-		ReconCheckbox.innerHTML = "<sl-icon name=\"box\"></sl-icon> Reconstruct with CIL"
-		break;
-	case ExportMode.DIONDO:
-		content = updateDiondoConfig();
-		break;
+		case ExportMode.JSON:
+			content = updateJsonConfig();
+			break;
+		case ExportMode.GVXR:
+			content = updateGvxrConfig();
+			break;
+		case ExportMode.XTEK:
+			content = updateXtekConfig();
+			break;
+		case ExportMode.PYTHON:
+			content = updatePythonConfig();
+			CaptureCheckbox.innerHTML = "<sl-icon name=\"camera-reels\"></sl-icon> Simulate X-ray Scan"
+			ReconCheckbox.innerHTML = "<sl-icon name=\"box\"></sl-icon> Reconstruct with CIL"
+			break;
+		case ExportMode.DIONDO:
+			content = updateDiondoConfig();
+			break;
 	}
 
 	// update export box, and download, with text content
@@ -278,13 +281,15 @@ function forceFullExport() {
 	DetectorCheckbox.disabled = true;
 	SampleCheckbox.disabled = true;
 	CaptureCheckbox.disabled = true;
-	ReconCheckbox.disabled = true;
+	ReconCheckbox.disabled = SupportsReconstruction;
+
 
 	BeamCheckbox.checked = true;
 	DetectorCheckbox.checked = true;
 	SampleCheckbox.checked = true;
 	CaptureCheckbox.checked = true;
 	ReconCheckbox.checked = true;
+	ReconCheckbox.checked = SupportsReconstruction;
 }
 
 
@@ -299,9 +304,9 @@ function updateJsonConfig() {
 			{
 				beam: BeamCheckbox.checked,
 				detector: DetectorCheckbox.checked,
-				samples:SampleCheckbox.checked,
+				samples: SampleCheckbox.checked,
 				capture: CaptureCheckbox.checked,
-				recon:ReconCheckbox.checked
+				recon: ReconCheckbox.checked && SupportsReconstruction
 			},
 			getExportOptions()
 		),
@@ -362,46 +367,46 @@ function updatePythonConfig() {
 	}, options);
 }
 
-function setExportContent(content:string):void {
+function setExportContent(content: string): void {
 	// Update code preview
 	CodePreview.textContent = content;
 	ConfigContent = content;
 }
 
-function downloadConfig():void {
+function downloadConfig(): void {
 	// Create blob
-	const blob = new Blob([ConfigContent], {type:"text/plain"});
+	const blob = new Blob([ConfigContent], { type: "text/plain" });
 
 	const va = document.createElement("a");
 	va.href = window.URL.createObjectURL(blob);
 
 	switch (ConfigFormat) {
-	case ExportMode.JSON:
-		va.download = "Config-WebCT.json";
-		break;
-	case ExportMode.GVXR:
-		va.download = "Config-GVXR.json";
-		break;
-	case ExportMode.XTEK:
-		va.download = "Config-XTEK.xtek";
-		break;
-	case ExportMode.DIONDO:
-		va.download = "Config-Diondo.xml";
-		break;
-	case ExportMode.PYTHON:
-		va.download = "simulate.py";
-		break;
+		case ExportMode.JSON:
+			va.download = "Config-WebCT.json";
+			break;
+		case ExportMode.GVXR:
+			va.download = "Config-GVXR.json";
+			break;
+		case ExportMode.XTEK:
+			va.download = "Config-XTEK.xtek";
+			break;
+		case ExportMode.DIONDO:
+			va.download = "Config-Diondo.xml";
+			break;
+		case ExportMode.PYTHON:
+			va.download = "simulate.py";
+			break;
 	}
 
 	va.click();
 }
 
-function showUploadConfigDialog():void {
+function showUploadConfigDialog(): void {
 	const fInput = document.createElement("input");
 	fInput.type = "file";
 	fInput.accept = ".json, .xtekct, .xml";
 
-	fInput.addEventListener("change",()=> {
+	fInput.addEventListener("change", () => {
 		console.log("Filebrowser change");
 
 		// check to see if a file was selected
@@ -420,8 +425,8 @@ function showUploadConfigDialog():void {
 	fInput.dispatchEvent(new MouseEvent("click"));
 }
 
-function parseImport(text:string) {
-	let config:configSubset | null = null;
+function parseImport(text: string) {
+	let config: configSubset | null = null;
 	if (text[0] == "{") {
 		// File format starts with a json token, try parsing and see what happens
 		try {
@@ -453,7 +458,7 @@ function parseImport(text:string) {
 			config = XTEKCTConfig.from_text(text).as_config();
 			console.log(config);
 		}
-	} else if (text[0] == "<" ) {
+	} else if (text[0] == "<") {
 		// likely XML file format, starting with '<xml'
 		if (ScanDocuConfig.can_parse(text)) {
 			console.log("Importing ScanDocPara Config");
@@ -478,7 +483,7 @@ function parseImport(text:string) {
 	DetectorCheckbox.checked = keys.detector;
 	SampleCheckbox.checked = keys.samples;
 	CaptureCheckbox.checked = keys.capture;
-	ReconCheckbox.checked = keys.recon;
+	ReconCheckbox.checked = keys.recon && SupportsReconstruction;
 
 	console.log("Applied Config");
 	ConfigDialog.hide();

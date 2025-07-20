@@ -6,7 +6,7 @@ import { Material, SampleProperties } from "../../../../samples/static/js/types"
 import { configFull, configSubset, ExportOptions } from "../types";
 import { FormatLoader, FormatLoaderStatic } from "./FormatLoader";
 
-type DistanceUnit = "m" | "cm"| "mm" | "um"
+type DistanceUnit = "m" | "cm" | "mm" | "um"
 type EnergyUnit = "electronvolt" | "eV" | "kiloelectronvolt" | "keV" | "megaelectronvolt" | "MeV"
 type Position = [number, number, number, DistanceUnit]
 type FilePath = string
@@ -34,19 +34,19 @@ type PointBeam = "PointSource"
 type BeamShape = ParallelBeam | PointBeam
 
 interface BeamEnergy {
-	Energy:number,
-	Unit:EnergyUnit,
-	PhotonCount:number,
+	Energy: number,
+	Unit: EnergyUnit,
+	PhotonCount: number,
 }
 
 interface GateMacro {
-	Unit:EnergyUnit
-	GateMacro:FilePath
+	Unit: EnergyUnit
+	GateMacro: FilePath
 }
 
 interface TextFile {
-	Unit:EnergyUnit
-	TextFile:FilePath
+	Unit: EnergyUnit
+	TextFile: FilePath
 }
 
 interface Tube {
@@ -71,36 +71,36 @@ type GVXRMaterial = ["element", MatElement] | ["compound", MatCompound] | ["mixt
 type sampleCommand = "MoveToCenter"
 
 interface sampleEntry {
-	Label:string,
-	Cube?:[number, DistanceUnit]
-	Cylinder?:[number, number,number, DistanceUnit],
+	Label: string,
+	Cube?: [number, DistanceUnit]
+	Cylinder?: [number, number, number, DistanceUnit],
 	Path?: FilePath,
 	Material: GVXRMaterial,
-	Density?:number,
-	Transform?: ["Rotation",number,number, number, number] | ["Translation", number, number, number, DistanceUnit] | ["Scaling", number, number, number]
+	Density?: number,
+	Transform?: ["Rotation", number, number, number, number] | ["Translation", number, number, number, DistanceUnit] | ["Scaling", number, number, number]
 	Type?: "inner" | "outer"
-	opacity?:number,
-	Unit:DistanceUnit,
+	opacity?: number,
+	Unit: DistanceUnit,
 }
 
 type sampleConfig = sampleEntry | sampleCommand
 
 interface scanConfig {
-	OutFolder:string,
-	NumberOfProjections:number,
-	FinalAngle:number,
-	StartAngle:number,
-	IncludeLastAngle:boolean,
-	"Flat-Field Correction":boolean,
+	OutFolder: string,
+	NumberOfProjections: number,
+	FinalAngle: number,
+	StartAngle: number,
+	IncludeLastAngle: boolean,
+	"Flat-Field Correction": boolean,
 }
 
-export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatLoader {
+export const GVXRConfig: FormatLoaderStatic = class GVXRConfig implements FormatLoader {
 	Detector: detectorConfig;
-	Source:sourceConfig;
-	Samples:sampleConfig[];
-	Scan?:scanConfig;
+	Source: sourceConfig;
+	Samples: sampleConfig[];
+	Scan?: scanConfig;
 
-	constructor(detector:detectorConfig, source:sourceConfig, samples:sampleConfig[], scan?:scanConfig){
+	constructor(detector: detectorConfig, source: sourceConfig, samples: sampleConfig[], scan?: scanConfig) {
 		this.Detector = detector;
 		this.Source = source;
 		this.Samples = samples;
@@ -108,15 +108,15 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 	}
 
 	to_text(): string {
-		return JSON.stringify(this, undefined, 4).replaceAll("false","False").replaceAll("true","True")
+		return JSON.stringify(this, undefined, 4).replaceAll("false", "False").replaceAll("true", "True")
 	}
 
-	static from_config(data:configFull, options:ExportOptions){
+	static from_config(data: configFull, options: ExportOptions) {
 		console.log("fromconfig");
 		console.log(data);
 		console.log(options);
 
-		const detector:detectorConfig = {
+		const detector: detectorConfig = {
 			UpVector: [0, 0, -1],
 			Position: [...data.capture.detectorPosition, "mm" as DistanceUnit],
 			Spacing: [data.detector.pixelSize, data.detector?.pixelSize, "mm" as DistanceUnit],
@@ -129,13 +129,13 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 			}
 		};
 
-		let beam:BeamSource;
+		let beam: BeamSource;
 		if (data.beam.method == "synch") {
 			console.log("beamsynch");
-			const synchBeam:SynchBeam = data.beam as never;
+			const synchBeam: SynchBeam = data.beam as never;
 			const totalCount = synchBeam.exposure * synchBeam.flux * 10e10;
 			beam = [{
-				Unit:"keV" as EnergyUnit,
+				Unit: "keV" as EnergyUnit,
 				Energy: synchBeam.energy,
 				PhotonCount: !synchBeam.harmonics ? totalCount : totalCount * 0.96,
 			}];
@@ -154,24 +154,24 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 			}
 		} else {
 			// Tube devices
-			const tubeBeam:TubeBeam = data.beam as never;
-			beam ={
+			const tubeBeam: TubeBeam = data.beam as never;
+			beam = {
 				kvp: tubeBeam.voltage,
 				"tube angle": tubeBeam.anodeAngle,
 			};
 		}
 
-		const source:sourceConfig = {
+		const source: sourceConfig = {
 			Position: [...data.capture.beamPosition, "mm" as DistanceUnit],
 			Shape: data.beam.method == "synch" ? "Parallel" : "PointSource",
 			Beam: beam
 		};
 
-		const samples:sampleConfig[] = ["MoveToCenter"];
+		const samples: sampleConfig[] = ["MoveToCenter"];
 		for (let key in data.samples.samples) {
 			const sample = data.samples.samples[key];
-			let material:GVXRMaterial;
-			let density:number;
+			let material: GVXRMaterial;
+			let density: number;
 			if (sample.material == undefined) {
 				const matsplit = sample.materialID?.split("/");
 				if (matsplit !== undefined) {
@@ -194,13 +194,13 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 			});
 		}
 
-		let scan:scanConfig|undefined = {
+		let scan: scanConfig | undefined = {
 			OutFolder: options.ProjectionFolder,
 			NumberOfProjections: data.capture.numProjections,
 			FinalAngle: data.capture.totalAngle,
 			StartAngle: 0,
 			IncludeLastAngle: false,
-			"Flat-Field Correction":true,
+			"Flat-Field Correction": true,
 		}
 
 		if (!options.gvxrIncludeScan) {
@@ -210,20 +210,20 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 		return new GVXRConfig(detector, source, samples, scan);
 	}
 
-	static from_text(data:string): GVXRConfig {
+	static from_text(data: string): GVXRConfig {
 		// Parse json, allow error to be thrown upwards
 		const obj = JSON.parse(data);
 
 		// Yes, we're assuming the json file has all objects existing and no mismatched errors.
 		// Yes, this should be replaced with a proper procedure to typecheck and validate all properties
-		const detector:detectorConfig = obj["Detector"];
-		const source:sourceConfig = obj["Source"];
-		const samples:sampleConfig[] = obj["Samples"];
-		const scan:scanConfig = obj["Scan"];
+		const detector: detectorConfig = obj["Detector"];
+		const source: sourceConfig = obj["Source"];
+		const samples: sampleConfig[] = obj["Samples"];
+		const scan: scanConfig = obj["Scan"];
 
 		if (detector.LSF === undefined) {
 			console.log("Undefined lsf");
-			detector.LSF = [0,1,0];
+			detector.LSF = [0, 1, 0];
 		}
 
 		if (detector.Scintillator === undefined) {
@@ -238,8 +238,8 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 		return new GVXRConfig(detector, source, samples, scan);
 	}
 
-	as_config():configSubset {
-		let beam:BeamProperties;
+	as_config(): configSubset {
+		let beam: BeamProperties;
 
 		if (this.Source.Shape == "Parallel" || this.Source.Shape == "ParallelBeam") {
 			// setup synch properties
@@ -248,16 +248,16 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 				"",
 				configBeam[0].Energy,
 				true,
-				1,1,false,[]
+				1, 1, false, []
 			);
 		} else {
 			// We only support kvp imports for point sources
 			const configBeam = this.Source.Beam as Tube;
-			let filters:Filter[] = [];
+			let filters: Filter[] = [];
 			if (configBeam.filter !== undefined && configBeam.filter.length > 0) {
 				filters = [{
-					material:ElementSymbols[configBeam.filter[0][0] as string as keyof typeof ElementSymbols],
-					thickness:configBeam.filter[0][1]
+					material: ElementSymbols[configBeam.filter[0][0] as string as keyof typeof ElementSymbols],
+					thickness: configBeam.filter[0][1]
 				}];
 			}
 			beam = new LabBeam(
@@ -274,7 +274,7 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 			);
 		}
 
-		const samples:Record<string, SampleProperties> = {};
+		const samples: Record<string, SampleProperties> = {};
 		for (let index = 0; index < this.Samples.length; index++) {
 			const sample = this.Samples[index];
 			if (typeof sample == "string") {
@@ -293,20 +293,20 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 				density: sample.Density as number,
 				description: "Imported GVXR Material",
 				material: sample.Material as Material["material"],
-				label: "GVXR Material "+index
+				label: "GVXR Material " + index
 			};
 
 			samples[sample.Label] = {
-				label:sample.Label,
-				modelPath:sample.Path,
-				sizeUnit:sample.Unit,
-				material:material
+				label: sample.Label,
+				modelPath: sample.Path,
+				sizeUnit: sample.Unit,
+				material: material
 			};
 		}
 
 
 		// pixel size
-		let pixelSize:number = 0
+		let pixelSize: number = 0
 		if (this.Detector.Spacing != undefined) {
 			// cast to mm, only take first element as we assume square pixels
 			switch (this.Detector.Spacing[2]) {
@@ -320,8 +320,8 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 		}
 
 		// physical size
-		let paneHeight:number = 0
-		let paneWidth:number = 0
+		let paneHeight: number = 0
+		let paneWidth: number = 0
 		if (this.Detector.Size != undefined) {
 			switch (this.Detector.Size[2]) {
 				case "mm":
@@ -366,14 +366,14 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 		let scintillatorThickness = this.Detector.Scintillator.Thickness;
 		if (this.Detector.Scintillator.Unit !== "mm") {
 			switch (this.Detector.Scintillator.Unit) {
-			case "cm":
-				scintillatorThickness = scintillatorThickness * 10;
-				break;
-			case "um":
-				scintillatorThickness = scintillatorThickness * 0.001;
-				break;
-			default:
-				break;
+				case "cm":
+					scintillatorThickness = scintillatorThickness * 10;
+					break;
+				case "um":
+					scintillatorThickness = scintillatorThickness * 0.001;
+					break;
+				default:
+					break;
 			}
 		}
 
@@ -382,7 +382,7 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 				paneHeight: paneHeight,
 				paneWidth: paneWidth,
 				pixelSize: pixelSize,
-				lsf: {pixels:Array.from(this.Detector.LSF, (e,i)=>i-Math.floor(this.Detector.LSF.length/2)), values:this.Detector.LSF},
+				lsf: { pixels: Array.from(this.Detector.LSF, (e, i) => i - Math.floor(this.Detector.LSF.length / 2)), values: this.Detector.LSF },
 				scintillator: {
 					material: scintillatorMaterial,
 					thickness: scintillatorThickness
@@ -399,7 +399,7 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 		};
 	}
 
-	static can_parse(obj:unknown): boolean {
+	static can_parse(obj: unknown): boolean {
 		// Ensure we have an object
 		if (typeof obj !== "object") {
 			return false;
@@ -409,17 +409,17 @@ export const GVXRConfig:FormatLoaderStatic = class GVXRConfig implements FormatL
 		// Please fix this issue microsoft, why can we not coherece typing on
 		// the unknown type????
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		const o:any = obj;
+		const o: any = obj;
 		// if (!("Detector" in obj)) {
 		// 	return false;
 		// }
 
 		// Workaround until aformentioned 'unknown' issues are fixed...
-		if(!Object.prototype.hasOwnProperty.call(obj, "Detector")){return false;}
-		if(!Object.prototype.hasOwnProperty.call(obj, "Source")){return false;}
-		if(!Object.prototype.hasOwnProperty.call(obj, "Samples")){return false;}
-		if(!Object.prototype.hasOwnProperty.call(o.Source, "Shape")){return false;}
-		if(!Object.prototype.hasOwnProperty.call(o.Detector, "Position")){return false;}
+		if (!Object.prototype.hasOwnProperty.call(obj, "Detector")) { return false; }
+		if (!Object.prototype.hasOwnProperty.call(obj, "Source")) { return false; }
+		if (!Object.prototype.hasOwnProperty.call(obj, "Samples")) { return false; }
+		if (!Object.prototype.hasOwnProperty.call(o.Source, "Shape")) { return false; }
+		if (!Object.prototype.hasOwnProperty.call(o.Detector, "Position")) { return false; }
 
 		// We've assured a bunch of gvxr-only keys exist, therefore it looks
 		// like a gvxr config we can parse later on. We don't do the full

@@ -25,12 +25,16 @@ dependencies:
   # Packaging
   - pyinstaller
 
+  # Development linting
+  - ruff
+
   # Pip packages
   # (environment.yml does not support multiple pip: keys.)
   - pip
   - pip:
     # Runtime
     - gvxr
+    - json5
     - imageio[ffmpeg]
     - git+https://bitbucket.org/spekpy/spekpy_release.git
     - xpecgen

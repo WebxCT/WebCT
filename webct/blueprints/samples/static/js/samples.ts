@@ -4,7 +4,7 @@
  */
 
 import { SlButton, SlDialog, SlInput, SlProgressBar, SlRadio, SlSelect, SlTab, SlTabGroup } from "@shoelace-style/shoelace";
-import { serialize } from "@shoelace-style/shoelace/dist/utilities/form";
+import { serialize } from "@shoelace-style/shoelace/dist/utilities/form.js";
 import { AlertType, showAlert } from "../../../base/static/js/base";
 import { prepareSampleRequest, processResponse, requestMaterialList, requestModelList, requestSampleData, SamplesResponseRegistry, sendMaterialData, sendSamplesData, uploadModel, SamplesRequestRegistry, deleteMaterialData } from "./api";
 import { SampleConfigError, SampleRequestError, showError, showValidationError } from "./errors";

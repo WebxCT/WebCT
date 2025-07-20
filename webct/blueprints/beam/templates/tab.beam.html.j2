@@ -7,14 +7,14 @@
 
 <div class="group">
 	<div>
-		<sl-select label="Digital Twin" value="dthe" id="selectTwin">
-			<sl-menu-item value="">None</sl-menu-item>
+		<sl-select label="Digital Twin" value="none" id="selectTwin">
+			<sl-menu-item value="none" checked>None</sl-menu-item>
 
 			<sl-divider></sl-divider>
 
 			<sl-menu-label>Lab CT Sources</sl-menu-label>
 
-			<sl-menu-item value="dthe">DTHE
+			<sl-menu-item value="DTHE">DTHE
 				<span> Dual Tomograph for High Energy (Source 2) </span>
 				{% include "./tags/insa-lyon.html.j2" %}
 				{% include "./tags/full.html.j2" %}
@@ -22,14 +22,24 @@
 
 			<sl-divider></sl-divider>
 
-
 			<sl-menu-label>Synchrotron Sources</sl-menu-label>
 
-			<sl-menu-item value="diad">DIAD
+			<sl-menu-item value="DIAD">DIAD
 				<span> K11 DIAD: Dual Imaging and Diffraction </span>
 				{% include "./tags/diamond.html.j2" %}
 				{% include "./tags/full.html.j2" %}
 			</sl-menu-item>
+		</sl-select>
+		<p id="pTwinName"></p>
+		<small id="pTwinDate"></small>
+		<img src="" id="imgTwin"/>
+		<small id="pTwinDescription"></small>
+	</div>
+</div>
+
+<div class="group">
+	<div>
+		<sl-select label="Source" id="selectTwinBeam">
 		</sl-select>
 
 		<sl-select label="Source Type" value="lab" id="selectBeamSource">
@@ -65,6 +75,9 @@
 		<sl-input type="number" label="Exposure" step="0.01" value="1" id="inputBeamExposure">
 			{% include "./units/exposure.html.j2" %}
 		</sl-input>
+
+		<sl-select type="select" label="Exposure", id="selectTwinBeamExposure">
+		</sl-select>
 
 		<sl-checkbox id="checkboxBeamHarmonics" advanced>Beam Harmonics</sl-checkbox>
 

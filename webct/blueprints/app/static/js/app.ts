@@ -1,11 +1,9 @@
-// export * from "@shoelace-style/shoelace";
-
 import { SlButton, SlProgressBar } from "@shoelace-style/shoelace";
 import { setupBeam, spectraNormPercentButton, SyncBeam, UpdateBeam } from "../../../beam/static/js/beam";
 import { getCaptureParams, setupCapture, SyncCapture, UpdateCapture, UpdateCapturePreview } from "../../../capture/static/js/capture";
 import { setupDetector, SyncDetector, UpdateDetector } from "../../../detector/static/js/detector";
 import { MarkLoading, PreviewData, setupPreview, updateProjection } from "../../../preview/static/js/sim/projection";
-import { setupRecon, SyncRecon, UpdateRecon, UpdateReconPreview as UpdateReconPreview } from "../../../reconstruction/static/js/recon";
+import { setupRecon, SyncRecon, UpdateRecon, UpdateReconPreview } from "../../../reconstruction/static/js/recon";
 import { setupSamples, SyncSamples, UpdateSamples } from "../../../samples/static/js/samples";
 import { setupConfig } from "./configuration";
 import { setupDownload, UpdateStats } from "./download";
@@ -15,9 +13,11 @@ let CaptureButtons: HTMLCollectionOf<SlButton>;
 let ReconButtons: HTMLCollectionOf<SlButton>;
 let LoadingBar: SlProgressBar;
 
-type LongLoadingSource = "Recon"|"Capture"|"Download"|"";
+type LongLoadingSource = "Recon" | "Capture" | "Download" | "";
 
 let LongLoadingCaller: LongLoadingSource;
+
+export let SupportsReconstruction = document.getElementById("selectReconstruction") !== null
 
 function bindGroupButtons() {
 	const groups = document.getElementsByClassName("group");
@@ -37,7 +37,8 @@ function bindGroupButtons() {
 					button.onclick = () => {
 						div.toggleAttribute("active");
 						button.innerHTML = "<sl-icon name=\"chevron-compact-down\"></sl-icon>";
-						if (div.attributes.getNamedItem("active")) {;
+						if (div.attributes.getNamedItem("active")) {
+							;
 							button.innerHTML = "<sl-icon name=\"chevron-compact-up\"></sl-icon>";
 						}
 					};
@@ -184,7 +185,10 @@ function loadApp() {
 	setupPreview();
 	setupSamples();
 	setupCapture();
-	setupRecon();
+
+	if (SupportsReconstruction) {
+		setupRecon();
+	}
 
 	setupDownload();
 
@@ -198,14 +202,14 @@ type LoadingType = "default" | "long" | "error";
 // https://stackoverflow.com/questions/14226803/wait-5-seconds-before-executing-next-line
 const delay = async (ms: number) => new Promise(res => setTimeout(res, ms));
 
-function UpdateProgressTime(seconds:number, segments:number) {
-	console.log("UpdateProgressTime("+seconds+")");
+function UpdateProgressTime(seconds: number, segments: number) {
+	console.log("UpdateProgressTime(" + seconds + ")");
 	LoadingBar.value = (1 / seconds)
 
 	let delta = seconds / segments
 	console.log(delta);
 	setTimeout(async () => {
-		for (let time = 1; time < seconds; time+=delta) {
+		for (let time = 1; time < seconds; time += delta) {
 			console.log("tik ");
 			if (LongLoadingCaller == "") {
 				LoadingBar.value = 100;
@@ -220,7 +224,7 @@ function UpdateProgressTime(seconds:number, segments:number) {
 
 let loadtime = 0
 
-function setPageLoading(loading: boolean, type: LoadingType = "default", source: LongLoadingSource=""): void {
+function setPageLoading(loading: boolean, type: LoadingType = "default", source: LongLoadingSource = ""): void {
 	if (loading) {
 		loadtime = performance.now()
 		console.log("## Button Loading");
@@ -274,34 +278,34 @@ function setPageLoading(loading: boolean, type: LoadingType = "default", source:
 		if (performance.now() - loadtime < 2000) {
 			// less than 3000ms has passed since transitioning to a loading
 			// state. Therefore pause for the remainding time and a little extra
-			setTimeout(() => {setPageLoading(loading, type, source)}, 2500 - (performance.now() - loadtime))
+			setTimeout(() => { setPageLoading(loading, type, source) }, 2500 - (performance.now() - loadtime))
 			return
 		}
 
 		// Check to see if the finish loading source supercedes the caller
 		if (type != "error") {
 			switch (LongLoadingCaller) {
-			case "Capture":
-				// Capture loading cannot be cancelled by random sources
-				if (source == "") {
-					return;
-				}
-				break;
-			case "Recon":
-				// Reconstruction loading has a higher priority than capture
-				if (source == "" || source == "Capture") {
-					return;
-				}
-				break;
-			case "Download":
-				// Download loading has the highest priority
-				if (source !== "Download") {
-					return;
-				}
-				break;
-			case "":
-			default:
-				break;
+				case "Capture":
+					// Capture loading cannot be cancelled by random sources
+					if (source == "") {
+						return;
+					}
+					break;
+				case "Recon":
+					// Reconstruction loading has a higher priority than capture
+					if (source == "" || source == "Capture") {
+						return;
+					}
+					break;
+				case "Download":
+					// Download loading has the highest priority
+					if (source !== "Download") {
+						return;
+					}
+					break;
+				case "":
+				default:
+					break;
 			}
 			console.log("## Finished Loading");
 		} else {
@@ -345,12 +349,16 @@ function setPageLoading(loading: boolean, type: LoadingType = "default", source:
 function InitialUpdate(): void {
 	setPageLoading(true);
 	MarkLoading();
-	UpdateBeam()
+	let _chain = UpdateBeam()
 		.then(() => UpdateDetector())
 		.then(() => UpdateSamples())
 		.then(() => UpdateCapture())
-		.then(() => UpdateRecon())
-		.then(() => updateProjection())
+
+	if (SupportsReconstruction) {
+		_chain = _chain.then(() => UpdateRecon())
+	}
+
+	_chain = _chain.then(() => updateProjection())
 		.finally(() => {
 			setPageLoading(false);
 			spectraNormPercentButton.click();
@@ -363,12 +371,14 @@ export function UpdatePage(): Promise<void> {
 	MarkLoading();
 	console.log("UpdatePage");
 
-	return SyncBeam()
+	let _chain = SyncBeam()
 		.then(() => SyncDetector())
 		.then(() => SyncSamples())
 		.then(() => SyncCapture())
-		.then(() => SyncRecon())
-		.then(() => updateProjection())
+	if (SupportsReconstruction) {
+		_chain = _chain.then(() => SyncRecon())
+	}
+	return _chain.then(() => updateProjection())
 		.finally(() => {
 			setPageLoading(false);
 			UpdateStats();
@@ -378,7 +388,7 @@ export function UpdatePage(): Promise<void> {
 function updatePreviewCapture(): void {
 	UpdatePage().then(() => {
 		// Due to the way things work with nested requests, we need to make an event listener
-		setPageLoading(true, "long","Capture");
+		setPageLoading(true, "long", "Capture");
 		UpdateCapturePreview();
 	});
 }
@@ -386,7 +396,7 @@ function updatePreviewCapture(): void {
 function updatePreviewRecon(): void {
 	UpdatePage().then(() => {
 		// Due to the way things work with nested requests, we need to make an event listener
-		setPageLoading(true, "long","Recon");
+		setPageLoading(true, "long", "Recon");
 
 		UpdateReconPreview();
 		// Also generate capture preview, since recon needs to process all projections anyway.

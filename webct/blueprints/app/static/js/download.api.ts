@@ -38,12 +38,12 @@ export interface DownloadRequest {
 	resource: DownloadResource
 }
 
-export async function sendPrepare(data:DownloadRequest): Promise<Response> {
+export async function sendPrepare(data: DownloadRequest): Promise<Response> {
 	return await fetch(Endpoint.putPrepare, {
 		method: "PUT",
 		body: JSON.stringify(data),
 		headers: {
-			"Content-Type":"application/json"
+			"Content-Type": "application/json"
 		}
 	});
 }
@@ -52,11 +52,11 @@ export async function requestStatus(): Promise<Response> {
 	return await fetch(Endpoint.getStatus);
 }
 
-export function downloadEndpoint(data:DownloadRequest): string {
-	return Endpoint.getDownload+"?resource="+data.resource+"&format="+data.format;
+export function downloadEndpoint(data: DownloadRequest): string {
+	return Endpoint.getDownload + "?resource=" + data.resource + "&format=" + data.format;
 }
 
-export function startDownload(data:DownloadRequest):void {
+export function startDownload(data: DownloadRequest): void {
 	const fakeA = document.createElement("a");
 	fakeA.href = downloadEndpoint(data);
 	fakeA.download = "filename.zip";

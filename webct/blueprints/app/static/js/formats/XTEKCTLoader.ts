@@ -1,8 +1,5 @@
 import { ElementSymbols } from "../../../../base/static/js/elements";
-import { BeamProperties, Filter, LabBeam, SynchBeam, TubeBeam } from "../../../../beam/static/js/types";
-import { DetectorProperties, ScintillatorMaterial } from "../../../../detector/static/js/types";
-import { MaterialLib } from "../../../../samples/static/js/samples";
-import { Material, SampleProperties } from "../../../../samples/static/js/types";
+import { BeamProperties, LabBeam } from "../../../../beam/static/js/types";
 import { configFull, configSubset, ExportOptions } from "../types";
 import { FormatLoader, FormatLoaderStatic } from "./FormatLoader";
 
@@ -223,15 +220,15 @@ DICOMTags=${this.config.DICOMTags}
 		`
 	}
 
-	static from_config(data:configFull, options:ExportOptions) {
+	static from_config(data: configFull, options: ExportOptions) {
 
 		if (data.beam.method == "synch") {
 			throw "Nikon XTEKCT does not support synchrotron sources."
 		}
 
-		let sdd = (data.capture.beamPosition[1] *-1) + data.capture.detectorPosition[1]
+		let sdd = (data.capture.beamPosition[1] * -1) + data.capture.detectorPosition[1]
 		let sod = data.capture.beamPosition[1] * -1
-		let VoxelSize = sod  / sdd * data.detector.pixelSize
+		let VoxelSize = sod / sdd * data.detector.pixelSize
 
 		return new XTEKCTConfig({
 			Name: "WebCT_Exported",
@@ -287,11 +284,11 @@ DICOMTags=${this.config.DICOMTags}
 			CentreOfRotationBottom: 0,
 			InterpolationType: 1,
 			BeamHardeningLUTFile: "",
-			CoefX4:0,
-			CoefX3:0,
-			CoefX2:0,
-			CoefX1:0,
-			CoefX0:0,
+			CoefX4: 0,
+			CoefX3: 0,
+			CoefX2: 0,
+			CoefX1: 0,
+			CoefX0: 0,
 			Scale: 1,
 			FilterType: 0,
 			CutOffFrequency: 3.937008,
@@ -320,7 +317,7 @@ DICOMTags=${this.config.DICOMTags}
 			// split into property and value
 			let prop = line.split("=")[0]
 			let value = line.split("=")[1]
-			console.log(prop +": " + value);
+			console.log(prop + ": " + value);
 
 			// File metadata
 			if (prop == "Name") { config["Name"] = value }

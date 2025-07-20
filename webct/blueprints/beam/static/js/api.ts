@@ -2,7 +2,6 @@
  * api.ts : API functions for communicating between the client and server.
  * @author Iwan Mitchell
  */
-import { Element } from "../../../base/static/js/types";
 import { SpectraData, BeamProperties, SourceType, BeamGenerator, LabBeam, Filter, MedBeam, SynchBeam } from "./types";
 
 // ====================================================== //

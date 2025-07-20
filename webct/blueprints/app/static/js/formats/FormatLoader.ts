@@ -8,7 +8,7 @@ export interface FormatLoader {
 }
 
 export interface FormatLoaderStatic {
-	from_config: (config:configFull, options:ExportOptions) => FormatLoader;
-	from_text: (obj:string) => FormatLoader;
-	can_parse: (text:string) => boolean;
+	from_config: (config: configFull, options: ExportOptions) => FormatLoader;
+	from_text: (obj: string) => FormatLoader;
+	can_parse: (text: string) => boolean;
 }

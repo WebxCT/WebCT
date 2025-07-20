@@ -44,6 +44,7 @@
 			<p><small>Zip file containing 360, 32bit TIFFs</small></p>
 			<p><small>Single 360x500x500 float32 numpy array</small></p> -->
 		</div>
+		{% if cuda %}
 		<div>
 			<div>
 				{% include "recon-centre.html.j2" %}
@@ -79,6 +80,7 @@
 			</sl-button-group>
 			<p><small id="smallDownloadRecon">Single 32bit float TIFF stack with 500 (500x500) slices</small></p>
 		</div>
+		{% endif %}
 	</div>
 
 	<div id="panelDownloadStatus">

@@ -1,9 +1,16 @@
 from dataclasses import dataclass
 from typing import Dict, Type, Union, cast
+
 from cil.framework import AcquisitionData, ImageGeometry
-from cil.plugins.astra import ProjectionOperator
-from cil.optimisation.functions import (IndicatorBox, TotalVariation, Function, LeastSquares)
-import numpy as np
+from cil.optimisation.functions import Function, LeastSquares
+
+import webct
+
+if webct.HAS_CUDA:
+	from cil.plugins.astra.operators import ProjectionOperator
+else:
+	class ProjectionOperator(): ...
+
 
 @dataclass(frozen=True)
 class DiffParams():

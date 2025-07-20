@@ -44,11 +44,20 @@ WebCT
 					<sl-icon name="camera-reels" slot="prefix"></sl-icon>
 				</sl-button>
 			</sl-tooltip>
+			{% if cuda %}
 			<sl-tooltip content="Reconstruction" placement="right" hoist>
 				<sl-button size="large" target="reconstruction">
 					<sl-icon name="box" slot="prefix"></sl-icon>
 				</sl-button>
 			</sl-tooltip>
+			{% else %}
+			<sl-tooltip content="Reconstruction Unavailable - WebCT Host requires CUDA" placement="right" hoist>
+				<sl-button size="large" target="reconstruction" disabled>
+					<sl-icon name="box" slot="prefix"></sl-icon>
+				</sl-button>
+			</sl-tooltip>
+			{% endif %}
+
 		</aside>
 		<aside id="sidebar">
 			<section class="tab" type="beam" active>
@@ -63,9 +72,11 @@ WebCT
 			<section class="tab" type="capture">
 				{% include "tab.capture.html.j2" %}
 			</section>
+			{% if cuda %}
 			<section class="tab" type="reconstruction">
 				{% include "tab.reconstruction.html.j2" %}
 			</section>
+			{% endif %}
 		</aside>
 		<section class="content">
 			<sl-progress-bar indeterminate id="barLoading"></sl-progress-bar>
@@ -84,9 +95,11 @@ WebCT
 					<section class="pane" type="capture">
 						{% include "pane.capture.html.j2" %}
 					</section>
+					{% if cuda %}
 					<section class="pane" type="reconstruction">
 						{% include "pane.reconstruction.html.j2" %}
 					</section>
+					{% endif %}
 				</section>
 				<section class="half-pane" id="webgl" slot="end">
 					{% include "preview.pane.html.j2" %}
