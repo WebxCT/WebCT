@@ -1,6 +1,9 @@
 # logs
 logs/
 
+# Shoelace distribution
+webct/blueprints/vendor/static/
+
 # generated version information
 file_version_info.cfg
 webct/blueprints/base/templates/version.html.j2

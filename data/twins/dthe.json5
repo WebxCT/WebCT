@@ -1,12 +1,31 @@
 {
 	// Name of the system, can include spaces
 	"name": "DTHE",
+
 	// Description of the system, mention the source, detector, affiliations,
 	// etc
 	"description": "Dual Tomograph for High Energy (Source 2)\nA machine with two x-ray sources",
+
+	// Facility the X-ray unit is hosted by
 	"facility": "INSA-Lyon",
+
 	// Date of data collection used to create the digital twin.
 	"date": "2023-07-05",
+
+	// Any affiliations related to the digital twin and machine, e.g facility,
+	// manufacturer, funding partner, lab of the researcher, etc
+	"affiliations": [
+		{
+			"name": "INSA-Lyon",
+			"website": "https://www.insa-lyon.fr/",
+			"image": "./img/insa-lyon.png"
+		},
+		{
+			"name": "INSA-Lyon",
+			"website": "https://www.insa-lyon.fr/",
+			"image": "./img/insa-lyon.png"
+		}
+	],
 
 
 	// X-ray emission source

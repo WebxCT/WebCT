@@ -14,7 +14,7 @@ export type SourceType = "lab" | "synch" | "med"
 export type EmissionShape = "point" | "parallel"
 
 
-export type BeamGenerator = "spekpy" | "xpecgen"
+export type BeamGenerator = "spekpy" | "xpecgen" | "monochromatic" | "static";
 
 /**
  * Energy spectra emitted by a X-Ray beam.
@@ -62,6 +62,10 @@ export interface BeamProperties {
 	 * Name of the source's digital twin
 	 */
 	twin: string
+	/**
+	 * Selected digital twin beam source
+	 */
+	twin_beam: string
 
 	method: SourceType;
 	shape: EmissionShape;
@@ -73,6 +77,10 @@ export interface BeamProperties {
 	 * Enable poisson noise, disabling in high-flux situations drastically increases performance.
 	 */
 	enableNoise: boolean;
+	/**
+	 * X-ray Spectra generator type
+	 */
+	generator: BeamGenerator;
 }
 
 export interface TubeBeam {
@@ -80,11 +88,11 @@ export interface TubeBeam {
 	spotSize: number;
 	material: number;
 	anodeAngle: number;
-	generator: BeamGenerator;
 }
 
 export class LabBeam implements BeamProperties, TubeBeam {
 	twin: string;
+	twin_beam: string;
 	method = "lab" as const
 	shape = "point" as const
 	voltage: number;
@@ -97,8 +105,9 @@ export class LabBeam implements BeamProperties, TubeBeam {
 	anodeAngle: number;
 	generator: BeamGenerator;
 
-	constructor(twin: string, voltage: number, enableNoise: boolean, exposure: number, intensity: number, spotSize: number, material: number, generator: BeamGenerator, anodeAngle: number, filters: Array<Filter>) {
+	constructor(twin: string, twin_beam: string, voltage: number, enableNoise: boolean, exposure: number, intensity: number, spotSize: number, material: number, generator: BeamGenerator, anodeAngle: number, filters: Array<Filter>) {
 		this.twin = twin;
+		this.twin_beam = twin_beam;
 		this.voltage = voltage;
 		this.enableNoise = enableNoise;
 		this.exposure = exposure;
@@ -113,6 +122,7 @@ export class LabBeam implements BeamProperties, TubeBeam {
 
 export class SynchBeam implements BeamProperties {
 	twin: string
+	twin_beam: string;
 	method = "synch" as const
 	shape = "parallel" as const
 	enableNoise: boolean
@@ -121,20 +131,24 @@ export class SynchBeam implements BeamProperties {
 	flux: number
 	harmonics: boolean
 	filters: Filter[]
+	generator: BeamGenerator;
 
-	constructor(twin: string, energy: number, enableNoise: boolean, exposure: number, flux: number, harmonics: boolean, filters: Array<Filter>) {
+	constructor(twin: string, twin_beam: string, energy: number, enableNoise: boolean, exposure: number, flux: number, harmonics: boolean, filters: Array<Filter>, generator: BeamGenerator) {
 		this.twin = twin;
+		this.twin_beam = twin_beam;
 		this.energy = energy;
 		this.enableNoise = enableNoise;
 		this.exposure = exposure;
 		this.flux = flux;
 		this.harmonics = harmonics;
 		this.filters = filters;
+		this.generator = generator;
 	}
 }
 
 export class MedBeam implements BeamProperties, TubeBeam {
 	twin: string
+	twin_beam: string;
 	method = "med" as const
 	shape = "point" as const
 	enableNoise: boolean
@@ -146,8 +160,9 @@ export class MedBeam implements BeamProperties, TubeBeam {
 	anodeAngle: number;
 	generator: BeamGenerator;
 
-	constructor(twin: string, voltage: number, enableNoise: boolean, mas: number, spotSize: number, material: number, generator: BeamGenerator, anodeAngle: number, filters: Array<Filter>) {
+	constructor(twin: string, twin_beam: string, voltage: number, enableNoise: boolean, mas: number, spotSize: number, material: number, generator: BeamGenerator, anodeAngle: number, filters: Array<Filter>) {
 		this.twin = twin;
+		this.twin_beam = twin_beam;
 		this.voltage = voltage;
 		this.enableNoise = enableNoise;
 		this.mas = mas;
@@ -308,7 +323,7 @@ export class SpectraDisplay {
 		this._chart = new Chart(this.canvas, {
 			type: "line",
 			data: {
-				labels: this.filteredSpectra.energies,
+				labels: this.filteredSpectra.energies.map((x) => { return x.toFixed(2) }),
 				datasets: [FilteredLineSettings, UnfilteredLineSettings],
 			},
 			options: chartOptions

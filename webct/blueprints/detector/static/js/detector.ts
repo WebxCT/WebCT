@@ -10,11 +10,15 @@ import { DetectorResponseRegistry, prepareRequest, processResponse, requestDetec
 import { DetectorConfigError, DetectorRequestError, showError, showValidationError } from "./errors";
 import { DetectorProperties, EnergyResponseDisplay, LSF, LSFDisplay, LSFParseEnum, ScintillatorMaterial } from "./types";
 import { validateHeight, validateHeightPx, validatePixel, validateScintillator, validateWidth, validateWidthPx } from "./validation";
-import { Valid } from "../../../base/static/js/validation";
+import { Valid, validateInput } from "../../../base/static/js/validation";
+import { DigitalTwin } from "../../../twins/static/js/types";
+import { TWIN } from "../../../twins/static/js/twin";
 
 // ====================================================== //
 // ================== Document Elements ================= //
 // ====================================================== //
+let TwinFovElement: SlSelect;
+
 export let PaneWidthElement: SlInput;
 let PaneHeightElement: SlInput;
 let PaneWidthPxElement: SlInput;
@@ -29,7 +33,7 @@ let LSFDialogButton: SlButton;
 let LSFDialogClose: SlButton;
 let LSFDialogInput: SlInput;
 let LSFDialogSubmit: SlButton;
-let LSFDialog:SlDialog;
+let LSFDialog: SlDialog;
 let LSFEnableCheckbox: SlCheckbox;
 let LSFCanvas: HTMLCanvasElement;
 let LSFDialogCanvas: HTMLCanvasElement;
@@ -39,6 +43,13 @@ let ScintillatorThicknessElement: SlInput;
 let EnergyResponseCanvas: HTMLCanvasElement;
 
 let DetectorBinningElement: SlSelect;
+let DetectorBinningImage: HTMLImageElement;
+
+let DetectorGainkConstantElement: SlInput;
+let DetectorGainElement: SlInput;
+let DetectorGainSelectElement: SlSelect;
+let DetectorGainEnableCheckbox: SlCheckbox;
+
 
 // ====================================================== //
 // ======================= Globals ====================== //
@@ -62,6 +73,8 @@ let ResponseDisplay: EnergyResponseDisplay;
  */
 export function setupDetector(): boolean {
 	console.log("setupDetector");
+
+	const twin_fov_element = document.getElementById("selectTwinFov");
 
 	const pane_width_element = document.getElementById("inputPaneWidth");
 	const pane_height_element = document.getElementById("inputPaneHeight");
@@ -88,9 +101,14 @@ export function setupDetector(): boolean {
 	const energy_response_canvas = document.getElementById("canvasEnergyResponse");
 
 	const select_detector_binning = document.getElementById("selectDetectorBinning");
+	const img_detector_binning = document.getElementById("imgDetectorBinning")
+	const input_detector_k_constant = document.getElementById("inputDetectorkConstant");
+	const input_detector_gain = document.getElementById("inputDetectorGain");
+	const select_detector_gain = document.getElementById("selectDetectorGain");
+	const checkbox_gain_enable = document.getElementById("checkboxGainEnable");
 
-
-	if (pane_width_element == null ||
+	if (twin_fov_element == null ||
+		pane_width_element == null ||
 		pane_height_element == null ||
 		pane_pixel_size_element == null ||
 		pane_width_px_element == null ||
@@ -111,7 +129,12 @@ export function setupDetector(): boolean {
 		scintillator_select_element == null ||
 		scintillator_thickness_element == null ||
 		energy_response_canvas == null ||
-		select_detector_binning == null) {
+		select_detector_binning == null ||
+		img_detector_binning == null ||
+		input_detector_k_constant == null ||
+		input_detector_gain == null ||
+		select_detector_gain == null ||
+		checkbox_gain_enable == null) {
 
 		console.log(pane_width_element);
 		console.log(pane_height_element);
@@ -133,10 +156,29 @@ export function setupDetector(): boolean {
 		console.log(scintillator_thickness_element);
 		console.log(energy_response_canvas);
 		console.log(select_detector_binning);
+		console.log(img_detector_binning);
+
+		console.log(input_detector_k_constant);
+		console.log(input_detector_gain);
+		console.log(select_detector_gain);
+		console.log(checkbox_gain_enable);
 
 		showAlert("Detector setup failure", AlertType.ERROR);
 		return false;
 	}
+
+	TwinFovElement = twin_fov_element as SlSelect;
+	TwinFovElement.classList.add("hidden")
+	TwinFovElement.addEventListener("sl-change", () => {
+		if (TWIN == null) {
+			return
+		}
+		let res = TWIN.detector.resolutions[parseInt(TwinFovElement.value as string)]
+		PaneWidthPxElement.value = res[0] + ""
+		PaneHeightPxElement.value = res[1] + ""
+		LastPanelChange = "px"
+		previewDetector()
+	})
 
 	PaneWidthElement = pane_width_element as SlInput;
 	PaneWidthElement.addEventListener("sl-change", () => {
@@ -216,7 +258,6 @@ export function setupDetector(): boolean {
 
 	LSFDialogInput.addEventListener("sl-change", () => {
 		const parseResult = LSF.from_text(LSFDialogInput.value);
-		console.log(parseResult);
 
 		if (parseResult.status == LSFParseEnum.SUCCESS && parseResult.lsf !== undefined) {
 			// Save to new LSF
@@ -238,10 +279,14 @@ export function setupDetector(): boolean {
 	})
 
 	ScintillatorSelectElement.addEventListener("sl-change", () => {
-		ScintillatorThicknessElement.disabled = (ScintillatorSelectElement.value == "")
+		if (TWIN == null) {
+			ScintillatorThicknessElement.disabled = (ScintillatorSelectElement.value == "")
+		}
 	});
 
 	EnergyResponseCanvas = energy_response_canvas as HTMLCanvasElement;
+
+	DetectorBinningImage = img_detector_binning as HTMLImageElement;
 
 	DetectorBinningElement = select_detector_binning as SlSelect;
 	DetectorBinningElement.addEventListener("sl-change", () => {
@@ -249,9 +294,37 @@ export function setupDetector(): boolean {
 		let height = (parseFloat(PaneHeightPxElement.value) / parseFloat(DetectorBinningElement.value as string)).toFixed(0);
 		DetectorBinningElement.helpText = PaneWidthPxElement.value + "x" + PaneHeightPxElement.value + " => " + width + "x" + height + " @ " + parseFloat(PanePixelSizeElement.value) * parseFloat(DetectorBinningElement.value as string) + "μm";
 
+		switch (DetectorBinningElement.value) {
+			default:
+			case "1":
+				DetectorBinningImage.src = "1x1.svg"
+				break;
+			case "2":
+				DetectorBinningImage.src = "3x3.svg"
+				break;
+			case "3":
+				DetectorBinningImage.src = "5x5.svg"
+				break;
+			case "4":
+				DetectorBinningImage.src = "7x7.svg"
+				break;
+		}
+
 		// resize preview to scale pixels
 		previewDetector();
 	});
+
+	DetectorGainkConstantElement = input_detector_k_constant as unknown as SlInput
+	DetectorGainElement = input_detector_gain as unknown as SlInput
+	DetectorGainSelectElement = select_detector_gain as unknown as SlSelect;
+	DetectorGainEnableCheckbox = checkbox_gain_enable as SlCheckbox
+	DetectorGainEnableCheckbox.addEventListener("sl-change", () => {
+		DetectorGainSelectElement.disabled = !DetectorGainEnableCheckbox.checked
+		DetectorGainElement.disabled = !DetectorGainEnableCheckbox.checked
+		if (TWIN === null) {
+			DetectorGainkConstantElement.disabled = !DetectorGainEnableCheckbox.checked
+		}
+	})
 
 	previewDetector();
 	return true;
@@ -261,7 +334,7 @@ export function setupDetector(): boolean {
  * Validate detector parameters and mark as valid/invalid.
  */
 export function validateDetector(): void {
-	let validationResults:Valid[] = []
+	let validationResults: Valid[] = []
 	validationResults = [
 		validateWidth(PaneWidthElement),
 		validateHeightPx(PaneHeightPxElement),
@@ -294,15 +367,11 @@ function previewDetector(): void {
 		// update width
 		PaneWidthElement.value = parseFloat(PaneWidthPxElement.value) * (parseFloat(PanePixelSizeElement.value) / 1000) + ""
 		PaneHeightElement.value = parseFloat(PaneHeightPxElement.value) * (parseFloat(PanePixelSizeElement.value) / 1000) + ""
-		console.log(PaneWidthElement);
-		console.log(PaneHeightElement);
 
 	} else {
 		// update px
 		PaneWidthPxElement.value = (parseFloat(PaneWidthElement.value) / (parseFloat(PanePixelSizeElement.value) / 1000)).toFixed(0) + ""
 		PaneHeightPxElement.value = (parseFloat(PaneHeightElement.value) / (parseFloat(PanePixelSizeElement.value) / 1000)).toFixed(0) + ""
-		console.log(PaneWidthPxElement);
-		console.log(PaneHeightPxElement);
 	}
 
 	try {
@@ -331,7 +400,7 @@ function previewDetector(): void {
 
 	// Update LSF Graph
 	console.log("preview detector");
-	if (CurrentLSF != undefined ) {
+	if (CurrentLSF != undefined) {
 		const lsfdisp = new LSFDisplay(CurrentLSF, LSFCanvas);
 		lsfdisp.displayLSF();
 	}
@@ -374,7 +443,7 @@ export function UpdateDetector(): Promise<void> {
 			const [properties, scintillatorEnergyResponse] = processResponse(result as DetectorResponseRegistry["detectorResponse"]);
 			setDetectorParams(properties);
 
-			ResponseDisplay = new EnergyResponseDisplay(scintillatorEnergyResponse, properties, EnergyResponseCanvas);
+			ResponseDisplay = new EnergyResponseDisplay(scintillatorEnergyResponse, properties.scintillator, EnergyResponseCanvas);
 			ResponseDisplay.displayEnergyResponse()
 
 		}).catch(() => {
@@ -413,7 +482,7 @@ function setDetector(): Promise<void> {
 	});
 }
 
-export function setDetectorParams(properties:DetectorProperties) {
+export function setDetectorParams(properties: DetectorProperties) {
 	console.log(properties);
 
 	// update local values
@@ -434,10 +503,17 @@ export function setDetectorParams(properties:DetectorProperties) {
 	LSFEnableCheckbox.checked = properties.enableLSF;
 	DetectorBinningElement.value = properties.binning + "";
 
+	DetectorGainEnableCheckbox.checked = properties.enableGain;
+	DetectorGainkConstantElement.value = properties.k + "";;
+	DetectorGainElement.value = properties.gain + "";
+	DetectorGainSelectElement.value = properties.gain + "";
+
+	TwinFovElement.value = properties.fov + "";
+
 	previewDetector();
 }
 
-export function getDetectorParams():DetectorProperties {
+export function getDetectorParams(): DetectorProperties {
 	return {
 		paneHeight: parseFloat(PaneHeightElement.value),
 		paneWidth: parseFloat(PaneWidthElement.value),
@@ -449,5 +525,107 @@ export function getDetectorParams():DetectorProperties {
 		lsf: CurrentLSF,
 		enableLSF: LSFEnableCheckbox.checked,
 		binning: parseInt(DetectorBinningElement.value as string),
+		enableGain: DetectorGainEnableCheckbox.checked,
+		k: parseFloat(DetectorGainkConstantElement.value as string),
+		gain: TWIN === null ? parseFloat(DetectorGainElement.value as string) : parseFloat(DetectorGainSelectElement.value as string),
+		fov: parseInt(TwinFovElement.value as string)
 	};
 }
+
+// ====================================================== //
+
+export function SetDetectorTwin(twin: DigitalTwin | null): void {
+	// Enable all detector functions
+	PaneWidthElement.disabled = false;
+	PaneHeightElement.disabled = false;
+	PaneWidthPxElement.disabled = false;
+	PaneHeightPxElement.disabled = false;
+	PanePixelSizeElement.disabled = false;
+
+	ScintillatorSelectElement.disabled = false;
+	ScintillatorThicknessElement.disabled = false;
+
+	LSFDialogSubmit.disabled = false;
+	LSFDialogSubmit.classList.remove("hidden")
+	LSFDialogInput.disabled = false;
+
+	TwinFovElement.classList.add("hidden")
+
+	DetectorGainElement.classList.remove("hidden");
+	DetectorGainSelectElement.classList.add("hidden");
+	DetectorGainkConstantElement.disabled = false;
+
+	if (twin == null) {
+		return;
+	}
+
+	PaneWidthPxElement.value = twin.detector.resolutions[0][0] + ""
+	PaneHeightPxElement.value = twin.detector.resolutions[0][0] + ""
+	LastPanelChange = "px"
+	PaneWidthPxElement.disabled = true
+	PaneHeightPxElement.disabled = true
+	PaneHeightElement.disabled = true
+	PaneWidthElement.disabled = true
+
+	PanePixelSizeElement.value = twin.detector.pixel_pitch + ""
+	PanePixelSizeElement.disabled = true
+
+	ScintillatorSelectElement.value = twin.detector.scintillator.material
+	ScintillatorThicknessElement.value = twin.detector.scintillator.thickness + ""
+	ScintillatorSelectElement.disabled = true
+	ScintillatorThicknessElement.disabled = true
+	ScintillatorThicknessElement.handleChange();
+
+	LSFDialogSubmit.classList.add("hidden")
+	LSFDialogInput.value = twin.detector.lsf.join(", ")
+	LSFDialogInput.disabled = true
+	LSFDialogSubmit.disabled = true
+
+	DetectorGainkConstantElement.disabled = true;
+	DetectorGainElement.classList.add("hidden")
+
+
+	if (twin.detector.scintillator.energyResponse !== undefined) {
+		ResponseDisplay = new EnergyResponseDisplay({
+			incident: twin.detector.scintillator.energyResponse.map(x => x[0]),
+			output: twin.detector.scintillator.energyResponse.map(x => x[1])
+		}, {
+			material: twin.detector.scintillator.material as ScintillatorMaterial,
+			thickness: twin.detector.scintillator.thickness
+		}, EnergyResponseCanvas);
+		ResponseDisplay.displayEnergyResponse()
+	}
+
+	TwinFovElement.classList.remove("hidden")
+
+	let textfov = ""
+	for (let i = 0; i < twin.detector.resolutions.length; i++) {
+		const resolution = twin.detector.resolutions[i];
+		textfov += "<sl-menu-item value=\"" + i + "\">"
+		textfov += resolution[0] + " x " + resolution[1]
+		textfov += "</sl-menu-item>"
+	}
+
+	TwinFovElement.innerHTML = textfov;
+	TwinFovElement.value = 0 + ""
+
+	// disable element if only one resolution is supported
+	TwinFovElement.disabled = twin.detector.resolutions.length == 1
+
+	DetectorGainkConstantElement.value = twin.detector.gain.k + ""
+
+	let textgain = ""
+	for (let i = 0; i < twin.detector.gain.gains.length; i++) {
+		const gain = twin.detector.gain.gains[i];
+		textgain += "<sl-menu-item value=\"" + gain + "\">"
+		textgain += gain + " e⁻/ADU"
+		textgain += "</sl-menu-item>"
+	}
+
+	DetectorGainSelectElement.innerHTML = textgain;
+	DetectorGainSelectElement.value = twin.detector.gain.gains[0] + ""
+	DetectorGainSelectElement.classList.remove("hidden")
+
+	previewDetector();
+}
+

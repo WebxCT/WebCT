@@ -245,10 +245,11 @@ export const GVXRConfig: FormatLoaderStatic = class GVXRConfig implements Format
 			// setup synch properties
 			const configBeam = this.Source.Beam as BeamEnergy[];
 			beam = new SynchBeam(
-				"",
+				"", "",
 				configBeam[0].Energy,
 				true,
-				1, 1, false, []
+				1, 1, false, [],
+				"monochromatic"
 			);
 		} else {
 			// We only support kvp imports for point sources
@@ -261,7 +262,7 @@ export const GVXRConfig: FormatLoaderStatic = class GVXRConfig implements Format
 				}];
 			}
 			beam = new LabBeam(
-				"",
+				"", "",
 				configBeam.kvp,
 				true,
 				1,
@@ -388,14 +389,18 @@ export const GVXRConfig: FormatLoaderStatic = class GVXRConfig implements Format
 					thickness: scintillatorThickness
 				},
 				enableLSF: true,
-				binning: 1
+				binning: 1,
+				enableGain: false,
+				gain: 1,
+				k: 1,
+				fov: 0,
 			},
 			beam: beam,
 			samples: {
 				samples: samples,
 				// todo: support model scaling via gvxr json
 				scaling: 1.0
-			}
+			},
 		};
 	}
 

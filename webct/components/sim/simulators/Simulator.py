@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import List
+
 import numpy as np
 
 from webct.components.Beam import Beam
@@ -19,7 +19,7 @@ class Simulator(metaclass=ABCMeta):
 	overriding parameter setting methods.
 	"""
 
-	def __init__(self, sid:str, pid:int) -> None:
+	def __init__(self, sid: str, pid: int) -> None:
 		self._pid = pid
 		self._sid = sid
 		self._beam: Beam = None
@@ -30,14 +30,17 @@ class Simulator(metaclass=ABCMeta):
 
 	@abstractmethod
 	def SimSingleProjection(self) -> np.ndarray:
-		"""Generate a single image of the scene. Commonly used for previewing
-		beam and detector parameters."""
-		raise NotImplementedError()
+		"""Generate a single image of the scene.
+
+		Commonly used for previewing beam and detector parameters.
+
+		"""
+		raise NotImplementedError
 
 	@abstractmethod
 	def SimAllProjections(self) -> np.ndarray:
 		"""Generate all projections of a scene."""
-		raise NotImplementedError()
+		raise NotImplementedError
 
 	@property
 	def beam(self) -> Beam:

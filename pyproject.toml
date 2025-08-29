@@ -1,0 +1,87 @@
+[project]
+name = "webct"
+version = "0.0.1"
+authors = [{name = "Iwan Mitchell", email = "i.t.mitchell@bangor.ac.uk"}]
+description = "Interactive Web UI for X-ray CT with Real-time Results"
+readme = {file = "Readme.md", content-type="text/markdown"}
+
+requires-python = "==3.10.16"
+
+license = "GPL-3.0"
+license-files = ["LICENSE"]
+
+keywords = ["x-ray", "simulation", "CT", "computed tomography", "scientific"]
+
+classifiers = [
+	"Development Status :: 5 - Production/Stable",
+	"Environment :: GPU",
+	"Intended Audience :: Science/Research",
+	"License :: Other/Proprietary License",
+	"Programming Language :: Python :: 3 :: Only",
+	"Topic :: Scientific/Engineering :: Image Processing",
+	"Topic :: Scientific/Engineering :: Medical Science Apps.",
+	"Topic :: Scientific/Engineering :: Visualization",
+	"Typing :: Typed",
+
+	# WebCT is not bundled for python-only distribution.
+	"Private :: Do Not Upload"
+]
+
+[project.urls]
+Homepage = "https://webct.io"
+Repository = "https://github.com/WebxCT/WebCT"
+Issues = "https://github.com/WebxCT/WebCT/issues"
+
+# [options]
+# packages = find:
+# zip_safe = True
+
+[project.entry-points."pyinstaller40"]
+hook-dirs = "webct.__pyinstaller:get_hook_dirs"
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+	# W191 - Indentation contains tabs
+	# pep8 is logically unsound. Why would you use a continuous character for
+	# discrete indentation blocks?
+	"W191",
+	"D206",
+
+	# N806 - Variables in function should be lowercase
+	"N806",
+
+	# N802 - Function name should be lowercase
+	"N802",
+
+	# N803 - argument name should be lowercase
+	"N803",
+
+	# E128 - Continuation line under-indented for visual indent
+	# This rule does not work when using the standard one-indent approach.
+	# "E128",
+
+	# N813 - camelcase imported as lowercase
+	# camelcase 'gvxrPython3.gvxrPython3' imported as lowercase 'gvxr'
+	"N813",
+
+	# W503 - Line break occurred before a binary operator
+	# The opposite is true: linebreaks should happen at the start of the line.
+	# "W503"
+	"D206",
+
+	# ERA001 - Remove commented-out code
+	# Unfortunately this is prone to overly produce false positives.
+	"ERA001",
+
+	"G004",
+
+]
+
+[tool.ruff.format]
+# I will fight anyone over this
+indent-style = "tab"
+docstring-code-format = true

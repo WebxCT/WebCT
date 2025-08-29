@@ -12,6 +12,7 @@ from multiprocessing.connection import Connection
 from random import Random
 from typing import Any, Tuple
 import logging
+
 log = logging.getLogger("Simulator")
 
 import numpy as np
@@ -43,9 +44,11 @@ class STM_PROJECTION(STM):
 	result_arr_shape: tuple
 	result_arr_type: type
 
+
 @dataclass(frozen=True)
 class STM_SCENE(STM):
 	pass
+
 
 @dataclass(frozen=True)
 class STM_ALL_PROJECTION(STM):
@@ -80,6 +83,7 @@ class SimResponse(Enum):
 	REJECTED = 10
 	ACCEPTED = 20
 
+
 class SimClient(Process):
 	# we store detector and capture params just to preallocate memory for
 	# projections
@@ -93,7 +97,7 @@ class SimClient(Process):
 	# process variables
 	_simulator: GVXRSimulator
 
-	def __init__(self, sid:str):
+	def __init__(self, sid: str):
 		super(SimClient, self).__init__()
 		log.info(f"[{sid}] Initializing Simulator Child")
 
@@ -126,44 +130,47 @@ class SimClient(Process):
 				self.conn_child.send(SimResponse.REJECTED)
 				continue
 
-			elif isinstance(input, STM_BEAM):
+			if isinstance(input, STM_BEAM):
 				log.info(f"({self.pid}) Parent asking for new beam")
 				self.conn_child.send(SimResponse.ACCEPTED)
 				self._simulator.beam = input.beam
 				self.conn_child.send(SimResponse.DONE)
 				continue
 
-			elif isinstance(input, STM_DETECTOR):
+			if isinstance(input, STM_DETECTOR):
 				log.info(f"({self.pid}) Parent asking for new detector")
 				self.conn_child.send(SimResponse.ACCEPTED)
 				self._simulator.detector = input.detector
 				self.conn_child.send(SimResponse.DONE)
 				continue
 
-			elif isinstance(input, STM_CAPTURE):
+			if isinstance(input, STM_CAPTURE):
 				log.info(f"({self.pid}) Parent asking for new capture")
 				self.conn_child.send(SimResponse.ACCEPTED)
 				self._simulator.capture = input.capture
 				self.conn_child.send(SimResponse.DONE)
 				continue
 
-			elif isinstance(input, STM_SAMPLES):
+			if isinstance(input, STM_SAMPLES):
 				log.info(f"({self.pid}) Parent asking for new samples")
 				self.conn_child.send(SimResponse.ACCEPTED)
 				for i, value in enumerate(input.samples.samples):
-					log.info(f"({self.pid}) Sample {i}: {value.label} - {value.modelPath} - {value.material.label} - {value.material.density}")
+					log.info(
+						f"({self.pid}) Sample {i}: {value.label} - {value.modelPath} - {value.material.label} - {value.material.density}"
+					)
 				self._simulator.samples = input.samples
 				self.conn_child.send(SimResponse.DONE)
 				continue
 
-			elif isinstance(input, STM_SCENE):
+			if isinstance(input, STM_SCENE):
 				log.info(f"({self.pid}) Parent asking for rendered scene")
 				self.conn_child.send(SimResponse.ACCEPTED)
 				energy_response = self._simulator.RenderScene()
 				self.conn_child.send(SimResponse.DONE)
 				self.conn_child.send(energy_response)
+				continue
 
-			elif isinstance(input, STM_PROJECTION):
+			if isinstance(input, STM_PROJECTION):
 				log.info(f"({self.pid}) Parent asking for single rendered projection")
 				log.info(f"({self.pid}) Using shared memory instance [[{input.result_sm}]] : {input.result_arr_shape}")
 				mem = shared_memory.SharedMemory(name=input.result_sm)
@@ -181,7 +188,9 @@ class SimClient(Process):
 				tik = monotonic()
 				log.info(f"({self.pid}) Filling [[{input.result_sm}]] with a single projection")
 				np.copyto(sm_arr, self._simulator.SimSingleProjection())
-				log.info(f"({self.pid}) [[{input.result_sm}]] Filled with a single projection in {monotonic() - tik:.2f}s")
+				log.info(
+					f"({self.pid}) [[{input.result_sm}]] Filled with a single projection in {monotonic() - tik:.2f}s"
+				)
 
 				# ? Would normally close memory, but causes issues on windows
 				# ? due to python bugs (plz merge the fix python comittiee <3)
@@ -192,7 +201,7 @@ class SimClient(Process):
 				self.conn_child.send(SimResponse.DONE)
 				continue
 
-			elif isinstance(input, STM_ALL_PROJECTION):
+			if isinstance(input, STM_ALL_PROJECTION):
 				log.info(f"({self.pid}) Parent asking for all rendered projection")
 				log.info(f"({self.pid}) Using shared memory instance [[{input.result_sm}]] : {input.result_arr_shape}")
 				mem = shared_memory.SharedMemory(name=input.result_sm)
@@ -232,13 +241,12 @@ class SimClient(Process):
 		# Parse confirmation response
 		if not isinstance(response, SimResponse):
 			raise SimThreadError(f"Expected a response, but got a {type(response)}")
-		elif response is SimResponse.REJECTED:
+
+		if response is SimResponse.REJECTED:
 			raise SimThreadError("Process rejected data request???")
-		elif response is not SimResponse.ACCEPTED:
-			raise SimThreadError(
-				f"Unexpected response: {response}, wanted SimResponse.ACCEPTED"
-			)
-		return
+
+		if response is not SimResponse.ACCEPTED:
+			raise SimThreadError(f"Unexpected response: {response}, wanted SimResponse.ACCEPTED")
 
 	def response(self, timeout=10.0, msg="Sim timeout during request. Crashed?"):
 		if not self.conn_parent.poll(timeout):
@@ -261,9 +269,7 @@ class SimClient(Process):
 		elif response is SimResponse.DONE:
 			return
 		else:
-			raise SimThreadError(
-				f"Unexpected response: {response}, wanted SimResponse.DONE"
-			)
+			raise SimThreadError(f"Unexpected response: {response}, wanted SimResponse.DONE")
 
 	def setDetector(self, detector: DetectorParameters):
 		# detector used for preallocation
@@ -281,12 +287,10 @@ class SimClient(Process):
 		# Parse simulation response
 		if not isinstance(response, SimResponse):
 			raise SimThreadError(f"Expected a response, but got a {type(response)}")
-		elif response is SimResponse.DONE:
+
+		if response is SimResponse.DONE:
 			return
-		else:
-			raise SimThreadError(
-				f"Unexpected response: {response}, wanted SimResponse.DONE"
-			)
+		raise SimThreadError(f"Unexpected response: {response}, wanted SimResponse.DONE")
 
 	def setCapture(self, capture: CaptureParameters):
 		# Capture used for preallocation
@@ -304,12 +308,9 @@ class SimClient(Process):
 		# Parse simulation response
 		if not isinstance(response, SimResponse):
 			raise SimThreadError(f"Expected a response, but got a {type(response)}")
-		elif response is SimResponse.DONE:
+		if response is SimResponse.DONE:
 			return
-		else:
-			raise SimThreadError(
-				f"Unexpected response: {response}, wanted SimResponse.DONE"
-			)
+		raise SimThreadError(f"Unexpected response: {response}, wanted SimResponse.DONE")
 
 	def setSamples(self, samples: RenderedSampleSettings):
 		request = STM_SAMPLES(samples)
@@ -324,20 +325,19 @@ class SimClient(Process):
 		# Parse simulation response
 		if not isinstance(response, SimResponse):
 			raise SimThreadError(f"Expected a response, but got a {type(response)}")
-		elif response is SimResponse.DONE:
+		if response is SimResponse.DONE:
 			return
-		else:
-			raise SimThreadError(f"Unexpected response: {response}, wanted SimResponse.DONE")
+		raise SimThreadError(f"Unexpected response: {response}, wanted SimResponse.DONE")
 
 	def getProjection(self) -> np.ndarray:
 		if self.detector is None:
 			raise AssertionError("Detector parameters were not set before calling getProjection")
 
 		# allocate shared memory
-		result_np: np.ndarray = np.ndarray(self.detector.binned_shape, dtype=float)
-		mem = shared_memory.SharedMemory(
-			f"WCT_SM_GP-{self.pid}-{rng.random()}", create=True, size=result_np.nbytes
-		)
+		dtype = np.uint16 if self.detector.enableGain else float
+		print(f"getProjection: {dtype}")
+		result_np: np.ndarray = np.ndarray(self.detector.binned_shape, dtype=dtype)
+		mem = shared_memory.SharedMemory(f"WCT_SM_GP-{self.pid}-{rng.random()}", create=True, size=result_np.nbytes)
 
 		# ! Due to a bug in python, we need to explicitly access the shared
 		# ! memory, otherwise it'll get deleted when the child process closes.
@@ -346,11 +346,11 @@ class SimClient(Process):
 		# ! Do not use sm_arr until an explicit DONE is received by the child.
 		sm_arr: np.ndarray = np.ndarray(
 			result_np.shape,
-			dtype=float,
+			dtype=dtype,
 			buffer=mem.buf,
 		)
 
-		request = STM_PROJECTION(mem.name, result_np.shape, float)
+		request = STM_PROJECTION(mem.name, result_np.shape, dtype)
 
 		# deallocate result_np immediately
 		del result_np
@@ -367,9 +367,10 @@ class SimClient(Process):
 		# Parse simulation response
 		if not isinstance(response, SimResponse):
 			raise SimThreadError(f"Expected a response, but got a {type(response)}")
-		elif response is SimResponse.DONE:
+
+		if response is SimResponse.DONE:
 			# Copy data to managed np array, close and deallocate shared space.
-			result: np.ndarray = np.empty(sm_arr.shape)
+			result: np.ndarray = np.empty(sm_arr.shape, dtype=dtype)
 			np.copyto(result, sm_arr)
 
 			# deallocate
@@ -377,11 +378,8 @@ class SimClient(Process):
 			mem.unlink()
 
 			# return result
-			return result.astype(np.float32)
-		else:
-			raise SimThreadError(
-				f"Unexpected response: {response}, wanted SimResponse.DONE"
-			)
+			return result
+		raise SimThreadError(f"Unexpected response: {response}, wanted SimResponse.DONE")
 
 	def getAllProjections(self) -> np.ndarray:
 		log.info(f"[{self._sid}] Generating {self.capture.projections} projections")
@@ -390,13 +388,13 @@ class SimClient(Process):
 
 		shape = (self.capture.projections, *self.detector.binned_shape)
 
+		dtype = np.uint16 if self.detector.enableGain else float
+
 		# allocate shared memory
 		size_GiB = (math.prod(shape) * 4) / 1024 / 1024 / 1024
 		log.info(f"Attempting to allocate {size_GiB * 2:.2f} GiB")
-		result_np: np.ndarray = np.ndarray(shape, dtype=float)
-		mem = shared_memory.SharedMemory(
-			f"WCT_SM_GP-{self.pid}-{rng.random()}", create=True, size=result_np.nbytes
-		)
+		result_np: np.ndarray = np.ndarray(shape, dtype=dtype)
+		mem = shared_memory.SharedMemory(f"WCT_SM_GP-{self.pid}-{rng.random()}", create=True, size=result_np.nbytes)
 
 		# ! Due to a bug in python, we need to explicitly access the shared
 		# ! memory, otherwise it'll get deleted when the child process closes.
@@ -405,11 +403,11 @@ class SimClient(Process):
 		# ! Do not use sm_arr until an explicit DONE is received by the child.
 		sm_arr: np.ndarray = np.ndarray(
 			shape,
-			dtype=float,
+			dtype=dtype,
 			buffer=mem.buf,
 		)
 
-		request = STM_ALL_PROJECTION(mem.name, result_np.shape, float)
+		request = STM_ALL_PROJECTION(mem.name, result_np.shape, dtype)
 
 		# deallocate result_np immediately
 		del result_np
@@ -422,7 +420,9 @@ class SimClient(Process):
 
 		# set timeout to number of projections, this is a worst-case scenario for most systems.
 		timeout = self.capture.projections
-		log.info(f"[{self._sid}] Child ({self.pid}) has {timeout}s to generate {self.capture.projections} projections, or they will be killed.")
+		log.info(
+			f"[{self._sid}] Child ({self.pid}) has {timeout}s to generate {self.capture.projections} projections, or they will be killed."
+		)
 
 		# Response accepted, wait for done signal
 		response = self.response(timeout=timeout, msg="Sim timeout while simulating.")
@@ -430,9 +430,9 @@ class SimClient(Process):
 		# Parse simulation response
 		if not isinstance(response, SimResponse):
 			raise SimThreadError(f"Expected a response, but got a {type(response)}")
-		elif response is SimResponse.DONE:
+		if response is SimResponse.DONE:
 			# Copy data to managed np array, close and deallocate shared space.
-			result: np.ndarray = np.empty(sm_arr.shape)
+			result: np.ndarray = np.empty(sm_arr.shape, dtype=dtype)
 			np.copyto(result, sm_arr)
 
 			# deallocate
@@ -440,26 +440,20 @@ class SimClient(Process):
 			mem.unlink()
 
 			# return result
-			return result.astype(np.float32)
-		else:
-			raise SimThreadError(
-				f"Unexpected response: {response}, wanted SimResponse.DONE"
-			)
+			return result
+		raise SimThreadError(f"Unexpected response: {response}, wanted SimResponse.DONE")
 
 	def getScene(self) -> np.ndarray:
 		request = STM_SCENE()
 		self.conn_parent.send(request)
 		self.check_confirm()
-		response = self.response(msg="sim timeout while rendering scene.")
+		response = self.response(msg="sim timeout while rendering scene.", timeout=20)
 
 		if not isinstance(response, SimResponse):
 			raise SimThreadError(f"Expected a response, but got a {type(response)}")
-		elif response is SimResponse.DONE:
+		if response is SimResponse.DONE:
 			scene = self.response(msg="sim timeout while generating scene.")
 			if not isinstance(scene, tuple):
 				raise SimThreadError(f"Unexpected scene type of '{type(scene)}', expected 'tuple'")
 			return np.asarray(scene)
-		else:
-			raise SimThreadError(
-				f"Unexpected response: {response}, wanted SimResponse.DONE"
-			)
+		raise SimThreadError(f"Unexpected response: {response}, wanted SimResponse.DONE")

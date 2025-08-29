@@ -28,6 +28,22 @@ def asPngStr(array: np.ndarray) -> str:
 	byteStream.seek(0)
 	return str(b64encode(byteStream.read()))[2:-1]
 
+def asPngStr_uint16(array: np.ndarray) -> str:
+
+	if array.dtype == np.uint16:
+		array = array.astype(float)
+
+	# process per-frame to avoid large memory overhead
+	compressed = np.empty_like(array, dtype=np.uint8)
+
+	for row in range(array.shape[0]):
+		compressed[row] = ((array[row] / 65535) * 255).astype(np.uint8)
+
+	byteStream = io.BytesIO()
+	img = Image.fromarray(compressed)
+	img.save(byteStream, "PNG")
+	byteStream.seek(0)
+	return str(b64encode(byteStream.read()))[2:-1]
 
 
 def asMp4Str(array: np.ndarray) -> str:

@@ -1,21 +1,25 @@
 """Beam generator for WebCT"""
 
+import logging as log
 from dataclasses import dataclass
+from enum import Enum, unique
 from functools import cache
-from typing import List, Tuple, cast
-from webct import Element
-from enum import Enum
-from enum import unique
+from typing import cast
+
+import numpy as np
 import spekpy as sp
 import xpecgen.xpecgen as xp
-import numpy as np
-import logging as log
 from gvxrPython3 import gvxr
+from gvxrPython3.twins import DigitalTwin, TwinBeamFixedSpectrum
+
+from webct import Element
+from webct.components.Twin import get_twin
 
 # Type aliases
 KeV = float
 mm = float
 Degrees = float
+
 
 @dataclass(frozen=True)
 class Spectra:
@@ -24,6 +28,7 @@ class Spectra:
 	kerma: float  # Air Kerma calculated from spectrum [uGy]
 	flu: float  # Fluence of spectrum [Photons cm^-2 mAs^-1]
 	emean: float  # Mean energy of spectrum [keV]
+
 
 @unique
 class PROJECTION(str, Enum):
@@ -43,6 +48,8 @@ class BEAM_GENERATOR(str, Enum):
 	SPEKPY = "spekpy"
 	XPECGEN = "xpecgen"
 	STATIC = "static"
+	XRAY_PHYSICS = "xrayphysics"
+	MONOCHROMATIC = "monochromatic"
 
 
 @dataclass(frozen=True)
@@ -51,14 +58,14 @@ class Filter:
 	thickness: mm
 
 	@staticmethod
-	def from_json(json:dict):
+	def from_json(json: dict):
 		filterElement = Element(int(json["material"]))
 		filterThickness = float(json["thickness"])
 		return Filter(filterElement, filterThickness)
 
 
-def parseFilters(pfilters: List[dict]) -> Tuple[Filter, ...]:
-	filters: List[Filter] = []
+def parseFilters(pfilters: list[dict]) -> tuple[Filter, ...]:
+	filters: list[Filter] = []
 	for potential in pfilters:
 		filters.append(Filter.from_json(potential))
 	return tuple(filters)
@@ -67,66 +74,75 @@ def parseFilters(pfilters: List[dict]) -> Tuple[Filter, ...]:
 @dataclass(frozen=True)
 class BeamParameters:
 	twin: str
+	twin_beam: str
 	method: str
-	filters: Tuple[Filter, ...]
+	filters: tuple[Filter, ...]
 	projection: PROJECTION
 	spotSize: float
 	enableNoise: bool
+	generator: BEAM_GENERATOR
 
 	def to_json(self) -> dict:
 		return self.__dict__
 
 	@staticmethod
-	def from_json(json:dict):
+	def from_json(json: dict):
 		twin = str(json["twin"])
+		if twin == "":
+			twin = "None"
+		twin_beam = str(json["twin_beam"])
 		method = str(json["method"])
 		filters = parseFilters(json["filters"])
 		projection = PROJECTION(json["projection"])
 		spotSize = float(json["spotSize"])
 		enableNoise = bool(json["enableNoise"])
+		generator = BEAM_GENERATOR(str(json["generator"]))
 
-		return BeamParameters(twin, method, filters, projection, spotSize, enableNoise)
+		return BeamParameters(twin, twin_beam, method, filters, projection, spotSize, enableNoise, generator)
 
-	def getSpectra(self) -> Tuple[Spectra, Spectra]:
+	def getSpectra(self) -> tuple[Spectra, Spectra]:
 		raise NotImplementedError("Cannot create a beam spectra from BeamParamaters.")
 
+
 @dataclass(frozen=True)
-class TubeBeam():
+class TubeBeam:
 	voltage: float
 	anodeAngle: float
-	generator: BEAM_GENERATOR
 	material: Element
+
 
 @dataclass(frozen=True)
 class LabBeam(BeamParameters, TubeBeam):
 	method = "lab"
 	projection = PROJECTION.POINT
-	exposure: float # s
-	intensity: float # uA
+	exposure: float  # s
+	intensity: float  # uA
 
 	@property
-	def mas(self)->float:
-		return self.exposure * ( self.intensity / 1000 )
+	def mas(self) -> float:
+		return self.exposure * (self.intensity / 1000)
 
 	def to_json(self) -> dict:
 		return self.__dict__
 
 	@staticmethod
-	def from_json(json:dict):
+	def from_json(json: dict):
 		twin = str(json["twin"])
+		twin_beam = str(json["twin_beam"])
 		voltage = float(json["voltage"])
 		enableNoise = bool(json["enableNoise"])
 		exposure = float(json["exposure"])
 		intensity = float(json["intensity"])
 		spotSize = float(json["spotSize"])
 		anodeAngle = float(json["anodeAngle"])
-		generator = BEAM_GENERATOR(str(json["generator"]))
 		material = Element(int(json["material"]))
 
 		filters = parseFilters(json["filters"])
+		generator = BEAM_GENERATOR(str(json["generator"]))
 
 		return LabBeam(
-			twin = twin,
+			twin=twin,
+			twin_beam=twin_beam,
 			method="lab",
 			enableNoise=enableNoise,
 			projection=PROJECTION.POINT,
@@ -136,11 +152,13 @@ class LabBeam(BeamParameters, TubeBeam):
 			intensity=intensity,
 			spotSize=spotSize,
 			anodeAngle=anodeAngle,
+			material=material,
 			generator=generator,
-			material=material)
+		)
 
-	def getSpectra(self) -> Tuple[Spectra, Spectra]:
+	def getSpectra(self) -> tuple[Spectra, Spectra]:
 		return generateSpectra(self)
+
 
 @dataclass(frozen=True)
 class MedBeam(BeamParameters, TubeBeam):
@@ -152,36 +170,40 @@ class MedBeam(BeamParameters, TubeBeam):
 		return self.__dict__
 
 	@staticmethod
-	def from_json(json:dict):
+	def from_json(json: dict):
 		twin = str(json["twin"])
+		twin_beam = str(json["twin_beam"])
 		voltage = float(json["voltage"])
 		mas = float(json["mas"])
 		enableNoise = bool(json["enableNoise"])
 		spotSize = float(json["spotSize"])
 		anodeAngle = float(json["anodeAngle"])
-		generator = BEAM_GENERATOR(str(json["generator"]))
 		material = Element(int(json["material"]))
 		filters = parseFilters(json["filters"])
+		generator = BEAM_GENERATOR(str(json["generator"]))
 
 		# How to obtain exposure and intensity from mAs?
-		intensity=1
-		exposure=1
+		intensity = 1
+		exposure = 1
 
 		return MedBeam(
-			twin = twin,
+			twin=twin,
+			twin_beam=twin_beam,
 			method="med",
 			projection=PROJECTION.POINT,
-			enableNoise = enableNoise,
+			enableNoise=enableNoise,
 			filters=filters,
 			voltage=voltage,
 			mas=mas,
 			spotSize=spotSize,
 			anodeAngle=anodeAngle,
+			material=material,
 			generator=generator,
-			material=material)
+		)
 
-	def getSpectra(self) -> Tuple[Spectra, Spectra]:
+	def getSpectra(self) -> tuple[Spectra, Spectra]:
 		return generateSpectra(self)
+
 
 @dataclass(frozen=True)
 class SynchBeam(BeamParameters):
@@ -196,8 +218,9 @@ class SynchBeam(BeamParameters):
 		return self.__dict__
 
 	@staticmethod
-	def from_json(json:dict):
+	def from_json(json: dict):
 		twin = str(json["twin"])
+		twin_beam = str(json["twin_beam"])
 		energy = float(json["energy"])
 		enableNoise = bool(json["enableNoise"])
 		exposure = float(json["exposure"])
@@ -205,9 +228,11 @@ class SynchBeam(BeamParameters):
 		harmonics = bool(json["harmonics"])
 
 		filters = parseFilters(json["filters"])
+		generator = BEAM_GENERATOR(str(json["generator"]))
 
 		return SynchBeam(
-			twin = twin,
+			twin=twin,
+			twin_beam=twin_beam,
 			method="synch",
 			projection=PROJECTION.PARALLEL,
 			enableNoise=enableNoise,
@@ -216,45 +241,87 @@ class SynchBeam(BeamParameters):
 			exposure=exposure,
 			flux=flux,
 			harmonics=harmonics,
-			spotSize=0)
+			spotSize=0,
+			generator=generator,
+		)
 
-	def getSpectra(self) -> Tuple[Spectra, Spectra]:
+	def getSpectra(self) -> tuple[Spectra, Spectra]:
 		return generateSpectra(self)
 
 
 @dataclass(frozen=True)
 class TwinBeam(BeamParameters):
-	flux:float
+	flux: float
+
 
 @dataclass(frozen=True)
 class TwinSynchBeam(TwinBeam, SynchBeam): ...
 
+
 @dataclass(frozen=True)
 class TwinTubeBeam(TwinBeam, TubeBeam): ...
 
-def BeamFromJson(json:dict) -> BeamParameters:
+
+def BeamFromJson(json: dict) -> BeamParameters:
 	if "method" not in json:
 		raise KeyError("No method key found.")
 
 	if json["method"] == "lab":
 		return LabBeam.from_json(json)
-	elif json["method"] == "med":
+	if json["method"] == "med":
 		return MedBeam.from_json(json)
-	elif json["method"] == "synch":
+	if json["method"] == "synch":
 		return SynchBeam.from_json(json)
-	else:
-		raise NotImplementedError(f"Method '{json['method']}' is not implemented")
+	raise NotImplementedError(f"Method '{json['method']}' is not implemented")
+
 
 @dataclass(frozen=True)
 class Beam:
 	params: BeamParameters
 	spectra: Spectra
 
+
 @cache
-def generateSpectra(beam: BeamParameters) -> Tuple[Spectra, Spectra]:
-	if beam.method == "synch":
-		log.info(f"Generating Synchrotron beam spectra")
-		params = cast(SynchBeam, beam)
+def generateSpectra(beam: BeamParameters) -> tuple[Spectra, Spectra]:
+	if beam.generator == BEAM_GENERATOR.STATIC:
+		twin: DigitalTwin | None = get_twin(beam.twin)
+		if twin is None:
+			raise ValueError(
+				f"Static spectra must have a digital twin, but unable to find twin with name '{twin.specification.name}'",
+			)
+
+		if beam.twin_beam not in twin.get_beams():
+			raise KeyError(f"Beam of name '{beam.twin_beam}' does not exist in twin '{twin.specification.name}'")
+
+		twinbeam = twin.specification.beams[beam.twin_beam]
+		print(twinbeam)
+
+		if isinstance(twinbeam, TwinBeamFixedSpectrum):
+			unfiltered = Spectra([x[0] for x in twinbeam.spectrum], [x[1] for x in twinbeam.spectrum], 0, 0, 0)
+
+			# Use gVXR to filter fixed spectrum beams
+			gvxr.resetBeamSpectrum()
+			for energy, photons in twinbeam.spectrum:
+				gvxr.addEnergyBinToSpectrumPerCm2At1m(energy, "keV", photons)
+
+			# for f in beam.filters:
+			# 	gvxr.addFilter(f.material, f.thickness, "mm")
+
+			filtered_bins = gvxr.getEnergyBins("keV")
+			filtered_photons = gvxr.getPhotonCountsPerCm2At1m()
+
+			filtered = Spectra(filtered_bins, filtered_photons, 0, 0, 0)
+
+			return (filtered, unfiltered)
+
+		if isinstance(twinbeam, TwinBeamFixedSpectrum):
+			unfiltered = Spectra([x[0] for x in twinbeam.spectrum], [x[1] for x in twinbeam.spectrum], 0, 0, 0)
+			filtered = Spectra([x[0] for x in twinbeam.spectrum], [x[1] for x in twinbeam.spectrum], 0, 0, 0)
+			return (unfiltered, filtered)
+
+	if beam.generator == BEAM_GENERATOR.MONOCHROMATIC:
+		log.info("Generating monochromatic beam spectra")
+		params = cast("SynchBeam", beam)
 		# harmonics are two higher order;
 		total_range = int(params.energy * 3 + 10)
 		flux = params.flux * 10e10
@@ -265,28 +332,21 @@ def generateSpectra(beam: BeamParameters) -> Tuple[Spectra, Spectra]:
 		photons[base_energy] = flux
 		if params.harmonics:
 			# Add higher-order harmonics
-			photons[base_energy*3] = photons[base_energy] * 0.01
-			photons[base_energy*2] = photons[base_energy] * 0.03
+			photons[base_energy * 3] = photons[base_energy] * 0.01
+			photons[base_energy * 2] = photons[base_energy] * 0.03
 			photons[base_energy] = flux * 0.96
 
-		return (Spectra(
-			tuple(energies.astype(float)),
-			tuple(photons.astype(float)),
-			0,
-			0,
-			0),
-
+		return (
+			Spectra(tuple(energies.astype(float)), tuple(photons.astype(float)), 0, 0, 0),
 			# ! Synchatron beam does not currently support filters.
-			Spectra(
-			tuple(energies.astype(float)),
-			tuple(photons.astype(float)),
-			0,
-			0,
-			0),
-			)
+			Spectra(tuple(energies.astype(float)), tuple(photons.astype(float)), 0, 0, 0),
+		)
 
-	elif beam.method == "lab" or beam.method == "med":
-		params = cast(LabBeam, beam) if beam.method == "lab" else cast(MedBeam, beam)
+	if beam.generator in {BEAM_GENERATOR.SPEKPY, BEAM_GENERATOR.XPECGEN, BEAM_GENERATOR.XRAY_PHYSICS}:
+		if beam.method not in {"lab", "med"}:
+			raise ValueError("Spekpy, Xpecgen, and Xrayphysics only support tube sources.")
+
+		params = cast("LabBeam", beam) if beam.method == "lab" else cast("MedBeam", beam)
 		log.info(f"Generating Tube beam spectra with {params.generator}")
 
 		if params.generator == BEAM_GENERATOR.SPEKPY:
@@ -296,12 +356,12 @@ def generateSpectra(beam: BeamParameters) -> Tuple[Spectra, Spectra]:
 				dk=1,
 				targ=params.material.name,
 				mas=params.mas,
-				shift=0.5
+				shift=0.5,
 			)
 			results = spec.get_std_results()
 
-			for filter in beam.filters:
-				spec = spec.filter(filter.material.name, filter.thickness)
+			for f in beam.filters:
+				spec = spec.filter(f.material.name, f.thickness)
 
 			return (
 				Spectra(
@@ -317,44 +377,55 @@ def generateSpectra(beam: BeamParameters) -> Tuple[Spectra, Spectra]:
 					kerma=results.kerma,
 					flu=results.flu,
 					emean=results.emean,
-				))
-		elif params.generator == BEAM_GENERATOR.XPECGEN:
-			# Generate a spectrum
-			unfiltered = xp.calculate_spectrum(params.voltage, params.anodeAngle, 1, 200, epsrel=0.5, monitor=None, z=params.material.value)
+				),
+			)
 
-			#Inherent filtration: 1.2mm Al
+		if params.generator == BEAM_GENERATOR.XPECGEN:
+			# Generate a spectrum
+			unfiltered = xp.calculate_spectrum(
+				params.voltage,
+				params.anodeAngle,
+				1,
+				200,
+				epsrel=0.5,
+				monitor=None,
+				z=params.material.value,
+			)
+
+			# Inherent filtration: 1.2mm Al
 			# mu_Al = xp.get_mu(Element.Al.value)
 			# unfiltered.attenuate(0.12, mu_Al)
 
 			# Apply filters
 			filtered = unfiltered.clone()
-			for filter in params.filters:
-				filtered.attenuate(filter.thickness / 10, xp.get_mu(filter.material.value))
+			for f in params.filters:
+				filtered.attenuate(f.thickness / 10, xp.get_mu(f.material.value))
 
-
-			(filter_energies,filter_count) = filtered.get_points()
-			(unfiltered_energies,unfiltered_count) = unfiltered.get_points()
+			(filter_energies, filter_count) = filtered.get_points()
+			(unfiltered_energies, unfiltered_count) = unfiltered.get_points()
 
 			return (
 				Spectra(
-					energies=tuple([float(f'{x:.4}') for x in filter_energies]),
-					photons=tuple([float(f'{x:.4}') for x in filter_count]),
+					energies=tuple([float(f"{x:.4}") for x in filter_energies]),
+					photons=tuple([float(f"{x:.4}") for x in filter_count]),
 					kerma=0,
 					flu=0,
 					emean=0,
 				),
 				Spectra(
-					energies=tuple([float(f'{x:.4}') for x in unfiltered_energies]),
-					photons=tuple([float(f'{x:.4}') for x in unfiltered_count]),
+					energies=tuple([float(f"{x:.4}") for x in unfiltered_energies]),
+					photons=tuple([float(f"{x:.4}") for x in unfiltered_count]),
 					kerma=0,
 					flu=0,
 					emean=0,
-				))
+				),
+			)
 
 			raise NotImplementedError("XPECGEN is currently not implemented.")
-		elif params.generator == BEAM_GENERATOR.STATIC:
-			gvxr.filter
-		else:
-			raise NotImplementedError("Other beam spectra generators are not implemented.")
-	else:
-		raise ValueError("Unsupported beam type.")
+
+		if params.generator == BEAM_GENERATOR.XRAY_PHYSICS:
+			raise NotImplementedError("Xray physics is currently not implemented.")
+
+		raise NotImplementedError("Other beam spectra generators are not implemented.")
+
+	raise ValueError("Unsupported beam type.")

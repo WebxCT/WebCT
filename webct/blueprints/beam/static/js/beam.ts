@@ -12,9 +12,9 @@ import { BeamResponseRegistry, processResponse, requestBeamData, sendBeamData } 
 import { BeamConfigError, BeamRequestError, showError, showValidationError } from "./errors";
 import { BeamGenerator, BeamProperties, Filter, LabBeam, MedBeam, SourceType, SpectraDisplay, SynchBeam, ViewFormat } from "./types";
 import { SupportedAnodes, validateAngle, validateEnergy, validateExposure, validateFilter, validateFlux, validateIntensity, validateMAs, validateSpotSize, validateVoltage } from "./validation";
-import { Valid } from "../../../base/static/js/validation";
-import { DigitalTwin, TwinBeamFixedSpectrum } from "../../../twin/js/types";
-import { SelectTwin, TWIN, TWIN_LIST, updateTwinList } from "../../../twin/js/twin";
+import { Valid, validateInput } from "../../../base/static/js/validation";
+import { DigitalTwin, TwinBeamFixedSpectrum } from "../../../twins/static/js/types";
+import { SetTwin, TWIN, TWIN_LIST, UpdateTwinList } from "../../../twins/static/js/twin";
 
 // ====================================================== //
 // ================== Document Elements ================= //
@@ -177,14 +177,13 @@ export function setupBeam(): boolean {
 	}
 	TwinSelectElement = twin_select_element as SlSelect;
 	TwinSelectElement.addEventListener("sl-change", () => {
-		SelectTwin(TwinSelectElement.value as string)
+		SetTwin(TwinSelectElement.value as string)
 	});
 
 	TwinSelectBeamElement = twin_select_beam_element as SlSelect;
 	TwinSelectBeamElement.addEventListener("sl-change", () => {
 		SelectTwinBeam(TwinSelectBeamElement.value as string)
 	});
-	updateTwinList();
 
 	TwinSelectExposureElement = twin_select_exposure_element as SlSelect;
 	TwinDescriptionElement = twin_description_element as HTMLParagraphElement;
@@ -197,43 +196,43 @@ export function setupBeam(): boolean {
 	TubeSettings = tube_settings_element as HTMLDivElement;
 	FilterSettings = filter_settings_element as HTMLDivElement;
 
-	BeamEnergyElement = energy_element as SlInput;
+	BeamEnergyElement = energy_element as unknown as SlInput;
 	BeamEnergyElement.addEventListener("sl-change", () => {
-		validateEnergy(BeamEnergyElement)
+		try { validateBeam() } catch { }
 	})
 	BeamNoiseElement = noise_element as SlCheckbox;
-	BeamExposureElement = exposure_element as SlInput;
+	BeamExposureElement = exposure_element as unknown as SlInput;
 	BeamExposureElement.addEventListener("sl-change", () => {
-		validateExposure(BeamExposureElement)
+		try { validateBeam() } catch { }
 	})
-	BeamVoltageElement = voltage_element as SlInput;
-	BeamIntensityElement = intensity_element as SlInput;
+	BeamVoltageElement = voltage_element as unknown as SlInput;
+	BeamIntensityElement = intensity_element as unknown as SlInput;
 	BeamIntensityElement.addEventListener("sl-change", () => {
-		validateIntensity(BeamIntensityElement)
+		try { validateBeam() } catch { }
 		updatePowerText()
 	})
-	BeamFluxElement = flux_element as SlInput;
+	BeamFluxElement = flux_element as unknown as SlInput;
 	BeamFluxElement.addEventListener("sl-change", () => {
-		validateFlux(BeamFluxElement)
+		try { validateBeam() } catch { }
 	})
-	BeamMASElement = mas_element as SlInput;
+	BeamMASElement = mas_element as unknown as SlInput;
 	BeamMASElement.addEventListener("sl-change", () => {
-		validateMAs(BeamMASElement)
+		try { validateBeam() } catch { }
 	})
-	BeamAngleElement = angle_element as SlInput;
+	BeamAngleElement = angle_element as unknown as SlInput;
 	BeamAngleElement.addEventListener("sl-change", () => {
-		validateAngle(BeamAngleElement)
+		try { validateBeam() } catch { }
 	})
-	BeamSpotSizeElement = spot_size as SlInput;
+	BeamSpotSizeElement = spot_size as unknown as SlInput;
 	BeamSpotSizeElement.addEventListener("sl-change", () => {
-		validateSpotSize(BeamSpotSizeElement)
+		try { validateBeam() } catch { }
 	})
 	BeamMaterialElement = beam_material_element as SlSelect;
 	BeamMaterialElement.addEventListener("sl-change", () => {
-		validateVoltage(BeamVoltageElement, BeamMaterialElement.value as SupportedAnodes)
+		try { validateBeam() } catch { }
 	})
 	BeamVoltageElement.addEventListener("sl-change", () => {
-		validateVoltage(BeamVoltageElement, BeamMaterialElement.value as SupportedAnodes)
+		try { validateBeam() } catch { }
 		updatePowerText()
 	})
 	BeamHarmonicsElement = harmonics_element as SlCheckbox;
@@ -321,19 +320,19 @@ export function setupBeam(): boolean {
 
 
 	FilterMaterialElement = filter_material_element as SlSelect;
-	FilterSizeElement = filter_size_element as SlInput;
+	FilterSizeElement = filter_size_element as unknown as SlInput;
 	FilterSizeElement.addEventListener("sl-change", () => {
-		validateFilter(FilterSizeElement);
+		try { validateBeam() } catch { }
 	});
 	FilterSizeElement.addEventListener("sl-input", () => {
-		validateFilter(FilterSizeElement);
+		try { validateBeam() } catch { }
 	});
 
 	BeamSpotSizeElement.addEventListener("sl-input", () => {
-		validateSpotSize(BeamSpotSizeElement)
+		try { validateBeam() } catch { }
 	})
 	BeamSpotSizeElement.addEventListener("sl-change", () => {
-		validateSpotSize(BeamSpotSizeElement)
+		try { validateBeam() } catch { }
 	})
 
 	SpectraCanvas = spectra_canvas as HTMLCanvasElement;
@@ -446,36 +445,39 @@ export function SyncBeam(): Promise<void> {
  */
 export function UpdateBeam(): Promise<void> {
 
-	return requestBeamData().then((response: Response) => {
-		console.log("Beam Data Response Status:" + response.status);
-		if (response.status == 400) {
-			showError(BeamRequestError.UNSUPPORTED_PARAMETERS);
-			return;
-		} else if (response.status == 500) {
-			showError(BeamRequestError.UNEXPECTED_SERVER_ERROR);
-			return;
-		}
-
-		// Convert to json
-		const result = response.json();
-
-		return result.then((result: unknown) => {
-
-			const [properties, spectraFiltered, spectraUnfiltered,] = processResponse(result as BeamResponseRegistry["beamResponse"]);
-
-			setBeamParams(properties);
-
-			let format: ViewFormat = "None";
-			if (Spectra?.viewFormat !== undefined) {
-				format = Spectra?.viewFormat;
+	return UpdateTwinList().then(() => {
+		requestBeamData().then((response: Response) => {
+			console.log("Beam Data Response Status:" + response.status);
+			if (response.status == 400) {
+				showError(BeamRequestError.UNSUPPORTED_PARAMETERS);
+				return;
+			} else if (response.status == 500) {
+				showError(BeamRequestError.UNEXPECTED_SERVER_ERROR);
+				return;
 			}
-			Spectra = new SpectraDisplay(spectraFiltered, spectraUnfiltered, properties, SpectraCanvas, format);
 
+			// Convert to json
+			const result = response.json();
+
+			return result.then((result: unknown) => {
+
+				const [properties, spectraFiltered, spectraUnfiltered,] = processResponse(result as BeamResponseRegistry["beamResponse"]);
+
+				setBeamParams(properties);
+
+
+				let format: ViewFormat = "None";
+				if (Spectra?.viewFormat !== undefined) {
+					format = Spectra?.viewFormat;
+				}
+				Spectra = new SpectraDisplay(spectraFiltered, spectraUnfiltered, properties, SpectraCanvas, format);
+
+			}).catch(() => {
+				showError(BeamRequestError.RESPONSE_DECODE);
+			});
 		}).catch(() => {
-			showError(BeamRequestError.RESPONSE_DECODE);
+			showError(BeamRequestError.SEND_ERROR);
 		});
-	}).catch(() => {
-		showError(BeamRequestError.SEND_ERROR);
 	});
 }
 
@@ -514,6 +516,7 @@ export function getBeamParms(): BeamProperties {
 		case "lab":
 			beam = new LabBeam(
 				TwinSelectElement.value as string,
+				TwinSelectBeamElement.value as string,
 				parseFloat(BeamVoltageElement.value as string),
 				BeamNoiseElement.checked,
 				parseFloat(BeamExposureElement.value as string),
@@ -533,6 +536,7 @@ export function getBeamParms(): BeamProperties {
 		case "med":
 			beam = new MedBeam(
 				TwinSelectElement.value as string,
+				TwinSelectBeamElement.value as string,
 				parseFloat(BeamVoltageElement.value as string),
 				BeamNoiseElement.checked,
 				parseFloat(BeamMASElement.value as string),
@@ -549,8 +553,16 @@ export function getBeamParms(): BeamProperties {
 			);
 			break;
 		case "synch":
+			let generator: BeamGenerator = "monochromatic"
+			if (TWIN != null) {
+				if (TWIN.beams[TwinSelectBeamElement.value as string].beam_type == "fixed-spectrum") {
+					generator = "static"
+				}
+			}
+
 			beam = new SynchBeam(
 				TwinSelectElement.value as string,
+				TwinSelectBeamElement.value as string,
 				parseFloat(BeamEnergyElement.value as string),
 				BeamNoiseElement.checked,
 				parseFloat(BeamExposureElement.value as string),
@@ -561,7 +573,8 @@ export function getBeamParms(): BeamProperties {
 						material: parseInt(FilterMaterialElement.value as string),
 						thickness: parseFloat(FilterSizeElement.value),
 					} as Filter
-				]
+				],
+				generator
 			);
 			break;
 	}
@@ -572,6 +585,7 @@ export function setBeamParams(beam: BeamProperties) {
 	let params;
 	BeamSourceSelectElement.value = beam.method;
 	TwinSelectElement.value = beam.twin;
+	TwinSelectBeamElement.value = beam.twin_beam;
 	BeamNoiseElement.checked = beam.enableNoise;
 
 	switch (beam.method) {
@@ -654,15 +668,12 @@ export function SetBeamTwin(twin: DigitalTwin | null) {
 	TwinSelectBeamElement.innerHTML = beamInner
 	TwinSelectBeamElement.disabled = numberBeams < 2
 
-	// Select first beam
-	TwinSelectBeamElement.value = Object.keys(twin.beams)[0]
-	SelectTwinBeam(TwinSelectBeamElement.value)
+	if (!Object.keys(twin.beams).includes(TwinSelectBeamElement.value as string)) {
+		// Check if current twin beam key exists, otherwise default to first beam.
+		TwinSelectBeamElement.value = Object.keys(twin.beams)[0]
+	}
 
-
-	// Call setbeam for specific beam settings
-	console.log("null twin!");
-
-	// No twin selected, enable all beam controls
+	SelectTwinBeam(TwinSelectBeamElement.value as string)
 
 }
 
@@ -675,6 +686,7 @@ export function SelectTwinBeam(new_beam: string) {
 
 	// Enable normal exposure, flux, and intensity element
 	BeamExposureElement.classList.remove("hidden")
+
 	if (BeamNoiseElement.checked) {
 		BeamExposureElement.disabled = false;
 		BeamIntensityElement.disabled = false;
@@ -715,74 +727,78 @@ export function SelectTwinBeam(new_beam: string) {
 	}
 	// We let beam selection take care of swapping out normal beam elements,
 	// only managing twin elements or hiding unsupported options.
-	BeamSourceSelectElement.handleValueChange();
+	BeamSourceSelectElement.handleValueChange().then(() => {
 
-	if (TWIN == null) {
-		return
-	}
-
-	// Disable constant beam settings
-	BeamSourceSelectElement.disabled = true;
-	BeamMaterialElement.disabled = true;
-	BeamAngleElement.disabled = true;
-
-	console.log(TWIN.detector.exposures.length !== 0);
-
-	if (TWIN.detector.exposures.length !== 0) {
-
-		// Add exposures Beam update should succeed before exposure applies, meaning
-		// exposure value should be a correct setting after an update. We check to
-		// see if the current exposure is in the approved exposure list and select
-		// it, defaulting to the first exposure if not.
-		BeamExposureElement.classList.add("hidden")
-		TwinSelectExposureElement.classList.remove("hidden")
-		if (BeamNoiseElement.checked) {
-			TwinSelectExposureElement.disabled = false;
+		if (TWIN == null) {
+			return
 		}
 
-		let exposureInner = "";
-		let found = false;
-		TWIN.detector.exposures.forEach((value) => {
-			exposureInner += "<sl-menu-item value=\"" + value + "\">" + value + "s</sl-menu-item>";
-			if (value == parseFloat(BeamExposureElement.value)) {
-				found = true
+		// Disable constant beam settings
+		BeamSourceSelectElement.disabled = true;
+		BeamMaterialElement.disabled = true;
+		BeamAngleElement.disabled = true;
+
+		console.log(TWIN.detector.exposures.length !== 0);
+
+		if (TWIN.detector.exposures.length !== 0) {
+
+			// Add exposures Beam update should succeed before exposure applies, meaning
+			// exposure value should be a correct setting after an update. We check to
+			// see if the current exposure is in the approved exposure list and select
+			// it, defaulting to the first exposure if not.
+			BeamExposureElement.classList.add("hidden");
+			BeamExposureElement.disabled = true;
+
+			TwinSelectExposureElement.classList.remove("hidden")
+			if (BeamNoiseElement.checked) {
+				TwinSelectExposureElement.disabled = false;
 			}
-		})
-		TwinSelectExposureElement.innerHTML = exposureInner;
 
-		if (found) {
-			// Current exposure exists, select it
-			TwinSelectExposureElement.value = BeamExposureElement.value
-		} else {
-			// Default to first exposure if the current exposure value is
-			// unsupported by the twin.
-			TwinSelectExposureElement.value = TWIN.detector.exposures[0] + ""
+			let exposureInner = "";
+			let found = false;
+			TWIN.detector.exposures.forEach((value) => {
+				exposureInner += "<sl-menu-item value=\"" + value + "\">" + value + "s</sl-menu-item>";
+				if (value == parseFloat(BeamExposureElement.value)) {
+					found = true
+				}
+			})
+			TwinSelectExposureElement.innerHTML = exposureInner;
+
+			if (found) {
+				// Current exposure exists, select it
+				TwinSelectExposureElement.value = BeamExposureElement.value
+			} else {
+				// Default to first exposure if the current exposure value is
+				// unsupported by the twin.
+				TwinSelectExposureElement.value = TWIN.detector.exposures[0] + ""
+			}
 		}
-	}
 
-	if (beam.beam_type == "fixed-spectrum") {
-		let fixedBeam = beam as (TwinBeamFixedSpectrum)
-		let flux = fixedBeam.spectrum.reduce((sum, current) => sum + current[1], 0)
-		if (beam.shape == "parallel") {
+		if (beam.beam_type == "fixed-spectrum") {
+			let fixedBeam = beam as (TwinBeamFixedSpectrum)
+			let flux = fixedBeam.spectrum.reduce((sum, current) => sum + current[1], 0)
+			if (beam.shape == "parallel") {
 
-			// Synchrotron fixed-flux beam source
-			BeamEnergyElement.classList.add("hidden")
-			BeamFluxElement.disabled = true
+				// Synchrotron fixed-flux beam source
+				BeamEnergyElement.classList.add("hidden")
+				BeamFluxElement.disabled = true
 
-			// beam flux is in x10^10
-			BeamFluxElement.value = flux / 10000000000 + ""
+				// beam flux is x10e10
+				BeamFluxElement.value = flux / 10000000000 + ""
 
-			// Cannot add harmonics to fixed spectrum beam
-			BeamHarmonicsElement.classList.add("hidden")
+				// Cannot add harmonics to fixed spectrum beam
+				BeamHarmonicsElement.classList.add("hidden")
+
+			}
+		} else if (beam.flux.curve.length !== 0) {
+			if (beam.shape == "point") {
+				// Flux is derived from intensity - kv calculations
+			} else if (beam.shape == "parallel") {
+				// Flux is derived from energy equations
+				BeamFluxElement.disabled = true;
+			}
 		}
-	} else if (beam.flux.curve.length !== 0) {
-		if (beam.shape == "point") {
-			// Flux is derived from intensity - kv calculations
-		} else if (beam.shape == "parallel") {
-			// Flux is derived from energy equations
-			BeamFluxElement.disabled = true;
-		}
-	}
+	});
 }
 
 export function PopulateTwinList() {
@@ -856,7 +872,45 @@ function ValidateTwinBeam(): void {
 	if (TWIN == null) {
 		return;
 	}
-
 	let beam = TWIN.beams[TwinSelectBeamElement.value as string]
 
+	let validationResults: Valid[] = []
+
+	validationResults = [
+		validateSpotSize(BeamSpotSizeElement),
+		validateFilter(FilterSizeElement)
+	]
+
+	if (beam.beam_type == "tube") {
+		validationResults.push(...[
+			validateInput(BeamVoltageElement, "Tube Voltage", {
+				type: "number",
+				min: beam.keV[0],
+				max: beam.keV[1],
+				message: "Source only supports " + beam.keV[0] + "keV to " + beam.keV[1] + "keV"
+			}),
+			validateInput(BeamIntensityElement, "Tube Intensity", {
+				type: "number",
+				min: beam.uA[0],
+				max: beam.uA[1],
+				message: "Source only supports " + beam.uA[0] + "μA to " + beam.uA[1] + "μA"
+			})
+		])
+	} else if (beam.beam_type == "monochromatic") {
+		validationResults.push(...[
+			validateInput(BeamEnergyElement, "Synchrotron Energy", {
+				type: "number",
+				min: beam.keV[0],
+				max: beam.keV[1],
+				message: "Source only supports " + beam.keV[0] + "keV to " + beam.keV[1] + "keV"
+			}),
+		])
+	}
+
+	validationResults.forEach(validation => {
+		if (!validation.valid) {
+			// An element is invalid, bubble as an exception
+			throw "<b>Invalid Beam Settings</b><br/> Your " + validation.InvalidReason as BeamConfigError
+		}
+	});
 }

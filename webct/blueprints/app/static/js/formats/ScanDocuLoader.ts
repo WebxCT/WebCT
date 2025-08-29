@@ -55,7 +55,7 @@ export const ScanDocuConfig: FormatLoaderStatic = class ScanDocuConfig implement
 			thickness: 0,
 		}
 
-		beam = new LabBeam("", this.scanparameter.Voltage, true, (this.scanparameter.IntegrationTime / 1000) * this.scanparameter.Framebinning, this.scanparameter.Current, 0, ElementSymbols.W, "spekpy", 12, [filter])
+		beam = new LabBeam("", "", this.scanparameter.Voltage, true, (this.scanparameter.IntegrationTime / 1000) * this.scanparameter.Framebinning, this.scanparameter.Current, 0, ElementSymbols.W, "spekpy", 12, [filter])
 
 		let pixelSize = this.recon.ProjectionPixelSizeX
 
@@ -76,6 +76,10 @@ export const ScanDocuConfig: FormatLoaderStatic = class ScanDocuConfig implement
 				paneHeight: this.scanparameter.DetectorPixelY * pixelSize,
 				paneWidth: this.scanparameter.DetectorPixelX * pixelSize,
 				scintillator: { material: "", thickness: 100 },
+				enableGain:false,
+				gain: 1,
+				k: 1,
+				fov: 0,
 			},
 			capture: {
 				beamPosition: [0, this.geometry.SourceObjectDist * -1, 0],

@@ -5,7 +5,7 @@ channels:
   - https://software.repos.intel.com/python/conda
   - astra-toolbox
 dependencies:
-  - python>=3.9
+  - python>=3.11.9
 
   # use (smaller, better, faster, stronger) open-source BLAS libraries to avoid
   # massive bloatware and license infringements from mkl used by default numpy
@@ -14,7 +14,7 @@ dependencies:
   # Runtime
   - flask
   - scipy
-  - matplotlib<3.5
+  - matplotlib
   - opencv
   - cil>=24.3.0
   - tigre
@@ -25,16 +25,24 @@ dependencies:
   # Packaging
   - pyinstaller
 
-  # Development linting
+  # Development linting and testing
   - ruff
+  - pytest
+  - pytest-cov
+
+  # Building 'xpecgen' and 'spekpy' using the legacy setup.py bdist_wheel
+  # mechanism, which will be removed in a future version. pip 25.3 will enforce
+  # this behaviour change. Discussion can be found at
+  # https://github.com/pypa/pip/issues/6334
+  - pip<25.3
 
   # Pip packages
   # (environment.yml does not support multiple pip: keys.)
-  - pip
   - pip:
     # Runtime
     - gvxr
     - json5
     - imageio[ffmpeg]
     - git+https://bitbucket.org/spekpy/spekpy_release.git
+    # - git+https://github.com/kylechampley/XrayPhysics
     - xpecgen

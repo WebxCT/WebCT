@@ -45,6 +45,28 @@ export interface DetectorProperties {
 	 * Detector pixel binning (averaging)
 	 */
 	binning: number;
+
+	/**
+	 * If gain is enabled, scaling images to uint16 based on electronic
+	 * behaviour
+	 */
+	enableGain: boolean;
+
+	/**
+	 * Detector innate gain constant
+	 */
+	k: number;
+
+	/**
+	 * User-selecteed gain value
+	 */
+	gain: number;
+
+	/**
+	 * Digital twin selected FoV
+	 * Does not have an affect on simulation.
+	 */
+	fov: number;
 }
 
 export type ScintillatorMaterial = "" | "CUSTOM" | "CsI" | "NaI" | "Gadox" | "Gadox DRZ-Plus" | "Gd2O3" | "Gd3Ga5O12" | "YGO" | "CdWO4" | "Y2O3" | "La2HfO7" | "Y3Al5O12"
@@ -240,13 +262,13 @@ export interface EnergyResponseData {
 export class EnergyResponseDisplay {
 	readonly energyResponse: EnergyResponseData
 	readonly canvas: HTMLCanvasElement
-	readonly detector: DetectorProperties
+	readonly scintillator: Scintillator
 	_chart?: Chart;
 
-	constructor(energyResponse: EnergyResponseData, detector: DetectorProperties, canvas: HTMLCanvasElement) {
+	constructor(energyResponse: EnergyResponseData, scintillator: Scintillator, canvas: HTMLCanvasElement) {
 		this.energyResponse = energyResponse;
 		this.canvas = canvas;
-		this.detector = detector;
+		this.scintillator = scintillator;
 
 		// Obtain a chart item if it already exists on the given canvas.
 		if (Chart.getChart(this.canvas) !== undefined) {
@@ -256,11 +278,11 @@ export class EnergyResponseDisplay {
 
 	public displayEnergyResponse(): void {
 
-		let title = "Energy Response for " + (this.detector.scintillator.thickness * 1000) + "μm " + this.detector.scintillator.material;
-		let label = this.detector.scintillator.material + "";
+		let title = "Energy Response for " + (this.scintillator.thickness * 1000) + "μm " + this.scintillator.material;
+		let label = this.scintillator.material + "";
 		let borderDash = undefined;
 
-		if (this.detector.scintillator.material == "") {
+		if (this.scintillator.material == "") {
 			title = "Perfect Energy Response";
 			label = "Perfect Response";
 			borderDash = [10,5];

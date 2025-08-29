@@ -9,7 +9,7 @@ from flask.wrappers import Response
 from PIL import Image
 import numpy as np
 from webct.blueprints.preview import bp
-from webct.components.imgutils import asPngStr
+from webct.components.imgutils import asPngStr, asPngStr_uint16
 from webct.components.sim.Download import DownloadResource, DownloadStatus
 from webct.components.sim.SimSession import Sim
 
@@ -25,10 +25,12 @@ def saveGif(array: np.ndarray) -> None:
 
 	images[0].save("projections.gif", "GIF", append_images=images[1:], duration=10, loop=0)
 
-def getHistImage(array:np.ndarray, bins:List[float]) -> str:
+def getHistImage(array:np.ndarray, bins:List[float], overexposure:float|None=None) -> str:
 	# create a mask of pixels < bin[5]
 	# 0 - 1 - 2 - 3 - 4 - 5 - 6
 	mask = array < bins[6]
+	if overexposure is not None:
+		overmask = array > overexposure
 
 	# create rgb image
 	array = (array - array.min()) / (array.max() - array.min())
@@ -38,6 +40,12 @@ def getHistImage(array:np.ndarray, bins:List[float]) -> str:
 	array[mask, 0] = 255
 	array[mask, 1] = 0
 	array[mask, 2] = 0
+
+	if overexposure is not None:
+		# set overexposed areas to green
+		array[overmask, 0] = 0
+		array[overmask, 1] = 178
+		array[overmask, 2] = 0
 
 	# create png and base64 via bytestream
 	byteStream = io.BytesIO()
@@ -53,13 +61,14 @@ def getPreviews() -> Response:
 
 	projection = sim.projection()
 	delta = monotonic() - then
-	log_projection = np.log(projection)
+	log_projection = np.log(projection.astype(float) / 65535)
 
 	hist, bins = sim.transmission_histogram()
-	histimgstr = getHistImage(projection, bins)
+	overexposure = 60000 if projection.dtype == np.uint16 else None
+	histimgstr = getHistImage(projection, bins, overexposure)
 
 	log.info(f"[{sim._sid}] Encoding projection preview")
-	projectionstr = asPngStr(projection)
+	projectionstr = asPngStr_uint16(projection) if projection.dtype == np.uint16 else asPngStr(projection)
 	log_projectionstr = asPngStr(log_projection)
 
 	layout = sim.layout()

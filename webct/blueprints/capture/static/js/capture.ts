@@ -11,7 +11,9 @@ import { CaptureConfigError, CaptureRequestError, showError, showValidationError
 import { CapturePreview, CaptureProperties } from "./types";
 import { validateSourcePosition, validateProjections, validateRotation, validateDetectorPosition, validateSceneRotation, validateSourceYPosition, validateDetectorYPosition } from "./validation";
 import { UpdatePage } from "../../../app/static/js/app";
-import { Valid } from "../../../base/static/js/validation";
+import { Valid, validateInput } from "../../../base/static/js/validation";
+import { TWIN } from "../../../twins/static/js/twin";
+import { DigitalTwin, XYZRange } from "../../../twins/static/js/types";
 
 // ====================================================== //
 // ================== Document Elements ================= //
@@ -110,7 +112,7 @@ export function setupCapture(): boolean {
 		detector_posy_element == null ||
 		detector_posz_element == null ||
 		laminography_enabled_element == null ||
-		range_nyquist == null || 
+		range_nyquist == null ||
 		magnification_text_element == null ||
 		voxel_size_text_element == null) {
 
@@ -150,35 +152,43 @@ export function setupCapture(): boolean {
 	MagnificationTextElement = magnification_text_element as HTMLParagraphElement;
 
 	TotalRotationElement = total_rotation_element as SlSelect;
-	TotalProjectionsElement = total_projections_element as SlInput;
+	TotalProjectionsElement = total_projections_element as unknown as SlInput;
 	TotalProjectionsElement.addEventListener("sl-change", () => {
 		validateProjections(TotalProjectionsElement);
 	});
 
-	BeamPosXElement = beam_posx_element as SlInput;
-	BeamPosYElement = beam_posy_element as SlInput;
-	BeamPosZElement = beam_posz_element as SlInput;
-	DetectorPosXElement = detector_posx_element as SlInput;
-	DetectorPosYElement = detector_posy_element as SlInput;
-	DetectorPosZElement = detector_posz_element as SlInput;
-	[BeamPosXElement,BeamPosZElement].forEach(element => {
+	BeamPosXElement = beam_posx_element as unknown as SlInput;
+	BeamPosYElement = beam_posy_element as unknown as SlInput;
+	BeamPosZElement = beam_posz_element as unknown as SlInput;
+	DetectorPosXElement = detector_posx_element as unknown as SlInput;
+	DetectorPosYElement = detector_posy_element as unknown as SlInput;
+	DetectorPosZElement = detector_posz_element as unknown as SlInput;
+	[BeamPosXElement, BeamPosZElement].forEach(element => {
 		element.addEventListener("sl-change", () => {
-			validateSourcePosition(element);
+			try {
+				validateCapture()
+			} catch (error) { }
 		})
 	});
 	BeamPosYElement.addEventListener("sl-change", () => {
-		validateSourceYPosition(BeamPosYElement)
+		try {
+			validateCapture()
+		} catch (error) { }
 	});
 
 	[DetectorPosXElement, DetectorPosZElement].forEach(element => {
 		element.addEventListener("sl-change", () => {
-			validateDetectorPosition(element);
+			try {
+				validateCapture()
+			} catch (error) { }
 		})
 	});
 	// Y is the main imaging axis, and therefore cannot be 0 or flipped in
 	// either source position or detector position.
 	DetectorPosYElement.addEventListener("sl-change", () => {
-		validateDetectorYPosition(DetectorPosYElement)
+		try {
+			validateCapture()
+		} catch (error) { }
 	});
 
 
@@ -186,12 +196,14 @@ export function setupCapture(): boolean {
 	SampleSDDElement = sample_position_sdd as HTMLParagraphElement;
 	SampleSODElement = sample_position_sod as HTMLParagraphElement;
 	SampleODDElement = sample_position_odd as HTMLParagraphElement;
-	SampleRotateXElement = sample_rotatex_element as SlInput;
-	SampleRotateYElement = sample_rotatey_element as SlInput;
-	SampleRotateZElement = sample_rotatez_element as SlInput;
+	SampleRotateXElement = sample_rotatex_element as unknown as SlInput;
+	SampleRotateYElement = sample_rotatey_element as unknown as SlInput;
+	SampleRotateZElement = sample_rotatez_element as unknown as SlInput;
 	[SampleRotateXElement, SampleRotateYElement, SampleRotateZElement].forEach(element => {
 		element.addEventListener("sl-change", () => {
-			validateRotation(element);
+			try {
+				validateCapture()
+			} catch (error) { }
 		})
 	});
 
@@ -218,7 +230,9 @@ export function setupCapture(): boolean {
 
 		BeamPosYElement.value = (sod * -1).toFixed(2)
 		DetectorPosYElement.value = odd.toFixed(2)
-		validateCapture()
+		try {
+			validateCapture()
+		} catch (error) { }
 	});
 
 	BeamPosYElement.addEventListener("sl-change", () => {
@@ -278,7 +292,12 @@ export function setupCapture(): boolean {
  * Validate capture parameters and mark as valid/invalid.
  */
 export function validateCapture(): void {
-	let validationResults:Valid[] = []
+	if (TWIN !== null) {
+		validateCaptureTwin();
+		return;
+	}
+
+	let validationResults: Valid[] = []
 	validationResults = [
 		validateProjections(TotalProjectionsElement),
 
@@ -308,7 +327,7 @@ export function validateCapture(): void {
 // =================== Display and UI =================== //
 // ====================================================== //
 
-function updateSamplePositionBar():[number, number, number] {
+function updateSamplePositionBar(): [number, number, number] {
 	// Assuming sample position only moves in the Y-coordinate, not taking into account axis offsets.
 	let sod = parseFloat(BeamPosYElement.value) * -1
 	let odd = parseFloat(DetectorPosYElement.value)
@@ -520,7 +539,7 @@ export function UpdateCapturePreview(): Promise<void> {
 	}).catch(() => { MarkError(); });
 }
 
-export function getCaptureParams():CaptureProperties {
+export function getCaptureParams(): CaptureProperties {
 	return {
 		numProjections: parseInt(TotalProjectionsElement.value),
 		totalAngle: parseInt(TotalRotationElement.value as string) as 180 | 360,
@@ -531,7 +550,7 @@ export function getCaptureParams():CaptureProperties {
 	};
 }
 
-export function setCaptureParams(properties:CaptureProperties) {
+export function setCaptureParams(properties: CaptureProperties) {
 	// update local values
 	// no implicit cast from number to string, really js?
 	TotalProjectionsElement.value = properties.numProjections + "";
@@ -551,9 +570,140 @@ export function setCaptureParams(properties:CaptureProperties) {
 
 	CheckboxLaminographyElement.checked = properties.laminographyMode;
 
-	let pct = ((properties.beamPosition[1] * -1) / ((properties.beamPosition[1]* -1) + properties.detectorPosition[1])) * 100
+	let pct = ((properties.beamPosition[1] * -1) / ((properties.beamPosition[1] * -1) + properties.detectorPosition[1])) * 100
 	console.log(properties);
 	console.log(pct);
 	SamplePosElement.value = pct
 	updateSamplePositionBar();
+}
+
+function getRangeDefault(range: XYZRange): [number, number, number] {
+	let default_x = 0
+	let default_y = 0
+	let default_z = 500
+
+	// Use default value, or midpoint between min-max if default is not set.
+	if (range.x.length !== 0) {
+		default_x = range.x.length === 3 && range.x[2] !== undefined ? range.x[2] : range.x[0] + (range.x[1] - range.x[0]) / 2
+	}
+
+	if (range.y.length !== 0) {
+		default_y = range.y.length === 3 && range.y[2] !== undefined ? range.y[2] : range.y[0] + (range.y[1] - range.y[0]) / 2
+	}
+
+	if (range.z.length !== 0) {
+		default_z = range.z.length === 3 && range.z[2] !== undefined ? range.z[2] : range.z[0] + (range.z[1] - range.z[0]) / 2
+	}
+
+	return [default_x, default_y, Math.abs(default_z)]
+}
+
+function isFixedRange(range: [number, number, number?] | []): boolean {
+	return range.length !== 0 && range[0] == range[1]
+}
+
+export function setCaptureTwin(twin:DigitalTwin | null) {
+	BeamPosXElement.disabled = false;
+	BeamPosYElement.disabled = false;
+	BeamPosZElement.disabled = false;
+
+	DetectorPosXElement.disabled = false;
+	DetectorPosYElement.disabled = false;
+	DetectorPosZElement.disabled = false;
+
+	if (twin == null) {
+		return;
+	}
+
+	let default_source_pos = getRangeDefault(twin.stage.source)
+	let default_detector_pos = getRangeDefault(twin.stage.detector)
+
+	BeamPosXElement.value = default_source_pos[0] + ""
+	BeamPosYElement.value = default_source_pos[2] * -1 + ""
+	BeamPosZElement.value = default_source_pos[1] + ""
+
+	DetectorPosXElement.value = default_detector_pos[0] + ""
+	DetectorPosYElement.value = default_detector_pos[2] + ""
+	DetectorPosZElement.value = default_detector_pos[1] + ""
+
+	BeamPosXElement.disabled = isFixedRange(twin.stage.source.x);
+	BeamPosYElement.disabled = isFixedRange(twin.stage.source.z);
+	BeamPosZElement.disabled = isFixedRange(twin.stage.source.y);
+	DetectorPosXElement.disabled = isFixedRange(twin.stage.detector.x);
+	DetectorPosYElement.disabled = isFixedRange(twin.stage.detector.z);
+	DetectorPosZElement.disabled = isFixedRange(twin.stage.detector.y);
+}
+
+function validateCaptureTwin() {
+	if (TWIN == null) {
+		return;
+	}
+
+	let validationResults: Valid[] = []
+	validationResults = [
+		validateProjections(TotalProjectionsElement),
+
+		// sample rotation
+		validateRotation(SampleRotateXElement),
+		validateRotation(SampleRotateYElement),
+		validateRotation(SampleRotateZElement),
+
+		// Source position (Z and Y are swapped)
+		(TWIN.stage.source.x.length !== 0) ?
+			validateInput(BeamPosXElement, "Source Position", {
+				type: "number",
+				max: TWIN.stage.source.x[1],
+				min: TWIN.stage.source.x[0],
+				message: "Beam X position must be between " + TWIN.stage.source.x[0] + "mm and " + TWIN.stage.source.x[1] + "mm"
+			}) : validateSourcePosition(BeamPosXElement),
+
+		// Beam position is negative
+		(TWIN.stage.source.z.length !== 0) ?
+			validateInput(BeamPosYElement, "Source Position", {
+				type: "number",
+				min: TWIN.stage.source.z[1] * -1,
+				max: TWIN.stage.source.z[0] * -1,
+				message: "Beam Y position must be between " + (TWIN.stage.source.z[1] * -1) + "mm and " + (TWIN.stage.source.z[0] * -1) + "mm"
+			}) : validateSourceYPosition(BeamPosYElement),
+
+		(TWIN.stage.source.y.length !== 0) ?
+			validateInput(BeamPosZElement, "Source Position", {
+				type: "number",
+				max: TWIN.stage.source.y[1],
+				min: TWIN.stage.source.y[0],
+				message: "Beam Z position must be between " + TWIN.stage.source.y[0] + "mm and " + TWIN.stage.source.y[1] + "mm"
+			}) : validateSourcePosition(BeamPosZElement),
+
+		// Detector position (Z and Y are swapped)
+		(TWIN.stage.detector.x.length !== 0) ?
+			validateInput(DetectorPosXElement, "Detector Position", {
+				type: "number",
+				max: TWIN.stage.detector.x[1],
+				min: TWIN.stage.detector.x[0],
+				message: "Detector X position must be between " + TWIN.stage.detector.x[0] + "mm and " + TWIN.stage.detector.x[1] + "mm"
+			}) : validateDetectorPosition(DetectorPosXElement),
+
+		(TWIN.stage.detector.z.length !== 0) ?
+			validateInput(DetectorPosYElement, "Detector Position", {
+				type: "number",
+				max: TWIN.stage.detector.z[1],
+				min: TWIN.stage.detector.z[0],
+				message: "Detector Y position must be between " + TWIN.stage.detector.z[0] + "mm and " + TWIN.stage.detector.z[1] + "mm"
+			}) : validateDetectorYPosition(DetectorPosYElement),
+
+		(TWIN.stage.detector.z.length !== 0) ?
+			validateInput(DetectorPosZElement, "Detector Position", {
+				type: "number",
+				max: TWIN.stage.detector.y[1],
+				min: TWIN.stage.detector.y[0],
+				message: "Detector Z position must be between " + TWIN.stage.detector.y[0] + "mm and " + TWIN.stage.detector.y[1] + "mm"
+			}) : validateDetectorPosition(DetectorPosZElement),
+	]
+
+	validationResults.forEach(validation => {
+		if (!validation.valid) {
+			// An element is invalid, bubble as an exception
+			throw "<b>Invalid Capture Settings</b><br/> Your " + validation.InvalidReason as CaptureConfigError
+		}
+	});
 }

@@ -521,7 +521,7 @@
             // up-down movement
             "y": [],
             // forward-backwards movement
-            "z": [-47500, -47500]
+            "z": [47500, 47500]
         },
 
         // If true, The detector will be fixed at the source's maximum distance

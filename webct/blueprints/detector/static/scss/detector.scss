@@ -1,4 +1,3 @@
-
 #divDetectorPreview {
 	background-color: var(--sl-color-primary-50);
 	transition-duration: 150ms;
@@ -6,19 +5,19 @@
 	border-style: double;
 }
 
-#divDetectorPreview > line {
+#divDetectorPreview>line {
 	stroke: var(--sl-color-neutral-200)
 }
 
-div.group:not([active]) > div > div.LSFGraph[advanced] {
+div.group:not([active])>div>div.LSFGraph[advanced] {
 	margin-top: 0;
 }
 
-div.group[active] > div > div.LSFGraph[advanced] {
+div.group[active]>div>div.LSFGraph[advanced] {
 	margin-top: 1rem;
 }
 
-section[type="detector"] > sl-split-panel {
+section[type="detector"]>sl-split-panel {
 	width: 100%;
 	height: 100%;
 }
@@ -34,11 +33,20 @@ div.LSFGraph {
 	border-width: 1px;
 }
 
-div.LSFGraph > canvas {
+div.LSFGraph>canvas {
 	height: 100%;
 	width: 100%;
 }
 
-sl-dialog > sl-button#buttonLSFSubmit {
+sl-dialog>sl-button#buttonLSFSubmit {
 	grid-column-start: 5;
+}
+
+#imgDetectorBinning {
+	width: 70%;
+	padding-left: 15%;
+}
+
+#textBin {
+	text-align: center;
 }

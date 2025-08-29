@@ -2,22 +2,24 @@ from dataclasses import dataclass
 from typing import Optional, cast
 
 import numpy as np
-from cil.framework import (
-	AcquisitionData, AcquisitionGeometry,
-	ImageData)
-from cil.optimisation.algorithms import CGLS, SIRT, FISTA
+from cil.framework import AcquisitionData, AcquisitionGeometry, ImageData
+from cil.optimisation.algorithms import CGLS, FISTA, SIRT
 from cil.processors import TransmissionAbsorptionConverter
 from cil.recon import FBP, FDK
 from matplotlib import use
+
 from webct.components.Beam import PROJECTION, BeamParameters
 from webct.components.Capture import CaptureParameters
 from webct.components.Detector import DetectorParameters
 from webct.components.recon import (
 	BoxProximal,
-	Proximal, ProximalFromJson,
 	IterativeOperator,
-	OperatorFromJson, ProjectionBlock,
-	dataWithOp)
+	OperatorFromJson,
+	ProjectionBlock,
+	Proximal,
+	ProximalFromJson,
+	dataWithOp,
+)
 from webct.components.recon.Differentiable import Diff, DiffFromJson, DiffLeastSquares
 
 use("Agg")
@@ -71,23 +73,23 @@ class FISTAParam(ReconParameters):
 ReconMethods = {
 	"FDK": {
 		"type": FDKParam,
-		"projections": (PROJECTION.POINT)
+		"projections": (PROJECTION.POINT),
 	},
 	"FBP": {
 		"type": FBPParam,
-		"projections": (PROJECTION.PARALLEL)
+		"projections": (PROJECTION.PARALLEL),
 	},
 	"CGLS": {
 		"type": CGLSParam,
-		"projections": (PROJECTION.PARALLEL, PROJECTION.POINT)
+		"projections": (PROJECTION.PARALLEL, PROJECTION.POINT),
 	},
 	"SIRT": {
 		"type": SIRTParam,
-		"projections": (PROJECTION.PARALLEL, PROJECTION.POINT)
+		"projections": (PROJECTION.PARALLEL, PROJECTION.POINT),
 	},
 	"FISTA": {
 		"type": FISTAParam,
-		"projections": (PROJECTION.PARALLEL, PROJECTION.POINT)
+		"projections": (PROJECTION.PARALLEL, PROJECTION.POINT),
 	},
 	# "PDHG": {
 	# 	"type":PDHGParam,
@@ -155,12 +157,12 @@ def reconstruct(projections: np.ndarray, capture: CaptureParameters, beam: BeamP
 
 	# FDK Reconstruction
 	if method_name == "FDK":
-		params = cast(FDKParam, params)
+		params = cast("FDKParam", params)
 		acData.reorder("tigre")
 		rec = FDK(acData, ig, params.filter).run()
 
 	elif method_name == "FBP":
-		params = cast(FBPParam, params)
+		params = cast("FBPParam", params)
 		if capture.laminography_mode:
 			acData.reorder("astra")
 			rec = FBP(acData, ig, params.filter, backend="astra").run()
@@ -170,7 +172,7 @@ def reconstruct(projections: np.ndarray, capture: CaptureParameters, beam: BeamP
 
 	elif method_name == "CGLS":
 		acData.reorder("astra")
-		params = cast(CGLSParam, params)
+		params = cast("CGLSParam", params)
 
 		# Reconstruction operator
 		blockOp, data = dataWithOp(params.operator, ig, acData)
@@ -185,7 +187,7 @@ def reconstruct(projections: np.ndarray, capture: CaptureParameters, beam: BeamP
 
 	elif method_name == "SIRT":
 		acData.reorder("astra")
-		params = cast(SIRTParam, params)
+		params = cast("SIRTParam", params)
 
 		# Reconstruction operator
 		blockOp, data = dataWithOp(params.operator, ig, acData)
@@ -203,7 +205,7 @@ def reconstruct(projections: np.ndarray, capture: CaptureParameters, beam: BeamP
 
 	elif method_name == "FISTA":
 		acData.reorder("astra")
-		params = cast(FISTAParam, params)
+		params = cast("FISTAParam", params)
 
 		# Differentiable function
 		diffFunction = params.diff.get(ig, acData)
@@ -225,7 +227,6 @@ def reconstruct(projections: np.ndarray, capture: CaptureParameters, beam: BeamP
 		rec = fista.solution
 
 	# elif method_name == "PDHG":
-		...
 		# grad = GradientOperator(ig)
 		# op = BlockOperator(projections, grad)
 		# alpha = 0.1
@@ -255,13 +256,13 @@ def ReconstructionFromJson(json: dict) -> ReconParameters:
 			filter = str(json["filter"])
 		return FDKParam(filter=filter)
 
-	elif method == "FBP":
+	if method == "FBP":
 		filter = "ram-lak"
 		if "filter" in json:
 			filter = str(json["filter"])
 		return FBPParam(filter=filter)
 
-	elif method == "CGLS":
+	if method == "CGLS":
 		operator:IterativeOperator = ProjectionBlock()
 		if "operator" in json:
 			operator = OperatorFromJson(json["operator"])
@@ -276,7 +277,7 @@ def ReconstructionFromJson(json: dict) -> ReconParameters:
 			tolerance = float(json["tolerance"])
 		return CGLSParam(iterations=iterations, operator=operator, tolerance=tolerance)
 
-	elif method == "SIRT":
+	if method == "SIRT":
 		operator:IterativeOperator = ProjectionBlock()
 		if "operator" in json:
 			operator = OperatorFromJson(json["operator"])
@@ -290,7 +291,7 @@ def ReconstructionFromJson(json: dict) -> ReconParameters:
 			constraint = ProximalFromJson(json["constraint"])
 
 		return SIRTParam(iterations=iterations, constraint=constraint, operator=operator)
-	elif method == "FISTA":
+	if method == "FISTA":
 		constraint:Proximal = BoxProximal()
 		if "constraint" in json:
 			constraint = ProximalFromJson(json["constraint"])
@@ -304,5 +305,4 @@ def ReconstructionFromJson(json: dict) -> ReconParameters:
 			diff = DiffFromJson(json["diff"])
 
 		return FISTAParam(iterations=iterations, constraint=constraint, diff=diff)
-	else:
-		raise TypeError(f"Recon paramaters for '{method}' is not supported.")
+	raise TypeError(f"Recon paramaters for '{method}' is not supported.")

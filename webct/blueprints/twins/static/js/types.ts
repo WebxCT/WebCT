@@ -1,6 +1,6 @@
 // oxlint-disable id-length
 
-import type { EmissionShape } from "../../beam/static/js/types"
+import type { EmissionShape } from "../../../beam/static/js/types"
 
 export interface DigitalTwin {
 
@@ -57,7 +57,7 @@ interface TwinStage {
 interface TwinDetector {
     exposures: number[]
     resolutions: [number, number][]
-    pixelPitch: number,
+    pixel_pitch: number,
     lsf: number[]
     scintillator: TwinScintillator
     gain: TwinGain
@@ -74,8 +74,8 @@ interface TwinGain {
     gains: number[]
 }
 
-interface XYZRange {
-    x: [number, number, number?]
-    y: [number, number, number?]
-    z: [number, number, number?]
+export interface XYZRange {
+    x: [number, number, number?] | []
+    y: [number, number, number?] | []
+    z: [number, number, number?] | []
 }

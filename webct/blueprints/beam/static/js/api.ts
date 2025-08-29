@@ -35,6 +35,7 @@ export interface BeamResponseRegistry {
 	beamResponse: {
 		params: {
 			twin:string;
+			twin_beam:string;
 			method: SourceType;
 			enableNoise:boolean;
 			voltage?: number;
@@ -138,6 +139,7 @@ export function processResponse(data: BeamResponseRegistry["beamResponse"]): [Be
 	case "lab":
 		beamProperties = new LabBeam(
 			data.params.twin as string,
+			data.params.twin_beam as string,
 			data.params.voltage as number,
 			data.params.enableNoise as boolean,
 			data.params.exposure as number,
@@ -152,6 +154,7 @@ export function processResponse(data: BeamResponseRegistry["beamResponse"]): [Be
 	case "med":
 		beamProperties = new MedBeam(
 			data.params.twin as string,
+			data.params.twin_beam as string,
 			data.params.voltage as number,
 			data.params.enableNoise as boolean,
 			data.params.mas as number,
@@ -165,12 +168,14 @@ export function processResponse(data: BeamResponseRegistry["beamResponse"]): [Be
 	case "synch":
 		beamProperties = new SynchBeam(
 			data.params.twin as string,
+			data.params.twin_beam as string,
 			data.params.energy as number,
 			data.params.enableNoise as boolean,
 			data.params.exposure as number,
 			data.params.flux as number,
 			data.params.harmonics as boolean,
 			filters,
+			"spekpy"
 		);
 		break;
 	}

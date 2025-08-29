@@ -31,3 +31,24 @@ def getDetector() -> Response:
 	response = DetectorResponse(simdata.detector, simdata.detector.scintillator.response)
 
 	return jsonify(response)
+
+
+@bp.route("/1x1.svg")
+def bin_1x1() -> Response:
+	return bp.send_static_file("img/1x1.drawio.svg")
+
+
+@bp.route("/3x3.svg")
+def bin_3x3() -> Response:
+	return bp.send_static_file("img/3x3.drawio.svg")
+
+
+@bp.route("/5x5.svg")
+def bin_5x5() -> Response:
+	return bp.send_static_file("img/5x5.drawio.svg")
+
+
+@bp.route("/7x7.svg")
+def bin_7x7() -> Response:
+	return bp.send_static_file("img/7x7.drawio.svg")
+

@@ -118,7 +118,7 @@ export const XTEKCTConfig: FormatLoaderStatic = class XTEKCTConfig implements Fo
 			thickness: this.config.Filter_ThicknessMM ?? 0,
 			material: ElementSymbols[this.config.Filter_Material as keyof typeof ElementSymbols ?? "Cu"] ?? ElementSymbols.Cu,
 		}
-		beam = new LabBeam("", this.config.XraykV, true, 1, this.config.XrayuA, 0, ElementSymbols.W, "spekpy", 12, [filter])
+		beam = new LabBeam("", "", this.config.XraykV, true, 1, this.config.XrayuA, 0, ElementSymbols.W, "spekpy", 12, [filter])
 
 		let pixelSize = this.config.DetectorPixelSizeX
 
@@ -132,6 +132,10 @@ export const XTEKCTConfig: FormatLoaderStatic = class XTEKCTConfig implements Fo
 				paneHeight: this.config.DetectorPixelsX * pixelSize,
 				paneWidth: this.config.DetectorPixelsY * pixelSize,
 				scintillator: { material: "", thickness: 100 },
+				enableGain: false,
+				gain: 1,
+				k: 1,
+				fov: 0,
 			},
 			capture: {
 				beamPosition: [0, this.config.SrcToObject * -1, 0],

@@ -1,7 +1,6 @@
 import logging
 from random import Random
 from threading import Semaphore
-from typing import List, Optional, Tuple
 
 import numpy as np
 from cil.utilities.display import show_geometry
@@ -13,20 +12,17 @@ from webct import Element
 from webct.components.Beam import BEAM_GENERATOR, PROJECTION, BeamParameters, Filter, LabBeam, Spectra, generateSpectra
 from webct.components.Capture import CaptureParameters
 from webct.components.Detector import DEFAULT_LSF, SCINTILLATOR_MATERIAL, DetectorParameters, Scintillator
+from webct.components.Reconstruction import FDKParam, ReconParameters, get_geometry, reconstruct
 from webct.components.Samples import RenderedSampleSettings, Sample, SampleSettings
 from webct.components.sim.clients.SimClient import SimClient, SimThreadError, SimTimeoutError
 from webct.components.sim.Download import DownloadManager
 from webct.components.sim.SimManager import getClient
 
-from webct.components.Reconstruction import FDKParam, ReconParameters, get_geometry, reconstruct
-
 log = logging.getLogger("SimSession")
 
 
 class SimSession:
-	"""
-	A simulator session, storing current simulation parameters and outputs.
-	"""
+	"""A simulator session, storing current simulation parameters and outputs."""
 
 	_beam_param: BeamParameters
 	_detector_param: DetectorParameters
@@ -39,13 +35,13 @@ class SimSession:
 	_counter: int = 1
 
 	# Save a flag if parameters have changed since last projection creation
-	_dirty: List[bool] = [False, False, False]
+	_dirty: list[bool] = [False, False, False]
 	_projections: np.ndarray
 	_projection: np.ndarray
 	_reconstruction: np.ndarray
 	_recon_param: ReconParameters
-	_scene: Optional[np.ndarray]
-	_dlmanager:DownloadManager
+	_scene: np.ndarray | None
+	_dlmanager: DownloadManager
 
 	# since flask runs python code concurrently, we need to ensure the simclient
 	# class is not used by multiple threads at once; or we have concurrency
@@ -62,16 +58,20 @@ class SimSession:
 
 	def init_default_parameters(self) -> None:
 		# Instantiate default values
-		self.beam = LabBeam(twin="none", method="lab", projection=PROJECTION.POINT,
-			filters=(Filter(Element.Cu,2),),
+		self.beam = LabBeam(
+			twin="none",
+			twin_beam="",
+			method="lab",
+			projection=PROJECTION.POINT,
+			filters=(Filter(Element.Cu, 2),),
 			voltage=70,
 			enableNoise=True,
-			exposure=1,
+			exposure=0.111,
 			intensity=120,
 			spotSize=0,
 			anodeAngle=12,
 			generator=BEAM_GENERATOR.SPEKPY,
-			material=Element.W
+			material=Element.W,
 		)
 		self.detector = DetectorParameters(
 			pane_height=300,
@@ -80,15 +80,17 @@ class SimSession:
 			lsf=DEFAULT_LSF,
 			enableLSF=True,
 			scintillator=Scintillator(SCINTILLATOR_MATERIAL.GADOX, 136.55 / 1000),
-			binning = 1,
-			)
-		self.samples = SampleSettings(
-			scaling = 1.0,
-			samples = (
-				Sample("Dragon Model", "welsh-dragon-small.stl", "mm", "element/aluminium"),
-			),
+			binning=1,
+			enableGain=True,
+			gain=914,
+			k=0.00097015324553,
+			fov=0,
 		)
-		self.capture = CaptureParameters(360, 360, (0, 100, 0), (0, -400, 0), (0, 0, 90), False)
+		self.samples = SampleSettings(
+			scaling=1.0,
+			samples=(Sample("Dragon Model", "welsh-dragon-small.stl", "mm", "element/aluminium"),),
+		)
+		self.capture = CaptureParameters(360, 360, (0, 100, 0), (0, -400, 0), (0, 0, 90), laminography_mode=False)
 		self.recon = FDKParam(filter="ram-lak")
 
 	@property
@@ -113,7 +115,7 @@ class SimSession:
 				self._simClient.kill()
 				log.error("Replacing Simulator Child with a new one...")
 				self._simClient = SimClient(self._sid)
-				raise e
+				raise
 
 	@property
 	def spectra(self) -> Spectra:
@@ -131,7 +133,7 @@ class SimSession:
 			return self._samples
 
 	@samples.setter
-	def samples(self, value:SampleSettings) -> None:
+	def samples(self, value: SampleSettings) -> None:
 		with self._lock:
 			if hasattr(self, "_samples") and value == self._samples:
 				return
@@ -200,10 +202,11 @@ class SimSession:
 				self._simClient = SimClient(self._sid)
 				raise e
 
-	def transmission_histogram(self) -> Tuple[List[float], List[float]]:
+	def transmission_histogram(self) -> tuple[list[float], list[float]]:
 		projection = self.projection()
+		bounds = (0, 1) if projection.dtype == float else (0, 65535)
 
-		hist, bins = np.histogram(projection, 100, (0, 1))
+		hist, bins = np.histogram(projection, 100, bounds)
 
 		# normalize hist to be a percentage
 		hist = hist / hist.max()
@@ -246,12 +249,12 @@ class SimSession:
 
 			try:
 				self._scene = self._simClient.getScene()
-			except SimThreadError as e:
+			except SimThreadError:
 				log.error("Thread Error while rendering scene! Forcefully killing Client...")
 				self._simClient.kill()
 				log.error("Replacing Simulator Child with a new one...")
 				self._simClient = SimClient(self._sid)
-				raise e
+				raise
 			return self._scene
 
 	def allProjections(self) -> np.ndarray:
@@ -264,9 +267,14 @@ class SimSession:
 				self._dirty[1] = False
 			try:
 				self._projections = self._simClient.getAllProjections()
+				print(self._projections.max())
+				print(self._projections.mean())
+				print(self._projections.min())
 			except SimThreadError as e:
 				if isinstance(e, SimTimeoutError):
-					log.error("Waited too long (>1s per projection) to render all projections. Unsure if simulator crashed since it's not responding. Forcefully killing Client...")
+					log.error(
+						"Waited too long (>1s per projection) to render all projections. Unsure if simulator crashed since it's not responding. Forcefully killing Client...",
+					)
 				else:
 					log.error("Thread Error while simulating all projections! Forcefully killing Client...")
 				self._simClient.kill()
@@ -288,7 +296,7 @@ class SimSession:
 		canvas = FigureCanvasAgg(fig)
 		canvas.draw()
 
-		return np.frombuffer(canvas.tostring_rgb(), dtype="uint8").reshape(height, width, 3)
+		return np.frombuffer(canvas.tostring_argb(), dtype="uint8").reshape(height, width, 4)[:, :, 1:]
 
 	@property
 	def recon(self) -> ReconParameters:
@@ -320,7 +328,13 @@ class SimSession:
 			self._lock.acquire()
 
 			log.info(f"[{self._sid}] Reconstructing")
-			self._reconstruction = reconstruct(projections, self._capture_param, self._beam_param, self._detector_param, self._recon_param)
+			self._reconstruction = reconstruct(
+				projections,
+				self._capture_param,
+				self._beam_param,
+				self._detector_param,
+				self._recon_param,
+			)
 			return self._reconstruction
 
 	@property
@@ -377,7 +391,7 @@ def Sim(sesh) -> SimSession:
 
 		if sid in stored_sessions:
 			return stored_sessions[sid]
-		else:
-			log.info(f"Creating new Simulator Session [{sid}]")
-			stored_sessions[sid] = SimSession(sid)
-			return stored_sessions[sid]
+
+		log.info(f"Creating new Simulator Session [{sid}]")
+		stored_sessions[sid] = SimSession(sid)
+		return stored_sessions[sid]

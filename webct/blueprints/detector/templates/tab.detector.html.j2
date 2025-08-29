@@ -5,6 +5,8 @@
 
 <div class="group">
 	<div>
+		<sl-select label="Detector Cropping" id="selectTwinFov"></sl-select>
+
 		<div style="grid-template-columns: repeat(2, minmax(0, 1fr)); display: grid;">
 			<sl-input type="number" label="Pane Width" value="640" id="inputPaneWidth">
 				{% include "./units/size.html.j2" %}
@@ -100,12 +102,31 @@
 
 <div class="group">
 	<div>
-		<sl-select label = "Detector Binning" value="1" id="selectDetectorBinning" help="2030x2030 => 200x200">
+		<sl-checkbox label="Gain" id="checkboxGainEnable">Enable gain and overexposure</sl-checkbox>
+
+		<sl-input label="k" id="inputDetectorkConstant" advanced>0.00007015324553</sl-input>
+
+		<sl-input label="Gain" id="inputDetectorGain">114
+			<span slot="suffix">e⁻/ADU</span>
+		</sl-input>
+		<sl-select label="Gain" value="114" id="selectDetectorGain" class="hidden">
+			<sl-menu-item value="114">114 e⁻/ADU</sl-menu-item>
+		</sl-select>
+	</div>
+	<button></button>
+</div>
+
+<div class="group">
+	<div>
+		<sl-select label="Detector Binning" value="1" id="selectDetectorBinning" help="2030x2030 => 200x200">
 			<sl-menu-item value="1">1x1 <span>1:1</span></sl-menu-item>
 			<sl-menu-item value="2">3x3 <span>1:9</span></sl-menu-item>
 			<sl-menu-item value="3">5x5 <span>1:25</span></sl-menu-item>
 			<sl-menu-item value="4">7x7 <span>1:49</span></sl-menu-item>
 		</sl-select>
-		<p>Pixel binning reduces the effective resolution of the detector, in exchange for pixel averaging.<br/> It is recommended on weaker systems</p>
+		<img src="1x1.svg" id="imgDetectorBinning">
+		<p id="textBin">Pixel binning reduces the effective resolution of the detector, in exchange for noise reduction.
+			<br /> It also reduces simulation size.
+		</p>
 	</div>
 </div>
