@@ -47,6 +47,7 @@ export interface DetectorResponseRegistry {
 			enableGain: boolean;
 			k: number;
 			gain: number;
+			numFlatfields: number;
 			fov: number;
 		},
 		energyResponse: {
@@ -79,6 +80,7 @@ export interface DetectorRequestRegistry {
 		enableGain: boolean;
 		k: number;
 		gain: number;
+		numFlatfields: number;
 		fov: number;
 	}
 }
@@ -133,8 +135,9 @@ export function processResponse(data: DetectorResponseRegistry["detectorResponse
 		enableLSF: data.params.enableLSF,
 		binning: data.params.binning,
 		enableGain: data.params.enableGain,
-		gain: data.params.gain,
 		k: data.params.k,
+		gain: data.params.gain,
+		numFlatfields: data.params.numFlatfields,
 		fov: data.params.fov,
 	};
 
@@ -160,8 +163,9 @@ export function prepareRequest(data: DetectorProperties): DetectorRequestRegistr
 		enableLSF: data.enableLSF,
 		binning: data.binning,
 		enableGain: data.enableGain,
-		gain: data.gain,
 		k: data.k,
+		gain: data.gain,
+		numFlatfields: data.numFlatfields,
 		fov: data.fov,
 	};
 }

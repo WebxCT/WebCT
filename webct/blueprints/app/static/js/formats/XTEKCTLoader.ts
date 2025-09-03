@@ -135,6 +135,7 @@ export const XTEKCTConfig: FormatLoaderStatic = class XTEKCTConfig implements Fo
 				enableGain: false,
 				gain: 1,
 				k: 1,
+				numFlatfields: 1,
 				fov: 0,
 			},
 			capture: {

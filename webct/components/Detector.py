@@ -1,8 +1,8 @@
+import math
 from copy import copy
 from dataclasses import dataclass
 from enum import Enum, unique
-import math
-from typing import List, Optional, Tuple
+
 import numpy as np
 
 # gvxr is only used in this context for scintillator properties.
@@ -17,7 +17,7 @@ class EnergyResponse:
 
 	@property
 	def asTuple(self):
-		return tuple(zip(self.incident, self.output))
+		return tuple(zip(self.incident, self.output, strict=True))
 
 
 @dataclass(frozen=True)
@@ -70,7 +70,7 @@ class SCINTILLATOR_MATERIAL(str, Enum):
 class Scintillator:
 	material: SCINTILLATOR_MATERIAL
 	thickness: float
-	custom_response: Optional[EnergyResponse] = None
+	custom_response: EnergyResponse | None = None
 
 	@property
 	def isCustom(self) -> bool:
@@ -123,23 +123,24 @@ class DetectorParameters:
 	pane_width: float  # width of pane in mm
 	pane_height: float  # height of pane in mm
 	pixel_size: float  # size of pixels in mm
-	lsf: List[float]  # Point spread function
+	lsf: list[float]  # Point spread function
 	enableLSF: bool  # Enable LSF
 	scintillator: Scintillator  # Scintillator
 	binning: int  # Detector Binning
 
-	enableGain: bool # Enable gain
+	enableGain: bool  # Enable gain
 	k: float  # Detector gain constant
 	gain: float  # Detector gain value
+	numFlatfields: int  # Number of flatfield images
 
-	fov: int # Detector fov setting
+	fov: int  # Detector fov setting
 
 	@property
-	def shape(self) -> Tuple[int, int]:
+	def shape(self) -> tuple[int, int]:
 		return tuple(int(t / self.pixel_size * self.binning) for t in (self.pane_height, self.pane_width))
 
 	@property
-	def binned_shape(self) -> Tuple[int, int]:
+	def binned_shape(self) -> tuple[int, int]:
 		return tuple(int(t / self.binned_pixel_size) for t in (self.pane_height, self.pane_width))
 
 	@property
@@ -189,7 +190,7 @@ class DetectorParameters:
 
 		# lsf/psf
 		enableLSF = bool(json["enableLSF"])
-		lsf: List[float] = [0, 1, 0]
+		lsf: list[float] = [0, 1, 0]
 		if "lsf" in json:
 			lsf = list(np.asarray(json["lsf"], dtype=float))
 
@@ -206,6 +207,8 @@ class DetectorParameters:
 		gain = float(json["gain"])
 		k = float(json["k"])
 
+		numFlatfields = int(json["numFlatfields"])
+
 		fov = int(json["fov"])
 
 		return DetectorParameters(
@@ -220,16 +223,17 @@ class DetectorParameters:
 			k=k,
 			gain=gain,
 			fov=fov,
+			numFlatfields=numFlatfields,
 		)
 
 
-def _lsf(x: np.ndarray, b2=54.9359, c2=-3.58452, e2=6.32561e09, f2=1.0):
+def _lsf(
+	x: np.ndarray, b2: float = 54.9359, c2: float = -3.58452, e2: float = 6.32561e09, f2: float = 1.0
+) -> np.ndarray:
 	temp_1 = (2.0 / (math.sqrt(math.pi) * e2 * f2)) * np.exp(-np.square(x) / (e2 * e2))
 	temp_2 = 1.0 / (b2 * c2) * np.power(1 + np.square(x) / (b2 * b2), -1)
 	temp_3 = np.power(2.0 / f2 + math.pi / c2, -1)
-	value = (temp_1 + temp_2) * temp_3
-
-	return value
+	return (temp_1 + temp_2) * temp_3
 
 
 def get() -> np.ndarray:

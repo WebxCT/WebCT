@@ -393,6 +393,7 @@ export const GVXRConfig: FormatLoaderStatic = class GVXRConfig implements Format
 				enableGain: false,
 				gain: 1,
 				k: 1,
+				numFlatfields: 1,
 				fov: 0,
 			},
 			beam: beam,

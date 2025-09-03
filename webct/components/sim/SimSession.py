@@ -84,6 +84,7 @@ class SimSession:
 			enableGain=True,
 			gain=914,
 			k=0.00097015324553,
+			numFlatfields=1,
 			fov=0,
 		)
 		self.samples = SampleSettings(

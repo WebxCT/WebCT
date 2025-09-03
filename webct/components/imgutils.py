@@ -13,17 +13,18 @@ def asPngStr(array: np.ndarray) -> str:
 	# array = (array * 255).astype("uint8")
 
 	# process per-frame to avoid large memory overhead
-	min = array.min()
-	max = array.max()
-	offset = max - min
-	compressed = np.empty_like(array, dtype=np.uint8)
+	vmin = float(array.min())
+	vmax = float(array.max())
+	offset = vmax - vmin
 
-	for row in range(array.shape[0]):
-		compressed[row] = (((array[row] - min) / offset) * 255).astype(np.uint8)
-
+	# for row in range(array.shape[0]):
+		# compressed[row] = (((array[row] - min) / offset) * 255).astype(np.uint8)
+	compressed = (array - vmin)
+	np.divide(compressed, offset, out=compressed)
+	np.multiply(compressed, 255, out=compressed)
 
 	byteStream = io.BytesIO()
-	img = Image.fromarray(compressed)
+	img = Image.fromarray(compressed.astype(np.uint8))
 	img.save(byteStream, "PNG")
 	byteStream.seek(0)
 	return str(b64encode(byteStream.read()))[2:-1]

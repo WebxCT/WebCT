@@ -9,7 +9,7 @@ import { MarkLoading, SetPreviewSize } from "../../../preview/static/js/sim/proj
 import { DetectorResponseRegistry, prepareRequest, processResponse, requestDetectorData, sendDetectorData } from "./api";
 import { DetectorConfigError, DetectorRequestError, showError, showValidationError } from "./errors";
 import { DetectorProperties, EnergyResponseDisplay, LSF, LSFDisplay, LSFParseEnum, ScintillatorMaterial } from "./types";
-import { validateHeight, validateHeightPx, validatePixel, validateScintillator, validateWidth, validateWidthPx } from "./validation";
+import { validateHeight, validateHeightPx, validateNumFlatfields, validatePixel, validateScintillator, validateWidth, validateWidthPx } from "./validation";
 import { Valid, validateInput } from "../../../base/static/js/validation";
 import { DigitalTwin } from "../../../twins/static/js/types";
 import { TWIN } from "../../../twins/static/js/twin";
@@ -49,6 +49,7 @@ let DetectorGainkConstantElement: SlInput;
 let DetectorGainElement: SlInput;
 let DetectorGainSelectElement: SlSelect;
 let DetectorGainEnableCheckbox: SlCheckbox;
+let DetectorFlatfieldElement: SlInput;
 
 
 // ====================================================== //
@@ -105,6 +106,7 @@ export function setupDetector(): boolean {
 	const input_detector_k_constant = document.getElementById("inputDetectorkConstant");
 	const input_detector_gain = document.getElementById("inputDetectorGain");
 	const select_detector_gain = document.getElementById("selectDetectorGain");
+	const input_detector_flatfield = document.getElementById("inputDetectorFlatfield");
 	const checkbox_gain_enable = document.getElementById("checkboxGainEnable");
 
 	if (twin_fov_element == null ||
@@ -134,6 +136,7 @@ export function setupDetector(): boolean {
 		input_detector_k_constant == null ||
 		input_detector_gain == null ||
 		select_detector_gain == null ||
+		input_detector_flatfield == null ||
 		checkbox_gain_enable == null) {
 
 		console.log(pane_width_element);
@@ -161,6 +164,7 @@ export function setupDetector(): boolean {
 		console.log(input_detector_k_constant);
 		console.log(input_detector_gain);
 		console.log(select_detector_gain);
+		console.log(input_detector_flatfield);
 		console.log(checkbox_gain_enable);
 
 		showAlert("Detector setup failure", AlertType.ERROR);
@@ -180,7 +184,7 @@ export function setupDetector(): boolean {
 		previewDetector()
 	})
 
-	PaneWidthElement = pane_width_element as SlInput;
+	PaneWidthElement = pane_width_element as unknown as SlInput;
 	PaneWidthElement.addEventListener("sl-change", () => {
 		LastPanelChange = "width"
 		if (validateWidth(PaneWidthElement).valid && validateWidthPx(PaneWidthPxElement).valid) {
@@ -188,7 +192,7 @@ export function setupDetector(): boolean {
 		}
 	});
 
-	PaneHeightElement = pane_height_element as SlInput;
+	PaneHeightElement = pane_height_element as unknown as SlInput;
 	PaneHeightElement.addEventListener("sl-change", () => {
 		LastPanelChange = "width"
 		if (validateHeight(PaneHeightElement).valid && validateHeightPx(PaneHeightPxElement).valid) {
@@ -196,7 +200,7 @@ export function setupDetector(): boolean {
 		}
 	});
 
-	PaneWidthPxElement = pane_width_px_element as SlInput;
+	PaneWidthPxElement = pane_width_px_element as unknown as SlInput;
 	PaneWidthPxElement.addEventListener("sl-change", () => {
 		LastPanelChange = "px"
 		if (validateWidth(PaneWidthElement).valid && validateWidthPx(PaneWidthPxElement).valid) {
@@ -204,7 +208,7 @@ export function setupDetector(): boolean {
 		}
 	});
 
-	PaneHeightPxElement = pane_height_px_element as SlInput;
+	PaneHeightPxElement = pane_height_px_element as unknown as SlInput;
 	PaneHeightPxElement.addEventListener("sl-change", () => {
 		LastPanelChange = "px"
 		if (validateHeight(PaneHeightElement).valid && validateHeightPx(PaneHeightPxElement).valid) {
@@ -212,7 +216,7 @@ export function setupDetector(): boolean {
 		}
 	});
 
-	PanePixelSizeElement = pane_pixel_size_element as SlInput;
+	PanePixelSizeElement = pane_pixel_size_element as unknown as SlInput;
 	PanePixelSizeElement.addEventListener("sl-change", () => {
 		if (validatePixel(PanePixelSizeElement).valid) {
 			previewDetector();
@@ -226,7 +230,7 @@ export function setupDetector(): boolean {
 	LSFEnableCheckbox = checkbox_lsf_enable as SlCheckbox;
 	LSFDialog = dialog_lsf as SlDialog;
 	LSFDialogButton = button_show_lsf as SlButton;
-	LSFDialogInput = input_lsf as SlInput;
+	LSFDialogInput = input_lsf as unknown as SlInput;
 	LSFDialogClose = button_lsf_close as SlButton;
 	LSFDialogSubmit = button_lsf_submit as SlButton;
 	LSFCanvas = canvas_lsf as HTMLCanvasElement;
@@ -273,7 +277,7 @@ export function setupDetector(): boolean {
 	});
 
 	ScintillatorSelectElement = scintillator_select_element as SlSelect;
-	ScintillatorThicknessElement = scintillator_thickness_element as SlInput;
+	ScintillatorThicknessElement = scintillator_thickness_element as unknown as SlInput;
 	ScintillatorThicknessElement.addEventListener("sl-change", () => {
 		validateScintillator(ScintillatorThicknessElement)
 	})
@@ -318,9 +322,15 @@ export function setupDetector(): boolean {
 	DetectorGainElement = input_detector_gain as unknown as SlInput
 	DetectorGainSelectElement = select_detector_gain as unknown as SlSelect;
 	DetectorGainEnableCheckbox = checkbox_gain_enable as SlCheckbox
+	DetectorFlatfieldElement = input_detector_flatfield as unknown as SlInput;
+	DetectorFlatfieldElement.addEventListener("sl-change", () => {
+		validateNumFlatfields(DetectorFlatfieldElement);
+	});
+
 	DetectorGainEnableCheckbox.addEventListener("sl-change", () => {
 		DetectorGainSelectElement.disabled = !DetectorGainEnableCheckbox.checked
 		DetectorGainElement.disabled = !DetectorGainEnableCheckbox.checked
+		DetectorFlatfieldElement.disabled = !DetectorGainEnableCheckbox.checked
 		if (TWIN === null) {
 			DetectorGainkConstantElement.disabled = !DetectorGainEnableCheckbox.checked
 		}
@@ -340,7 +350,8 @@ export function validateDetector(): void {
 		validateHeightPx(PaneHeightPxElement),
 		validateWidthPx(PaneWidthPxElement),
 		validateHeight(PaneHeightElement),
-		validatePixel(PanePixelSizeElement)
+		validatePixel(PanePixelSizeElement),
+		validateNumFlatfields(DetectorFlatfieldElement)
 	]
 
 	validationResults.forEach(validation => {
@@ -507,6 +518,7 @@ export function setDetectorParams(properties: DetectorProperties) {
 	DetectorGainkConstantElement.value = properties.k + "";;
 	DetectorGainElement.value = properties.gain + "";
 	DetectorGainSelectElement.value = properties.gain + "";
+	DetectorFlatfieldElement.value = properties.numFlatfields + "";
 
 	TwinFovElement.value = properties.fov + "";
 
@@ -528,6 +540,7 @@ export function getDetectorParams(): DetectorProperties {
 		enableGain: DetectorGainEnableCheckbox.checked,
 		k: parseFloat(DetectorGainkConstantElement.value as string),
 		gain: TWIN === null ? parseFloat(DetectorGainElement.value as string) : parseFloat(DetectorGainSelectElement.value as string),
+		numFlatfields: parseInt(DetectorFlatfieldElement.value as string),
 		fov: parseInt(TwinFovElement.value as string)
 	};
 }

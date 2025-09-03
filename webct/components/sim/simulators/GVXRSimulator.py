@@ -4,7 +4,7 @@ from typing import cast
 from zlib import crc32
 
 import numpy as np
-from gvxrPython3 import gvxr
+from gvxrPython3 import gvxr, gvxr2json
 from matplotlib.colors import hsv_to_rgb
 
 from webct import model_folder
@@ -23,8 +23,9 @@ from webct.components.sim.simulators.Simulator import Simulator
 
 
 def colour_from_string(string: str) -> tuple[float, float, float]:
-	"""Deterministically Creates a rgb colour from a given string.
-		The same text input will always return the same colour.
+	"""Deterministically creates a rgb colour from a given string.
+
+	The same text input will always return the same colour.
 
 	Args:
 		string (str): String to create a colour from.
@@ -87,16 +88,12 @@ class GVXRSimulator(Simulator):
 		gvxr.rotateNode("root", 90, 0, 1, 0)
 
 	def apply_gain(self, image: np.ndarray) -> np.ndarray:
-		print(image.max())
-		print(image.mean())
-		print(image.min())
 		if not self._detector.enableGain:
 			return image
-		image = (1 / (self._detector.gain * self._detector.k)) * image
-		image = np.clip(image, 0, 65535).astype(np.uint16)
-		print(image.max())
-		print(image.mean())
-		print(image.min())
+
+		image *= 1 / (self._detector.gain * self._detector.k)
+		np.clip(image, 0, 65535, image)
+		image = image.astype(np.uint16)
 		return image
 
 	def SimSingleProjection(self) -> np.ndarray:
@@ -104,27 +101,37 @@ class GVXRSimulator(Simulator):
 		gvxr.disableArtefactFiltering()
 
 		# workaround for inf projections after stage movement
-		self.beam = self._beam
+		# self.beam = self._beam
 
-		# Whiteimage for flatfield flattening
-		white = np.asarray(gvxr.getWhiteImage(), dtype=float)
+		gvxr2json.saveJSON("infimage.json")
 
+		white = np.ones((gvxr.getDetectorNumberOfPixels()[1], gvxr.getDetectorNumberOfPixels()[0]))
+
+		for i in range(self.detector.numFlatfields):
+			white += np.asarray(gvxr.getWhiteImage())
+
+		# Create array to store generated image
+		x_ray_image = np.zeros(
+			(gvxr.getDetectorNumberOfPixels()[1], gvxr.getDetectorNumberOfPixels()[0]),
+			dtype=np.single,
+		)
 
 		# if no samples are loaded, gvxr crashes.
 		# As a workaround, simulate white images if the number of samples is 0.
 		if len(self.samples.samples) == 0:
 			if self.detector.enableGain:
 				return self.apply_gain(white)
-			return np.asarray(gvxr.computeXRayImage(), dtype=float) / white
+			return white
 
-		image = np.asarray(gvxr.computeXRayImage(), dtype=float)
+		gvxr.computeXRayImage(x_ray_image)
 
-		# We generally only apply gain to images if we aren't performing
-		# flatfield correction.
+		print(x_ray_image)
+		print(white)
+
 		if self.detector.enableGain:
-			return self.apply_gain(image)
+			return self.apply_gain(x_ray_image)
 
-		return image / white
+		return x_ray_image / white
 
 	def SimAllProjections(self) -> np.ndarray:
 		# workaround, doesn't seem to be set properly in init
@@ -137,7 +144,7 @@ class GVXRSimulator(Simulator):
 			aFirstAngle=0,
 			anIncludeLastAngleFlag=False,
 			aLastAngle=self.capture.angles[-1],
-			aNumberOfWhiteImagesInFlatField=1,
+			aNumberOfWhiteImagesInFlatField=self.detector.numFlatfields,
 			aPositionOfCentreOfRotationX=0,
 			aPositionOfCentreOfRotationY=0,
 			aPositionOfCentreOfRotationZ=0,
@@ -150,7 +157,9 @@ class GVXRSimulator(Simulator):
 		)
 
 		if self.detector.enableGain:
-			return self.apply_gain(np.asarray(gvxr.getLastProjectionSet(), dtype=float) * np.asarray(gvxr.getWhiteImage()))
+			return self.apply_gain(
+				np.asarray(gvxr.getLastProjectionSet(), dtype=float) * np.asarray(gvxr.getWhiteImage()),
+			)
 
 		return np.asarray(gvxr.getLastProjectionSet()) / gvxr.getWhiteImage()
 
@@ -309,8 +318,6 @@ class GVXRSimulator(Simulator):
 		self._capture = value
 
 	def RenderScene(self) -> tuple[tuple[float]]:
-		gvxr.displayScene()
-		# gvxr.renderLoop()
 
 		# Zoom scene
 		dist = np.asarray(gvxr.getDetectorPosition("mm")) - np.asarray(gvxr.getSourcePosition("mm"))
@@ -323,7 +330,4 @@ class GVXRSimulator(Simulator):
 
 		# Update scene
 		gvxr.displayScene()
-		gvxr.takeScreenshot()
-		gvxr.displayScene()
-
 		return gvxr.takeScreenshot()

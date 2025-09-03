@@ -63,6 +63,11 @@ export interface DetectorProperties {
 	gain: number;
 
 	/**
+	 * Number of flatfields used for image normalisation
+	 */
+	numFlatfields: number;
+
+	/**
 	 * Digital twin selected FoV
 	 * Does not have an affect on simulation.
 	 */

@@ -30,9 +30,9 @@ export function validateWidth(WidthElement: SlInput): Valid {
 /**
  * WidthPx Validator
  */
-const WidthPxValidator:Validator = {
-	min:1,
-	max:10000,
+const WidthPxValidator: Validator = {
+	min: 1,
+	max: 10000,
 	type: "int",
 	message: "Pixel width must be a whole number larger than 0px, and less than 10000px."
 }
@@ -48,9 +48,9 @@ export function validateWidthPx(WidthPxElement: SlInput): Valid {
 /**
  * HeightPx Validator
  */
-const HeightPxValidator:Validator = {
-	min:1,
-	max:10000,
+const HeightPxValidator: Validator = {
+	min: 1,
+	max: 10000,
 	type: "int",
 	message: "Pixel height must be a whole number larger than 0px, and less than 10000px."
 }
@@ -77,8 +77,8 @@ export function validatePixel(PixelElement: SlInput): Valid {
 /**
  * Scintillator Validator
  */
-const ScintillatorValidator:Validator = {
-	min:1,
+const ScintillatorValidator: Validator = {
+	min: 1,
 	type: "number",
 	message: "Scintillator thickness must be larger than 1μm."
 }
@@ -89,4 +89,13 @@ const ScintillatorValidator:Validator = {
  */
 export function validateScintillator(ScintillatorElement: SlInput): Valid {
 	return validateInput(ScintillatorElement, "Detector Scintillator Thickness", ScintillatorValidator);
+}
+
+const FlatfieldValidator: Validator = {
+	min: 0,
+	type: "int",
+	message: "Number of flatfields must be 0 or higher."
+}
+export function validateNumFlatfields(FlatfieldElement: SlInput): Valid {
+	return validateInput(FlatfieldElement, "Detector Flatfield Count", FlatfieldValidator)
 }
