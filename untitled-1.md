@@ -13,8 +13,12 @@
   - all but monochromatic
 - [ ] validation
   - [x] beam validation
+  - [ ] detector validation
   - [ ] stage validation
 - [ ] twin affiliations
+- [ ] xrayphysics (gvxr default)
+
+Both methods work
 
 
 

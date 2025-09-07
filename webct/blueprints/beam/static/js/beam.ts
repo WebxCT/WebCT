@@ -519,7 +519,7 @@ export function getBeamParms(): BeamProperties {
 				TwinSelectBeamElement.value as string,
 				parseFloat(BeamVoltageElement.value as string),
 				BeamNoiseElement.checked,
-				parseFloat(BeamExposureElement.value as string),
+				((TWIN !== null && TWIN.detector.exposures.length > 0) ? parseFloat(TwinSelectExposureElement.value as string) : parseFloat(BeamExposureElement.value as string) ),
 				parseFloat(BeamIntensityElement.value as string),
 				parseFloat(BeamSpotSizeElement.value as string),
 				parseInt(BeamMaterialElement.value as string),

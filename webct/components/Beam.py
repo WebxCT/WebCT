@@ -424,6 +424,13 @@ def generateSpectra(beam: BeamParameters) -> tuple[Spectra, Spectra]:
 			raise NotImplementedError("XPECGEN is currently not implemented.")
 
 		if params.generator == BEAM_GENERATOR.XRAY_PHYSICS:
+			# xray physics is now the default in gvxr
+			gvxr.resetBeamSpectrum()
+			gvxr.setmAs(beam.m)
+			# gvxr.setmAs()
+			# gvxr.setFiltration()
+			# gvxr.setVoltage()
+
 			raise NotImplementedError("Xray physics is currently not implemented.")
 
 		raise NotImplementedError("Other beam spectra generators are not implemented.")

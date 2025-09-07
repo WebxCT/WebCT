@@ -97,41 +97,7 @@ class GVXRSimulator(Simulator):
 		return image
 
 	def SimSingleProjection(self) -> np.ndarray:
-		# workaround, doesn't seem to be set properly in init
-		gvxr.disableArtefactFiltering()
-
-		# workaround for inf projections after stage movement
-		# self.beam = self._beam
-
-		gvxr2json.saveJSON("infimage.json")
-
-		white = np.ones((gvxr.getDetectorNumberOfPixels()[1], gvxr.getDetectorNumberOfPixels()[0]))
-
-		for i in range(self.detector.numFlatfields):
-			white += np.asarray(gvxr.getWhiteImage())
-
-		# Create array to store generated image
-		x_ray_image = np.zeros(
-			(gvxr.getDetectorNumberOfPixels()[1], gvxr.getDetectorNumberOfPixels()[0]),
-			dtype=np.single,
-		)
-
-		# if no samples are loaded, gvxr crashes.
-		# As a workaround, simulate white images if the number of samples is 0.
-		if len(self.samples.samples) == 0:
-			if self.detector.enableGain:
-				return self.apply_gain(white)
-			return white
-
-		gvxr.computeXRayImage(x_ray_image)
-
-		print(x_ray_image)
-		print(white)
-
-		if self.detector.enableGain:
-			return self.apply_gain(x_ray_image)
-
-		return x_ray_image / white
+		...
 
 	def SimAllProjections(self) -> np.ndarray:
 		# workaround, doesn't seem to be set properly in init
@@ -169,47 +135,7 @@ class GVXRSimulator(Simulator):
 
 	@beam.setter
 	def beam(self, value: Beam) -> None:
-		if value.params.projection == PROJECTION.POINT:
-			gvxr.usePointSource()
-			# Focal spot is setup in capture, as it changes beam position.
-		elif value.params.projection == PROJECTION.PARALLEL:
-			gvxr.useParallelBeam()
-		else:
-			raise NotImplementedError("Only parallel or point sources are supported.")
-
-		# setup spectra
-		gvxr.resetBeamSpectrum()
-		for i in range(len(value.spectra.energies)):
-			gvxr.addEnergyBinToSpectrum(value.spectra.energies[i], "keV", value.spectra.photons[i])
-
-		# setup noise
-		if self.capture is not None:
-			if isinstance(value.params, (LabBeam, MedBeam)):
-				mAs = 1
-				if isinstance(value.params, LabBeam):
-					lab = cast("LabBeam", value.params)
-					mAs = (lab.intensity / 1000) * lab.exposure
-				else:
-					med = cast("MedBeam", value.params)
-					mAs = med.mas
-
-				electron_charge = 1.602e-19  # [C]
-				photon_count = mAs * (1.0e-3 / electron_charge) * (1 / ((self.capture.SDD * 10) ** 2))
-				gvxr.setNumberOfPhotonsPerPixelAtSDD(int(photon_count))
-			elif isinstance(value.params, SynchBeam):
-				synch = cast("SynchBeam", value.params)
-
-				# flux is x10^10
-				flux = synch.flux * synch.exposure
-
-				gvxr.setNumberOfPhotonsPerPixelAtSDD(int(np.clip(flux * 10e10, a_min=1, a_max=2**16 - 1)))
-
-		gvxr.enablePoissonNoise()
-
-		if not value.params.enableNoise:
-			gvxr.disablePoissonNoise()
-
-		self._beam = value
+		...
 
 	@property
 	def detector(self) -> DetectorParameters:
@@ -318,7 +244,6 @@ class GVXRSimulator(Simulator):
 		self._capture = value
 
 	def RenderScene(self) -> tuple[tuple[float]]:
-
 		# Zoom scene
 		dist = np.asarray(gvxr.getDetectorPosition("mm")) - np.asarray(gvxr.getSourcePosition("mm"))
 
