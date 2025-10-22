@@ -49,6 +49,7 @@ ignore = [
 	# pep8 is logically unsound. Why would you use a continuous character for
 	# discrete indentation blocks?
 	"W191",
+	# D206 - Docstring Tab Indentation
 	"D206",
 
 	# N806 - Variables in function should be lowercase
@@ -77,8 +78,15 @@ ignore = [
 	# Unfortunately this is prone to overly produce false positives.
 	"ERA001",
 
+	# G004 - Logging F String
+	# The overhead of formatting F strings in disabled logs is insignificant.
 	"G004",
 
+	# TRY003 - Raise Vanilla Args
+	"TRY003",
+
+	# EM101 - Raw String in Exception
+	"EM101",
 ]
 
 [tool.ruff.format]

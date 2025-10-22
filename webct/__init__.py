@@ -107,7 +107,8 @@ try:
 	HAS_CUDA = True
 except KeyError:
 	log.warning("CUDA is not installed, TIGRA and ASTRA-accelerated reconstruction will be unavailable!")
-
+except IndexError:
+	log.warning("Failed to enumerate installed GPUs with CUDA. TIGRA and ASTRA-accelerated reconstruction will be unavailable!")
 
 # todo: move / replace
 class Element(IntEnum):

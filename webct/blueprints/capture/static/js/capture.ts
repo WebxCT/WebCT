@@ -661,9 +661,9 @@ function validateCaptureTwin() {
 		(TWIN.stage.source.z.length !== 0) ?
 			validateInput(BeamPosYElement, "Source Position", {
 				type: "number",
-				min: TWIN.stage.source.z[1] * -1,
-				max: TWIN.stage.source.z[0] * -1,
-				message: "Beam Y position must be between " + (TWIN.stage.source.z[1] * -1) + "mm and " + (TWIN.stage.source.z[0] * -1) + "mm"
+				min: Math.abs(TWIN.stage.source.z[1]) * -1,
+				max: Math.abs(TWIN.stage.source.z[0]) * -1,
+				message: "Beam Y position must be between " + (Math.abs(TWIN.stage.source.z[1]) * -1) + "mm and " + (Math.abs(TWIN.stage.source.z[0]) * -1) + "mm"
 			}) : validateSourceYPosition(BeamPosYElement),
 
 		(TWIN.stage.source.y.length !== 0) ?
@@ -691,7 +691,7 @@ function validateCaptureTwin() {
 				message: "Detector Y position must be between " + TWIN.stage.detector.z[0] + "mm and " + TWIN.stage.detector.z[1] + "mm"
 			}) : validateDetectorYPosition(DetectorPosYElement),
 
-		(TWIN.stage.detector.z.length !== 0) ?
+		(TWIN.stage.detector.y.length !== 0) ?
 			validateInput(DetectorPosZElement, "Detector Position", {
 				type: "number",
 				max: TWIN.stage.detector.y[1],

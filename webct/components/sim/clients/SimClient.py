@@ -187,7 +187,10 @@ class SimClient(Process):
 				# copy values into shared memory
 				tik = monotonic()
 				log.info(f"({self.pid}) Filling [[{input.result_sm}]] with a single projection")
-				np.copyto(sm_arr, self._simulator.SimSingleProjection())
+				print(sm_arr.shape)
+				im = self._simulator.SimSingleProjection()
+				print(im.shape)
+				np.copyto(sm_arr, im)
 				log.info(
 					f"({self.pid}) [[{input.result_sm}]] Filled with a single projection in {monotonic() - tik:.2f}s"
 				)
@@ -335,7 +338,7 @@ class SimClient(Process):
 
 		# allocate shared memory
 		dtype = np.uint16 if self.detector.enableGain else float
-		print(f"getProjection: {dtype}")
+		print(f"getProjection: {dtype}: {self.detector.binned_shape}")
 		result_np: np.ndarray = np.ndarray(self.detector.binned_shape, dtype=dtype)
 		mem = shared_memory.SharedMemory(f"WCT_SM_GP-{self.pid}-{rng.random()}", create=True, size=result_np.nbytes)
 

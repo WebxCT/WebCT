@@ -10,7 +10,7 @@ import numpy as np
 import spekpy as sp
 import xpecgen.xpecgen as xp
 from gvxrPython3 import gvxr
-from gvxrPython3.twins import DigitalTwin, TwinBeamFixedSpectrum
+from gvxrPython3.twins import DigitalTwin, TwinBeamFixedSpectrum, TwinBeamMonochromatic
 
 from webct import Element
 from webct.components.Twin import get_twin
@@ -294,30 +294,25 @@ def generateSpectra(beam: BeamParameters) -> tuple[Spectra, Spectra]:
 			raise KeyError(f"Beam of name '{beam.twin_beam}' does not exist in twin '{twin.specification.name}'")
 
 		twinbeam = twin.specification.beams[beam.twin_beam]
-		print(twinbeam)
 
 		if isinstance(twinbeam, TwinBeamFixedSpectrum):
-			unfiltered = Spectra([x[0] for x in twinbeam.spectrum], [x[1] for x in twinbeam.spectrum], 0, 0, 0)
+			unfiltered = Spectra(
+				[x[0] for x in twinbeam.spectrum], [x[1] for x in twinbeam.spectrum], 0, 0, 0
+			)
 
-			# Use gVXR to filter fixed spectrum beams
 			gvxr.resetBeamSpectrum()
 			for energy, photons in twinbeam.spectrum:
 				gvxr.addEnergyBinToSpectrumPerCm2At1m(energy, "keV", photons)
 
-			# for f in beam.filters:
-			# 	gvxr.addFilter(f.material, f.thickness, "mm")
+			# internal filtration is already handled by the beam characteristics
+			for f in beam.filters:
+				gvxr.addFilter(f.material, f.thickness, "mm")
 
 			filtered_bins = gvxr.getEnergyBins("keV")
 			filtered_photons = gvxr.getPhotonCountsPerCm2At1m()
-
 			filtered = Spectra(filtered_bins, filtered_photons, 0, 0, 0)
 
 			return (filtered, unfiltered)
-
-		if isinstance(twinbeam, TwinBeamFixedSpectrum):
-			unfiltered = Spectra([x[0] for x in twinbeam.spectrum], [x[1] for x in twinbeam.spectrum], 0, 0, 0)
-			filtered = Spectra([x[0] for x in twinbeam.spectrum], [x[1] for x in twinbeam.spectrum], 0, 0, 0)
-			return (unfiltered, filtered)
 
 	if beam.generator == BEAM_GENERATOR.MONOCHROMATIC:
 		log.info("Generating monochromatic beam spectra")
@@ -421,12 +416,9 @@ def generateSpectra(beam: BeamParameters) -> tuple[Spectra, Spectra]:
 				),
 			)
 
-			raise NotImplementedError("XPECGEN is currently not implemented.")
-
 		if params.generator == BEAM_GENERATOR.XRAY_PHYSICS:
 			# xray physics is now the default in gvxr
-			gvxr.resetBeamSpectrum()
-			gvxr.setmAs(beam.m)
+			# gvxr.resetBeamSpectrum()
 			# gvxr.setmAs()
 			# gvxr.setFiltration()
 			# gvxr.setVoltage()

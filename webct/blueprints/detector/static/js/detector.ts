@@ -10,7 +10,7 @@ import { DetectorResponseRegistry, prepareRequest, processResponse, requestDetec
 import { DetectorConfigError, DetectorRequestError, showError, showValidationError } from "./errors";
 import { DetectorProperties, EnergyResponseDisplay, LSF, LSFDisplay, LSFParseEnum, ScintillatorMaterial } from "./types";
 import { validateHeight, validateHeightPx, validateNumFlatfields, validatePixel, validateScintillator, validateWidth, validateWidthPx } from "./validation";
-import { Valid, validateInput } from "../../../base/static/js/validation";
+import { Valid } from "../../../base/static/js/validation";
 import { DigitalTwin } from "../../../twins/static/js/types";
 import { TWIN } from "../../../twins/static/js/twin";
 
@@ -624,6 +624,9 @@ export function SetDetectorTwin(twin: DigitalTwin | null): void {
 
 	// disable element if only one resolution is supported
 	TwinFovElement.disabled = twin.detector.resolutions.length == 1
+	let resolution = twin.detector.resolutions[parseInt(TwinFovElement.value)]
+	PaneWidthPxElement.value = resolution[0] + ""
+	PaneWidthPxElement.value = resolution[1] + ""
 
 	DetectorGainkConstantElement.value = twin.detector.gain.k + ""
 
@@ -641,4 +644,3 @@ export function SetDetectorTwin(twin: DigitalTwin | null): void {
 
 	previewDetector();
 }
-
